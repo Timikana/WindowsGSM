@@ -36,6 +36,9 @@ namespace WindowsGSM.Functions.Doctor
             // 4) Java (jeux Minecraft)
             CheckJava(results, gameFullName);
 
+            // 5) Truck Simulator : server_packages.* requis (sinon le serveur ne démarre pas)
+            CheckTruckPackages(results, serverId, gameFullName);
+
             // Rappel
             results.Add(new DiagnosticResult("Joignabilité Internet", DiagStatus.Info,
                 "Dépend du firewall + du port-forward sur la box (voir Tools ▸ Ports / UPnP). Ce diagnostic vérifie l'écoute LOCALE, pas l'ouverture côté box."));
@@ -213,6 +216,37 @@ namespace WindowsGSM.Functions.Doctor
             catch (Exception e)
             {
                 results.Add(new DiagnosticResult("Java", DiagStatus.Warn, e.Message));
+            }
+        }
+
+        // Euro/American Truck Simulator : le serveur dédié REFUSE de démarrer sans
+        // save\server_packages.sii + .dat (données de map/DLC). Ces fichiers s'exportent
+        // depuis le client (console : export_server_packages) puis le plugin les copie.
+        // On anticipe en alertant si manquants.
+        private static void CheckTruckPackages(List<DiagnosticResult> results, string serverId, string gameFullName)
+        {
+            string g = (gameFullName ?? "").ToLowerInvariant();
+            if (!g.Contains("truck simulator")) { return; }
+
+            try
+            {
+                string save = ServerPath.GetServersServerFiles(serverId, "save");
+                bool sii = File.Exists(Path.Combine(save, "server_packages.sii"));
+                bool dat = File.Exists(Path.Combine(save, "server_packages.dat"));
+                if (sii && dat)
+                {
+                    results.Add(new DiagnosticResult("server_packages", DiagStatus.Ok,
+                        "server_packages.sii + .dat présents (map/DLC OK)."));
+                }
+                else
+                {
+                    results.Add(new DiagnosticResult("server_packages", DiagStatus.Fail,
+                        "Manquant(s) -> le serveur ne démarrera pas. Dans le client (g_console 1), tape « export_server_packages » avec TOUS tes DLC chargés, puis démarre le serveur : le plugin copie save\\server_packages.sii + .dat automatiquement."));
+                }
+            }
+            catch (Exception e)
+            {
+                results.Add(new DiagnosticResult("server_packages", DiagStatus.Warn, e.Message));
             }
         }
     }
