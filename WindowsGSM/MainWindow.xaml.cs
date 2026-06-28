@@ -2391,6 +2391,31 @@ namespace WindowsGSM
             dynamic gameServer = GameServer.Data.Class.Get(server.Game, new ServerConfig(server.ID), PluginsList);
             if (gameServer == null) { return null; }
 
+            // Euro/American Truck Simulator : le serveur dedie CRASHE au demarrage sans
+            // save\server_packages.sii + .dat (donnees map/DLC, exportees depuis le client via
+            // export_server_packages). On previent clairement au lieu de laisser un crash obscur.
+            if ((server.Game ?? "").ToLowerInvariant().Contains("truck simulator"))
+            {
+                try
+                {
+                    string save = ServerPath.GetServersServerFiles(server.ID, "save");
+                    bool ok = File.Exists(Path.Combine(save, "server_packages.sii")) && File.Exists(Path.Combine(save, "server_packages.dat"));
+                    if (!ok)
+                    {
+                        var mb = new Wpf.Ui.Controls.MessageBox
+                        {
+                            Title = "server_packages manquant",
+                            Content = "Ce serveur Truck Simulator n'a pas de save\\server_packages.sii + .dat : il va probablement crasher au démarrage.\n\nDepuis le CLIENT (config.cfg : uset g_console \"1\"), lance le jeu avec TOUS tes DLC chargés, ouvre la console (~) et tape :\n    export_server_packages\nPuis redémarre ce serveur : le plugin copie les fichiers automatiquement.\n\nDémarrer quand même ?",
+                            PrimaryButtonText = "Démarrer quand même",
+                            CloseButtonText = "Annuler"
+                        };
+                        var res = await mb.ShowDialogAsync();
+                        if (res != Wpf.Ui.Controls.MessageBoxResult.Primary) { return null; }
+                    }
+                }
+                catch (Exception e) { AppLog.Warn("TruckSim", "check server_packages: " + e.Message); }
+            }
+
             //End All Running Process
             await EndAllRunningProcess(server.ID);
             await Task.Delay(500);
