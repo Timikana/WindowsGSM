@@ -11,6 +11,20 @@
 # What is WindowsGSM?
 WindowsGSM is a powerful tool to manage game servers. Equipped with a GUI for server admins to install, import, start, stop, restart, update, and automate multiple servers with a push of a button.
 
+## ✨ Fork features (.NET 10 / WPF-UI)
+
+This fork modernizes the UI (WPF-UI Fluent, dark native title bars) and adds:
+
+- **Multi-channel notifications** — broadcast alerts (crash, RAM, disk, updates…) to **ntfy / Telegram / SMTP e-mail / generic webhook**, with a per-channel *Test* button. Secrets are encrypted at rest (DPAPI, per-user).
+- **Auto port-forward (UPnP)** — homemade SSDP + SOAP IGD client (no external dependency) that opens/closes a server's ports on start/stop. Also works as an *advisor*: lists the exact ports to open manually when UPnP is off (e.g. OPNsense). Per-game port resolver with quirks (e.g. Satisfactory 7777 + 8888 TCP).
+- **Server Doctor** — one-click diagnostics: status, locally-listening ports, free disk, Java, plus opt-in external reachability.
+- **Discord bot** — interactive start/stop/restart/backup/update buttons and a live status dashboard across multiple guilds.
+- **Hardening** — SteamCMD AppID/argument sanitisation, file-based application log usable in Release builds.
+
+| Notifications | Ports / UPnP | Server Doctor |
+| --- | --- | --- |
+| ![Notifications](docs/screenshots/notifications.png) | ![Ports / UPnP](docs/screenshots/portforward.png) | ![Server Doctor](docs/screenshots/doctor.png) |
+
 |               | 🎮 Game Server  | Supported | Query |
 | ------------- | --------------- | --------- | ----- |
 | ![logo](WindowsGSM/Images/Games/7dtd.png?raw=true)   | 7 Days to Die Dedicated Server                    |✅|      |
