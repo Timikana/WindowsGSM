@@ -28,6 +28,72 @@ namespace WindowsGSM.Functions
         public PluginManagement()
         {
             Directory.CreateDirectory(ServerPath.GetPlugins());
+            SeedDefaultPlugins();
+        }
+
+        /// <summary>
+        /// Copie les plugins embarques par defaut (dossier "default_plugins" livre a cote de l'exe)
+        /// vers plugins\ s'ils n'y sont pas deja. Un marqueur (configs\.default_plugins_seeded) note
+        /// ceux deja semes une fois, afin qu'une suppression volontaire par l'utilisateur soit respectee
+        /// (on ne re-seme pas un plugin deja seme). Idempotent et sans ecrasement.
+        /// </summary>
+        public static void SeedDefaultPlugins()
+        {
+            try
+            {
+                string defaultDir = Path.Combine(MainWindow.WGSM_PATH, "default_plugins");
+                if (!Directory.Exists(defaultDir)) { return; }
+
+                string marker = ServerPath.Get(ServerPath.FolderName.Configs, ".default_plugins_seeded");
+                var seeded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (File.Exists(marker))
+                {
+                    foreach (var line in File.ReadAllLines(marker))
+                    {
+                        var n = line.Trim();
+                        if (n.Length > 0) { seeded.Add(n); }
+                    }
+                }
+
+                bool changed = false;
+                foreach (var srcFolder in Directory.GetDirectories(defaultDir, "*.cs", SearchOption.TopDirectoryOnly))
+                {
+                    string name = Path.GetFileName(srcFolder);
+                    if (seeded.Contains(name)) { continue; }            // deja seme une fois -> respecte une suppression
+
+                    string dst = ServerPath.GetPlugins(name);
+                    if (!Directory.Exists(dst))
+                    {
+                        CopyDirectory(srcFolder, dst);
+                        AppLog.Info("Plugins", $"Plugin par defaut seme : {name}");
+                    }
+                    seeded.Add(name);
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(marker));
+                    File.WriteAllLines(marker, seeded);
+                }
+            }
+            catch (Exception e)
+            {
+                AppLog.Warn("Plugins", "SeedDefaultPlugins a echoue : " + e.Message);
+            }
+        }
+
+        private static void CopyDirectory(string src, string dst)
+        {
+            Directory.CreateDirectory(dst);
+            foreach (var file in Directory.GetFiles(src))
+            {
+                File.Copy(file, Path.Combine(dst, Path.GetFileName(file)), overwrite: false);
+            }
+            foreach (var dir in Directory.GetDirectories(src))
+            {
+                CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
+            }
         }
 
         // P3-6 : les ~150 MetadataReference (TPA framework .NET 10 + WindowsGSM + Newtonsoft) sont IDENTIQUES

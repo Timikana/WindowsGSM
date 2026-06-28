@@ -14,6 +14,7 @@ namespace WindowsGSM.Functions
         private static readonly object _lock = new object();
         private const string FileName = "windowsgsm-app.log";
 
+        public static void Info(string source, string message) => Write("INFO", source, message);
         public static void Warn(string source, string message) => Write("WARN", source, message);
         public static void Error(string source, string message) => Write("ERROR", source, message);
 
