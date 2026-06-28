@@ -486,7 +486,7 @@
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <DockPanel DockPanel.Dock="Left" Width="280">
                                     <DockPanel DockPanel.Dock="Top">
-                                        <Label Content="Dashboard Channel ID"/>
+                                        <Label Content="Dashboard Channel ID(s)" ToolTip="Un ou plusieurs canaux (un par serveur Discord), séparés par des virgules"/>
                                         <Button x:Name="button_DiscordBotDashboardEdit" DockPanel.Dock="Right" Content="Edit" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotDashboardEdit_Click"/>
                                     </DockPanel>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotDashboard" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
@@ -1142,6 +1142,7 @@
         <!-- Sidebar Windows 11 (remplace le HamburgerMenu Metro) - rétractable (pin/unpin) -->
         <Border x:Name="SidebarBorder" HorizontalAlignment="Left" Width="190" Panel.ZIndex="10"
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="8,12,8,8">
                 <ui:Button x:Name="NavToggle" Icon="{ui:SymbolIcon Navigation24}" ToolTip="Réduire / épingler le menu" Appearance="Secondary" Click="NavToggle_Click" HorizontalAlignment="Left" Margin="0,0,0,8" Padding="10,8"/>
                 <ui:Button x:Name="NavHome" Content="Accueil" Icon="{ui:SymbolIcon Home24}" Appearance="Primary" Click="NavHome_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
@@ -1151,7 +1152,12 @@
                 <Separator Margin="4,10"/>
                 <ui:Button x:Name="NavPlugins" Content="Plugins" Icon="{ui:SymbolIcon PuzzlePiece24}" Appearance="Secondary" Click="NavPlugins_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <ui:Button x:Name="NavSettings" Content="Réglages" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Click="NavSettings_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <Separator Margin="4,10"/>
+                <ui:Button x:Name="NavPorts" Content="Ports / UPnP" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Tools_PortForward_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavDoctor" Content="Server Doctor" Icon="{ui:SymbolIcon Search24}" Appearance="Secondary" Click="Tools_ServerDoctor_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavNotifs" Content="Notifications" Icon="{ui:SymbolIcon Alert24}" Appearance="Secondary" Click="Nav_Notifications_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
             </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
     </Grid>

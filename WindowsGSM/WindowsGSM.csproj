@@ -41,6 +41,8 @@
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="System.Management" Version="9.0.0" />
+    <!-- DPAPI (ProtectedData) : chiffrement au repos du token du bot Discord. Pas dans le SDK desktop par defaut. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
     <!-- Remplace Microsoft.CodeDom.Providers.DotNetCompilerPlatform (inexistant en .NET 10) -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
     <!-- Remplace LiveCharts 0.9.7 (abandonne) -->

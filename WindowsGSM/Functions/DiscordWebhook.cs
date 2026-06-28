@@ -25,6 +25,15 @@ namespace WindowsGSM.Functions
 
         public async Task<bool> Send(string serverid, string servergame, string serverstatus, string servername, string serverip, string serverport)
         {
+            // Multi-canaux : diffuse aussi vers les canaux globaux configures (ntfy, etc.),
+            // independamment de Discord (fonctionne meme si aucun webhook Discord n'est defini).
+            try
+            {
+                string extra = string.IsNullOrWhiteSpace(_customMessage) ? string.Empty : "\n" + _customMessage;
+                await Notifications.Notifier.Broadcast($"{servername} [{servergame}]", $"{serverstatus}\n{serverip}:{serverport}{extra}");
+            }
+            catch { /* best-effort : ne jamais bloquer l'alerte Discord */ }
+
             if (string.IsNullOrWhiteSpace(_webhookUrl))
             {
                 return false;

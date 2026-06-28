@@ -14,3 +14,7 @@ WindowsGSM/publish-net10/
 *.bak
 build*.log
 *_OLD_wpfui_*
+packages/
+.vs/
+*.user
+*.log

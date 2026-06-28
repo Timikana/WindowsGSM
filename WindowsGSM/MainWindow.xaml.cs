@@ -1440,6 +1440,9 @@ namespace WindowsGSM
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
 
+            // Referme tous les ports UPnP qu'on a ouverts (best-effort, non bloquant).
+            try { Functions.PortForward.PortForwardManager.CleanupAllAsync().ConfigureAwait(false); } catch { }
+
             // Stop Discord Bot
             g_DiscordBot.Stop().ConfigureAwait(false);
         }
@@ -2495,6 +2498,14 @@ namespace WindowsGSM
 
             StartQuery(server);
 
+            // Auto port-forward UPnP (best-effort, opt-in via configs/portforward.json ; master OFF par défaut)
+            try
+            {
+                var portCfg = new Functions.ServerConfig(server.ID);
+                _ = Functions.PortForward.PortForwardManager.OpenForServerAsync(server.ID, server.Game, portCfg.ServerPort, portCfg.ServerQueryPort);
+            }
+            catch { /* ne jamais bloquer le démarrage du serveur */ }
+
             if (MahAppSwitch_SendStatistics.IsChecked == true)
             {
                 var analytics = new GoogleAnalytics();
@@ -2523,6 +2534,9 @@ namespace WindowsGSM
             ServerCache.SavePID(server.ID, -1);
             ServerCache.SaveProcessName(server.ID, string.Empty);
             ServerCache.SaveWindowsIntPtr(server.ID, (IntPtr)0);
+
+            // Referme les ports UPnP ouverts pour ce serveur (best-effort).
+            try { _ = Functions.PortForward.PortForwardManager.CloseForServerAsync(server.ID); } catch { }
 
             if (p != null && !p.HasExited)
             {
@@ -3962,6 +3976,60 @@ namespace WindowsGSM
         #endregion
 
         #region Menu - Tools
+        private void Tools_PortForward_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var servers = new List<Functions.PortForward.PortForwardDialog.ServerInfo>();
+                foreach (var row in ServerGrid.Items.Cast<ServerTable>().ToList())
+                {
+                    try
+                    {
+                        var sc = new Functions.ServerConfig(row.ID);
+                        servers.Add(new Functions.PortForward.PortForwardDialog.ServerInfo
+                        {
+                            Id = row.ID, Name = row.Name, Game = row.Game, Port = sc.ServerPort, QueryPort = sc.ServerQueryPort
+                        });
+                    }
+                    catch { }
+                }
+                new Functions.PortForward.PortForwardDialog(servers) { Owner = this }.ShowDialog();
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("PortForward/UI", ex.Message); }
+        }
+
+        private void Nav_Notifications_Click(object sender, RoutedEventArgs e)
+        {
+            try { new Functions.Notifications.NotificationsDialog { Owner = this }.ShowDialog(); }
+            catch (Exception ex) { Functions.AppLog.Warn("Notifications/UI", ex.Message); }
+        }
+
+        private void Tools_ServerDoctor_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var servers = new List<Functions.Doctor.ServerDoctorDialog.ServerInfo>();
+                foreach (var row in ServerGrid.Items.Cast<ServerTable>().ToList())
+                {
+                    try
+                    {
+                        var sc = new Functions.ServerConfig(row.ID);
+                        var meta = GetServerMetadata(row.ID);
+                        bool running = meta != null && meta.ServerStatus == ServerStatus.Started;
+                        servers.Add(new Functions.Doctor.ServerDoctorDialog.ServerInfo
+                        {
+                            Id = row.ID, Name = row.Name, Game = row.Game, Port = sc.ServerPort, Query = sc.ServerQueryPort, Running = running
+                        });
+                    }
+                    catch { }
+                }
+                // Pas de MessageBox natif : le dialogue affiche lui-même l'état vide (cohérent au thème).
+                string sel = (ServerGrid.SelectedItem as ServerTable)?.ID;
+                new Functions.Doctor.ServerDoctorDialog(servers, sel) { Owner = this }.ShowDialog();
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("Doctor/UI", ex.Message); }
+        }
+
         private void Tools_GlobalServerListCheck_Click(object sender, RoutedEventArgs e)
         {
             var row = (ServerTable)ServerGrid.SelectedItem;

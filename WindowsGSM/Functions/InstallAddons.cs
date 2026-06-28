@@ -30,8 +30,9 @@ namespace WindowsGSM.Functions
                 dynamic gameServer = GameServer.Data.Class.Get(server.Game);
                 return await GameServer.Addon.AMXModX.Install(server.ID, modFolder: gameServer.Game);
             }
-            catch
+            catch (Exception e)
             {
+                AppLog.Warn("InstallAddons/AMXModX", e.Message);
                 return false;
             }
         }
@@ -56,8 +57,9 @@ namespace WindowsGSM.Functions
                 dynamic gameServer = GameServer.Data.Class.Get(server.Game);
                 return await GameServer.Addon.SourceMod.Install(server.ID, modFolder: gameServer.Game);
             }
-            catch
+            catch (Exception e)
             {
+                AppLog.Warn("InstallAddons/SourceMod", e.Message);
                 return false;
             }
         }
@@ -88,8 +90,9 @@ namespace WindowsGSM.Functions
 
                 return true;
             }
-            catch
+            catch (Exception e)
             {
+                AppLog.Warn("InstallAddons/DayZMod", e.Message);
                 return false;
             }
         }
@@ -137,8 +140,9 @@ namespace WindowsGSM.Functions
                 await Task.Run(() => { try { File.Delete(zipPath); } catch { } });
                 return success;
             }
-            catch
+            catch (Exception e)
             {
+                AppLog.Warn("InstallAddons/OxideMod", e.Message);
                 return false;
             }
         }
@@ -155,8 +159,9 @@ namespace WindowsGSM.Functions
                 using (var responseReader = new StreamReader(response.GetResponseStream()))
                 return JObject.Parse(responseReader.ReadToEnd())["tag_name"].ToString();
             }
-            catch
+            catch (Exception e)
             {
+                AppLog.Warn("InstallAddons/GetOxideModLatestVersion", e.Message);
                 return null;
             }
         }
