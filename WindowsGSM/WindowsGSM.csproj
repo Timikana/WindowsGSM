@@ -28,6 +28,15 @@
     <Resource Include="Images\**\*.ico" />
   </ItemGroup>
 
+  <!-- Plugins embarques par defaut (17, audites). Leur .cs NE DOIT PAS etre compile dans l'app
+       (sinon doublons de types WindowsGSM.Plugins.*) : on les exclut de la compilation et on les
+       copie tels quels en sortie. Au demarrage, SeedDefaultPlugins() copie ceux manquants dans
+       plugins\ -> le loader Roslyn existant les compile au runtime, comme un plugin installe. -->
+  <ItemGroup>
+    <Compile Remove="default_plugins\**\*.cs" />
+    <Content Include="default_plugins\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- COM pare-feu : gere en late-bound (dynamic) dans WindowsFirewall.cs, plus de COMReference -->
 
   <!-- Packages : versions modernes compatibles .NET 10. Les dizaines de polyfills
