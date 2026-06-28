@@ -53,9 +53,22 @@ namespace WindowsGSM.Installer
             }
         }
 
+        // Durcissement (anti-injection) : empeche d'injecter des +commandes SteamCMD via des champs
+        // qui finissent dans la ligne d'arguments. Les AppID Steam sont toujours numeriques ; un
+        // guillemet ne peut pas apparaitre legitimement dans un chemin Windows ni un nom de mod.
+        private static string SanitizeAppId(string appId)
+            => new string((appId ?? string.Empty).Where(char.IsDigit).ToArray());
+
+        private static string SanitizeArg(string s)
+            => (s ?? string.Empty).Replace("\"", string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+
         // Old parameter script
         public void SetParameter(string installDir, string modName, string appId, bool validate, bool loginAnonymous = true)
         {
+            installDir = SanitizeArg(installDir);
+            modName = SanitizeArg(modName);
+            appId = SanitizeAppId(appId);
+
             _param = $"+force_install_dir \"{installDir}\"";
 
             if (loginAnonymous)
@@ -119,6 +132,11 @@ namespace WindowsGSM.Installer
         // New parameter script
         public static string GetParameter(string forceInstallDir, string appId, bool validate = true, bool loginAnonymous = true, string modName = null, string custom = null)
         {
+            forceInstallDir = SanitizeArg(forceInstallDir);
+            modName = SanitizeArg(modName);
+            custom = SanitizeArg(custom); // garde espaces/tirets (ex. -beta latest_experimental), retire guillemets/retours ligne
+            appId = SanitizeAppId(appId);
+
             var sb = new StringBuilder();
 
             // Set up force_install_dir parameter

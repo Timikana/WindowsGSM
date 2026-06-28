@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using WindowsGSM.Functions;
 
 namespace WindowsGSM.DiscordBot
@@ -8,6 +11,25 @@ namespace WindowsGSM.DiscordBot
     static class Configs
     {
 		private static readonly string _botPath = ServerPath.Get(ServerPath.FolderName.Configs, "discordbot");
+
+		// Chiffrement au repos du token (DPAPI, lie au compte Windows courant).
+		// Prefixe pour distinguer un token chiffre d'un ancien token en clair (retro-compat).
+		private const string TokenEncPrefix = "enc:v1:";
+		private static readonly byte[] _tokenEntropy = Encoding.UTF8.GetBytes("WindowsGSM.DiscordBot.Token");
+
+		private static string ProtectToken(string plain)
+		{
+			byte[] data = Encoding.UTF8.GetBytes(plain);
+			byte[] enc = ProtectedData.Protect(data, _tokenEntropy, DataProtectionScope.CurrentUser);
+			return TokenEncPrefix + Convert.ToBase64String(enc);
+		}
+
+		private static string UnprotectToken(string stored)
+		{
+			byte[] enc = Convert.FromBase64String(stored.Substring(TokenEncPrefix.Length));
+			byte[] data = ProtectedData.Unprotect(enc, _tokenEntropy, DataProtectionScope.CurrentUser);
+			return Encoding.UTF8.GetString(data);
+		}
 
 		public static void CreateConfigs()
 		{
@@ -42,7 +64,19 @@ namespace WindowsGSM.DiscordBot
 		{
 			try
 			{
-				return File.ReadAllText(Path.Combine(_botPath, "token.txt")).Trim();
+				string raw = File.ReadAllText(Path.Combine(_botPath, "token.txt")).Trim();
+				if (raw.Length == 0) { return string.Empty; }
+
+				if (raw.StartsWith(TokenEncPrefix))
+				{
+					// Token chiffre : ne se dechiffre que sous le compte Windows qui l'a ecrit.
+					try { return UnprotectToken(raw); }
+					catch { return string.Empty; } // chiffre par un autre compte / corrompu -> forcer une nouvelle saisie
+				}
+
+				// Ancien format en clair : on le renvoie ET on migre le fichier vers DPAPI de maniere transparente.
+				try { SetBotToken(raw); } catch { }
+				return raw;
 			}
 			catch
 			{
@@ -53,7 +87,9 @@ namespace WindowsGSM.DiscordBot
 		public static void SetBotToken(string token)
 		{
 			Directory.CreateDirectory(_botPath);
-			File.WriteAllText(Path.Combine(_botPath, "token.txt"), token.Trim());
+			string t = token.Trim();
+			string toWrite = t.Length == 0 ? string.Empty : ProtectToken(t);
+			File.WriteAllText(Path.Combine(_botPath, "token.txt"), toWrite);
 		}
 
 		public static string GetDashboardChannel()
@@ -72,6 +108,22 @@ namespace WindowsGSM.DiscordBot
 		{
 			Directory.CreateDirectory(_botPath);
 			File.WriteAllText(Path.Combine(_botPath, "channel.txt"), channel.Trim());
+		}
+
+		// Plusieurs canaux possibles (un par serveur Discord/guild) : IDs séparés par virgule,
+		// point-virgule, espace ou retour-ligne. Tolère l'ancien format à un seul ID.
+		public static List<string> GetDashboardChannels()
+		{
+			try
+			{
+				string raw = File.ReadAllText(Path.Combine(_botPath, "channel.txt"));
+				return raw.Split(new[] { ',', ';', '\n', '\r', ' ', '\t' }, System.StringSplitOptions.RemoveEmptyEntries)
+						  .Select(s => s.Trim()).Where(s => s.Length > 0).Distinct().ToList();
+			}
+			catch
+			{
+				return new List<string>();
+			}
 		}
 
 		public static int GetDashboardRefreshRate()

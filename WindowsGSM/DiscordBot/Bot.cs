@@ -15,8 +15,8 @@ namespace WindowsGSM.DiscordBot
 	{
 		private DiscordSocketClient _client;
 		private string _donorType;
-		private SocketTextChannel _dashboardTextChannel;
-		private RestUserMessage _dashboardMessage;
+		// Un message d'état par canal (clé = channelId) — supporte plusieurs serveurs Discord (guilds).
+		private readonly Dictionary<ulong, IUserMessage> _dashboardMessages = new Dictionary<ulong, IUserMessage>();
 		private CancellationTokenSource _cancellationTokenSource;
 
 		public Bot()
@@ -73,6 +73,7 @@ namespace WindowsGSM.DiscordBot
 			_client.Disconnected += On_Bot_Disconnected;
 			_client.Connected += On_Bot_Connected;
 			_client.SlashCommandExecuted += On_SlashCommandExecuted;
+			_client.ButtonExecuted += On_ButtonExecuted;
 
 			try
 			{
@@ -229,14 +230,14 @@ namespace WindowsGSM.DiscordBot
 
 				await _client.StopAsync();
 
-				// Delete the message after the bot stop
+				// Supprime les messages d'état (tous les canaux) après l'arrêt du bot.
 				try
 				{
-					if (_dashboardTextChannel != null)
+					foreach (var kv in _dashboardMessages)
 					{
-                        await _dashboardTextChannel.DeleteMessageAsync(_dashboardMessage);
-                        _dashboardMessage = null;
-                    }
+						try { await kv.Value.DeleteAsync(); } catch { }
+					}
+					_dashboardMessages.Clear();
 				}
 				catch
 				{
@@ -248,32 +249,43 @@ namespace WindowsGSM.DiscordBot
 		// ===== Message « dashboard » live : poste/maj un embed d'état dans un salon =====
 		private async Task StartDashboardMessageUpdate()
 		{
-			string channelId = Configs.GetDashboardChannel();
-			if (string.IsNullOrWhiteSpace(channelId) || !ulong.TryParse(channelId, out ulong chId)) { return; }
-
-			_dashboardMessage = null;
+			_dashboardMessages.Clear();
 			while (_client != null && _client.ConnectionState == ConnectionState.Connected)
 			{
 				try
 				{
-					if (_client.GetChannel(chId) is SocketTextChannel channel)
+					var channelIds = Configs.GetDashboardChannels();
+					if (channelIds.Count > 0)
 					{
-						_dashboardTextChannel = channel;
-						var embed = await BuildDashboardEmbed();
-						if (_dashboardMessage == null)
+						var embed = await BuildDashboardEmbed(); // construit une fois par cycle, réutilisé sur chaque canal
+						foreach (var cidStr in channelIds)
 						{
-							_dashboardMessage = await channel.SendMessageAsync(embed: embed.Build());
-						}
-						else
-						{
-							await _dashboardMessage.ModifyAsync(m => m.Embed = embed.Build());
+							if (!ulong.TryParse(cidStr, out ulong chId)) { continue; }
+							try
+							{
+								if (_client.GetChannel(chId) is IMessageChannel channel)
+								{
+									if (_dashboardMessages.TryGetValue(chId, out var msg) && msg != null)
+									{
+										await msg.ModifyAsync(m => m.Embed = embed.Build());
+									}
+									else
+									{
+										_dashboardMessages[chId] = await channel.SendMessageAsync(embed: embed.Build());
+									}
+								}
+							}
+							catch (Exception e)
+							{
+								BotLog($"Dashboard message (canal {cidStr}) : {e.Message}");
+								_dashboardMessages.Remove(chId); // message inaccessible -> recréé au prochain cycle
+							}
 						}
 					}
 				}
 				catch (Exception e)
 				{
-					BotLog($"Dashboard message : {e.Message}");
-					_dashboardMessage = null; // message supprimé/inaccessible -> on le recréera au prochain tour
+					BotLog($"Dashboard : {e.Message}");
 				}
 
 				int rate = Configs.GetDashboardRefreshRate();
@@ -349,7 +361,8 @@ namespace WindowsGSM.DiscordBot
 						.AddChoice("kill", "kill")
 						.AddChoice("backup", "backup")
 						.AddChoice("update", "update")
-						.AddChoice("stats", "stats"))
+						.AddChoice("stats", "stats")
+						.AddChoice("panel", "panel"))
 					.AddOption("serverid", ApplicationCommandOptionType.Integer, "ID du serveur (si requis)", isRequired: false);
 
 				await _client.CreateGlobalApplicationCommandAsync(cmd.Build());
@@ -386,6 +399,16 @@ namespace WindowsGSM.DiscordBot
 				{
 					if (!full && action != "players") { await cmd.RespondAsync("Permission complète requise.", ephemeral: true); return; }
 					await cmd.RespondAsync(await BuildSlashGlobalResponse(action), ephemeral: false);
+					return;
+				}
+
+				// Panneau de contrôle interactif (boutons Start/Stop/Restart/Backup/Update)
+				if (action == "panel")
+				{
+					if (string.IsNullOrEmpty(serverId)) { await cmd.RespondAsync("Cette action nécessite un `serverid`.", ephemeral: true); return; }
+					if (!full && !serverIds.Contains(serverId)) { await cmd.RespondAsync("Pas de permission sur ce serveur.", ephemeral: true); return; }
+					var (pembed, pcomp) = await BuildPanelMessage(serverId);
+					await cmd.RespondAsync(embed: pembed, components: pcomp);
 					return;
 				}
 
@@ -453,6 +476,75 @@ namespace WindowsGSM.DiscordBot
 						return "Action inconnue.";
 				}
 			});
+		}
+
+		// Construit le panneau de contrôle (embed statut + boutons) pour un serveur.
+		private async Task<(Embed, MessageComponent)> BuildPanelMessage(string serverId)
+		{
+			return await Application.Current.Dispatcher.Invoke(async () =>
+			{
+				MainWindow w = (MainWindow)Application.Current.MainWindow;
+				bool exists = w.IsServerExist(serverId);
+				string name = exists ? w.GetServerName(serverId) : $"#{serverId}";
+				string status = exists ? w.GetServerStatus(serverId).ToString() : "?";
+				string players = exists ? w.GetServerPlayers(serverId) : "-";
+				string conn = exists ? w.GetServerConnectInfo(serverId) : string.Empty;
+				bool started = status == "Started";
+
+				var embed = new EmbedBuilder()
+					.WithTitle($"🎮 #{serverId} {name}")
+					.WithDescription($"{(started ? "🟢" : "⚫")} **{status}**\nJoueurs : {players}" + (string.IsNullOrEmpty(conn) ? string.Empty : $"\n`{conn}`"))
+					.WithColor(started ? Color.Green : Color.LightGrey)
+					.WithFooter($"{MainWindow.WGSM_VERSION} • Panneau de contrôle")
+					.Build();
+
+				var comp = new ComponentBuilder()
+					.WithButton("Start", $"wgsm:start:{serverId}", ButtonStyle.Success)
+					.WithButton("Stop", $"wgsm:stop:{serverId}", ButtonStyle.Danger)
+					.WithButton("Restart", $"wgsm:restart:{serverId}", ButtonStyle.Primary)
+					.WithButton("Backup", $"wgsm:backup:{serverId}", ButtonStyle.Secondary)
+					.WithButton("Update", $"wgsm:update:{serverId}", ButtonStyle.Secondary)
+					.Build();
+
+				return await Task.FromResult((embed, comp));
+			});
+		}
+
+		// Clic sur un bouton du panneau : customId = "wgsm:<action>:<serverId>".
+		private async Task On_ButtonExecuted(SocketMessageComponent comp)
+		{
+			try
+			{
+				string[] parts = (comp.Data.CustomId ?? string.Empty).Split(':');
+				if (parts.Length != 3 || parts[0] != "wgsm") { return; }
+				string action = parts[1];
+				string serverId = parts[2];
+
+				// Même contrôle de permission que les commandes (par admin / par serveur).
+				var serverIds = Configs.GetServerIdsByAdminId(comp.User.Id.ToString());
+				bool full = serverIds.Contains("0");
+				if (serverIds.Count == 0 || (!full && !serverIds.Contains(serverId)))
+				{
+					await comp.RespondAsync("Tu n'as pas la permission.", ephemeral: true);
+					return;
+				}
+
+				await comp.DeferAsync(ephemeral: true);
+				string result = await ExecuteSlashTargetAction(action, serverId, comp.User.Id.ToString(), comp.User.Username);
+				await comp.FollowupAsync(result, ephemeral: true);
+
+				// Rafraîchit le panneau (statut/joueurs) après l'action.
+				try
+				{
+					var (embed, components) = await BuildPanelMessage(serverId);
+					await comp.Message.ModifyAsync(m => { m.Embed = embed; m.Components = components; });
+				}
+				catch { }
+			}
+			catch (Exception e)
+			{
+				try { await comp.RespondAsync($"Erreur : {e.Message}", ephemeral: true); } catch { }
+			}
 		}
 
 		public string GetInviteLink()
