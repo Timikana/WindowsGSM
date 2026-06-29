@@ -126,6 +126,40 @@ namespace WindowsGSM.DiscordBot
 			}
 		}
 
+		// ===== Canal « panneau d'administration » (embed interactif permanent) =====
+		// Fichier séparé du dashboard : un ou plusieurs IDs de canaux dédiés à l'administration.
+		public static string GetAdminPanelChannel()
+		{
+			try
+			{
+				return File.ReadAllText(Path.Combine(_botPath, "adminpanel.txt")).Trim();
+			}
+			catch
+			{
+				return string.Empty;
+			}
+		}
+
+		public static void SetAdminPanelChannel(string channel)
+		{
+			Directory.CreateDirectory(_botPath);
+			File.WriteAllText(Path.Combine(_botPath, "adminpanel.txt"), channel.Trim());
+		}
+
+		public static List<string> GetAdminPanelChannels()
+		{
+			try
+			{
+				string raw = File.ReadAllText(Path.Combine(_botPath, "adminpanel.txt"));
+				return raw.Split(new[] { ',', ';', '\n', '\r', ' ', '\t' }, System.StringSplitOptions.RemoveEmptyEntries)
+						  .Select(s => s.Trim()).Where(s => s.Length > 0).Distinct().ToList();
+			}
+			catch
+			{
+				return new List<string>();
+			}
+		}
+
 		public static int GetDashboardRefreshRate()
 		{
 			try
@@ -134,7 +168,7 @@ namespace WindowsGSM.DiscordBot
 			}
 			catch
 			{
-				return 5;
+				return 60;
 			}
 		}
 

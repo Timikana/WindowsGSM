@@ -36,7 +36,7 @@ namespace WindowsGSM.GameServer
         public string StartPath = "7DaysToDieServer.exe";
         public bool AllowsEmbedConsole = true;
         public int PortIncrements = 1;
-        public dynamic QueryMethod = null;
+        public dynamic QueryMethod = null; // 7DtD ne répond pas à l'A2S ; joueurs via Telnet (cf. QueryServerPlayersAsync)
 
         public string Port = "26900";
         public string QueryPort = "26900";

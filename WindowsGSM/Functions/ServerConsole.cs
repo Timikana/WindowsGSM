@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -48,9 +49,19 @@ namespace WindowsGSM.Functions
 
         public async void Input(Process process, string text, IntPtr mainWindow)
         {
-            if (!process.HasExited)
+            // async void : TOUTE exception non gérée ici tue le process (impossible à rattraper par
+            // l'appelant). On enveloppe donc tout dans un try/catch (ex. stdin non redirigé, handle invalide).
+            try
             {
-                if (process.StartInfo.RedirectStandardInput)
+                if (process == null || process.HasExited) { return; }
+
+                // Process ré-attaché (Process.GetProcessById après redémarrage de WGSM) : l'accès à
+                // StartInfo lève « Process was not started by this object ». On lit en sûr -> false.
+                bool redirected;
+                try { redirected = process.StartInfo.RedirectStandardInput; }
+                catch { redirected = false; }
+
+                if (redirected)
                 {
                     try
                     {
@@ -66,27 +77,38 @@ namespace WindowsGSM.Functions
                 {
                     await Task.Run(() =>
                     {
-                        if (!process.HasExited && process.ProcessName == "7DaysToDieServer")
+                        try
                         {
-                            SetForegroundWindow(mainWindow);
-                            var current = GetForegroundWindow();
-                            var wgsmWindow = Process.GetCurrentProcess().MainWindowHandle;
-                            if (current != wgsmWindow)
+                            if (!process.HasExited && process.ProcessName == "7DaysToDieServer")
                             {
-                                SendWaitToMainWindow("{TAB}");
-                                SendWaitToMainWindow(text);
-                                SendWaitToMainWindow("{TAB}");
-                                SendWaitToMainWindow(text);
-                                SendWaitToMainWindow("{ENTER}");
-                                SetForegroundWindow(wgsmWindow);
+                                SetForegroundWindow(mainWindow);
+                                var current = GetForegroundWindow();
+                                var wgsmWindow = Process.GetCurrentProcess().MainWindowHandle;
+                                if (current != wgsmWindow)
+                                {
+                                    SendWaitToMainWindow("{TAB}");
+                                    SendWaitToMainWindow(text);
+                                    SendWaitToMainWindow("{TAB}");
+                                    SendWaitToMainWindow(text);
+                                    SendWaitToMainWindow("{ENTER}");
+                                    SetForegroundWindow(wgsmWindow);
+                                }
+                            }
+                            else
+                            {
+                                SendMessageToMainWindow(mainWindow, text);
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            SendMessageToMainWindow(mainWindow, text);
+                            AppLog.Warn("ServerConsole", $"Input (envoi commande) : {ex.Message}");
                         }
                     });
                 }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("ServerConsole", $"Input : {ex.Message}");
             }
         }
 

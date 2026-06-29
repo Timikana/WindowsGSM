@@ -1239,16 +1239,105 @@ namespace WindowsGSM
                     {
                         if (!s.Online) { s.Players = "—"; continue; }
 
-                        string portStr = !string.IsNullOrWhiteSpace(s.QueryPort) && s.QueryPort != "0"
-                            ? s.QueryPort : s.Port;
-                        if (!int.TryParse(portStr, out int port)) { s.Players = "—"; continue; }
-
-                        var info = await SteamQuery.GetInfoAsync(s.IP, port).ConfigureAwait(true);
+                        var info = await QueryServerPlayersAsync(s).ConfigureAwait(true);
                         s.Players = info.HasValue ? $"{info.Value.Players} / {info.Value.MaxPlayers}" : "—";
                     }
                 }
                 catch { }
-                await Task.Delay(15 * 1000);
+                await Task.Delay(60 * 1000); // refresh joueurs : 1 min (cadence lente pour ne pas marteler)
+            }
+        }
+
+        // Choisit la bonne méthode de comptage selon le jeu : A2S par défaut, API native pour
+        // les jeux sans A2S (Palworld = REST, Satisfactory = HTTPS).
+        private async Task<SteamQuery.Info?> QueryServerPlayersAsync(ServerTable s)
+        {
+            string game = s.Game ?? string.Empty;
+
+            if (game.StartsWith("Palworld", StringComparison.OrdinalIgnoreCase))
+            {
+                var (enabled, restPort, pwd) = ReadPalworldRest(s.ID);
+                if (enabled && restPort > 0)
+                {
+                    return await Functions.NativePlayerQuery.PalworldAsync(s.IP, restPort, pwd).ConfigureAwait(true);
+                }
+                return null; // Palworld n'expose pas l'A2S : pas de repli
+            }
+
+            if (game.StartsWith("Satisfactory", StringComparison.OrdinalIgnoreCase))
+            {
+                if (int.TryParse(s.Port, out int sport))
+                {
+                    string token = Functions.ApiToken.Get(s.ID);
+                    return await Functions.NativePlayerQuery.SatisfactoryAsync(s.IP, sport, token).ConfigureAwait(true);
+                }
+                return null;
+            }
+
+            if (game.StartsWith("7 Days to Die", StringComparison.OrdinalIgnoreCase))
+            {
+                var (en, tport, tpwd, tmax) = ReadSevenDaysTelnet(s.ID);
+                if (en && tport > 0)
+                {
+                    return await Functions.NativePlayerQuery.SevenDaysTelnetAsync(s.IP, tport, tpwd, tmax).ConfigureAwait(true);
+                }
+                return null; // 7DtD sans Telnet activé : pas d'A2S fiable
+            }
+
+            // Défaut : A2S (QueryPort sinon Port).
+            string portStr = !string.IsNullOrWhiteSpace(s.QueryPort) && s.QueryPort != "0" ? s.QueryPort : s.Port;
+            if (!int.TryParse(portStr, out int port)) { return null; }
+            return await SteamQuery.GetInfoAsync(s.IP, port).ConfigureAwait(true);
+        }
+
+        // Lit TelnetEnabled / TelnetPort / TelnetPassword / ServerMaxPlayerCount d'un serveur 7 Days to Die.
+        private (bool enabled, int port, string password, int max) ReadSevenDaysTelnet(string serverId)
+        {
+            try
+            {
+                string cfg = Functions.ServerPath.GetServersServerFiles(serverId, "serverconfig.xml");
+                if (!System.IO.File.Exists(cfg)) { return (false, 0, null, 0); }
+
+                var doc = System.Xml.Linq.XDocument.Load(cfg);
+                string Prop(string name) => doc.Descendants("property")
+                    .FirstOrDefault(p => (string)p.Attribute("name") == name)?.Attribute("value")?.Value;
+
+                bool enabled = string.Equals(Prop("TelnetEnabled"), "true", StringComparison.OrdinalIgnoreCase);
+                int.TryParse(Prop("TelnetPort"), out int port);
+                string pwd = Prop("TelnetPassword");
+                int.TryParse(Prop("ServerMaxPlayerCount"), out int max);
+                return (enabled, port, pwd, max);
+            }
+            catch
+            {
+                return (false, 0, null, 0);
+            }
+        }
+
+        // Lit RESTAPIEnabled / RESTAPIPort / AdminPassword dans le PalWorldSettings.ini d'un serveur Palworld.
+        private (bool enabled, int port, string password) ReadPalworldRest(string serverId)
+        {
+            try
+            {
+                string ini = Functions.ServerPath.GetServersServerFiles(serverId, @"Pal\Saved\Config\WindowsServer\PalWorldSettings.ini");
+                if (!System.IO.File.Exists(ini)) { return (false, 0, null); }
+
+                string text = System.IO.File.ReadAllText(ini);
+                bool enabled = System.Text.RegularExpressions.Regex.IsMatch(text, @"RESTAPIEnabled=True", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                int port = 8212;
+                var mp = System.Text.RegularExpressions.Regex.Match(text, @"RESTAPIPort=(\d+)");
+                if (mp.Success) { int.TryParse(mp.Groups[1].Value, out port); }
+
+                string pwd = null;
+                var mpw = System.Text.RegularExpressions.Regex.Match(text, "AdminPassword=\"([^\"]*)\"");
+                if (mpw.Success) { pwd = mpw.Groups[1].Value; }
+
+                return (enabled, port, pwd);
+            }
+            catch
+            {
+                return (false, 0, null);
             }
         }
 
@@ -4055,6 +4144,20 @@ namespace WindowsGSM
             catch (Exception ex) { Functions.AppLog.Warn("Doctor/UI", ex.Message); }
         }
 
+        private void Tools_ApiToken_Click(object sender, RoutedEventArgs e)
+        {
+            var row = (ServerTable)ServerGrid.SelectedItem;
+            if (row == null)
+            {
+                System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "API Token", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            bool isSatisfactory = (row.Game ?? string.Empty).StartsWith("Satisfactory", StringComparison.OrdinalIgnoreCase);
+            var dlg = new Functions.ApiTokenDialog(row.ID, row.Name, isSatisfactory) { Owner = this };
+            dlg.ShowDialog();
+        }
+
         private void Tools_GlobalServerListCheck_Click(object sender, RoutedEventArgs e)
         {
             var row = (ServerTable)ServerGrid.SelectedItem;
@@ -4636,6 +4739,23 @@ namespace WindowsGSM
             }
         }
 
+        private void Button_DiscordBotAdminPanelEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (button_DiscordBotAdminPanelEdit.Content.ToString() == "Edit")
+            {
+                button_DiscordBotAdminPanelEdit.Content = "Save";
+                textBox_DiscordBotAdminPanel.IsEnabled = true;
+                textBox_DiscordBotAdminPanel.Focus();
+                textBox_DiscordBotAdminPanel.SelectAll();
+            }
+            else
+            {
+                button_DiscordBotAdminPanelEdit.Content = "Edit";
+                textBox_DiscordBotAdminPanel.IsEnabled = false;
+                DiscordBot.Configs.SetAdminPanelChannel(textBox_DiscordBotAdminPanel.Text);
+            }
+        }
+
         private void Button_DiscordBotAddID_Click(object sender, RoutedEventArgs e)
         {
             OpenDiscordAdminOverlay(null, "0");
@@ -5088,6 +5208,9 @@ namespace WindowsGSM
                 textBox_DiscordBotDashboard.IsEnabled = false;
                 textBox_DiscordBotDashboard.Text = DiscordBot.Configs.GetDashboardChannel();
                 numericUpDown_DiscordRefreshRate.Value = DiscordBot.Configs.GetDashboardRefreshRate();
+                button_DiscordBotAdminPanelEdit.Content = "Edit";
+                textBox_DiscordBotAdminPanel.IsEnabled = false;
+                textBox_DiscordBotAdminPanel.Text = DiscordBot.Configs.GetAdminPanelChannel();
                 Refresh_DiscordBotAdminList(listBox_DiscordBotAdminList.SelectedIndex);
                 if (listBox_DiscordBotAdminList.Items.Count > 0 && listBox_DiscordBotAdminList.SelectedItem == null)
                     listBox_DiscordBotAdminList.SelectedItem = listBox_DiscordBotAdminList.Items[0];
