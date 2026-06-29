@@ -1,4 +1,4 @@
-﻿![WindowsGSM — .NET 10 / WPF-UI fork](docs/screenshots/banner.png)
+﻿![WindowsGSM — .NET 10 / WPF-UI fork](docs/screenshots/banner-hd.png)
 
 [![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/WindowsGSM/WindowsGSM/)
 [![Build status](https://ci.appveyor.com/api/projects/status/ttaomnayo3gidf2g?svg=true)](https://ci.appveyor.com/project/WindowsGSM/windowsgsm)
