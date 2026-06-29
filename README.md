@@ -18,8 +18,9 @@ This fork modernizes the UI (WPF-UI Fluent, dark native title bars) and adds:
 - **Multi-channel notifications** — broadcast alerts (crash, RAM, disk, updates…) to **ntfy / Telegram / SMTP e-mail / generic webhook**, with a per-channel *Test* button. Secrets are encrypted at rest (DPAPI, per-user).
 - **Auto port-forward (UPnP)** — homemade SSDP + SOAP IGD client (no external dependency) that opens/closes a server's ports on start/stop. Also works as an *advisor*: lists the exact ports to open manually when UPnP is off (e.g. OPNsense). Per-game port resolver with quirks (e.g. Satisfactory 7777 + 8888 TCP).
 - **Server Doctor** — one-click diagnostics: status, locally-listening ports, free disk, Java, plus opt-in external reachability.
-- **Discord bot** — interactive start/stop/restart/backup/update buttons and a live status dashboard across multiple guilds.
-- **Hardening** — SteamCMD AppID/argument sanitisation, file-based application log usable in Release builds.
+- **Discord bot** — a dedicated **admin panel** (persistent embed with a server dropdown + start/stop/restart/backup/update buttons), interactive buttons, slash commands, and a live status dashboard across multiple guilds. Stale panel/dashboard messages are auto-cleaned on bot restart.
+- **Live player counts** — per-game online players shown in the grid & dashboard, queried by the right protocol for each game: A2S (Steam), Palworld REST API, Satisfactory HTTPS API, and 7 Days to Die Telnet. Per-server API tokens/passwords are encrypted at rest (DPAPI).
+- **Hardening** — SteamCMD AppID/argument sanitisation, crash-safe console input (re-attached processes), file-based application log usable in Release builds.
 
 | Notifications | Ports / UPnP | Server Doctor |
 | --- | --- | --- |
