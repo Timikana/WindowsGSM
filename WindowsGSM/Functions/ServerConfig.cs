@@ -40,6 +40,7 @@ namespace WindowsGSM.Functions
             public const string MemoryWatchdog = "memorywatchdog"; // #16 (par serveur)
             public const string MemoryLimitMB = "memorylimitmb";
             public const string BackupBeforeUpdate = "backupbeforeupdate"; // #20
+            public const string Maintenance = "maintenance"; // #69 (suspend auto-start/auto-restart)
             public const string BackupCrontab = "backupcrontab";           // sauvegarde planifiée
             public const string BackupCrontabFormat = "backupcrontabformat";
         }
@@ -76,6 +77,7 @@ namespace WindowsGSM.Functions
         public bool MemoryWatchdog;       // #16 : surveillance RAM activée pour ce serveur
         public string MemoryLimitMB = "8000"; // seuil RAM (Mo) défini par l'utilisateur
         public bool BackupBeforeUpdate;   // #20 : sauvegarde avant chaque update (off par défaut, coûte du disque)
+        public bool Maintenance;          // #69 : mode maintenance — suspend auto-start et auto-restart
         public bool BackupCrontab;        // sauvegarde planifiée activée
         public string BackupCrontabFormat = "0 5 * * *"; // par défaut 05:00 quotidien
 
@@ -152,6 +154,7 @@ namespace WindowsGSM.Functions
                             case SettingName.CPUAffinity: CPUAffinity = keyvalue[1]; break;
                             case SettingName.AutoScroll: AutoScroll = keyvalue[1] == "1"; break;
                             case SettingName.MemoryWatchdog: MemoryWatchdog = keyvalue[1] == "1"; break;
+                            case SettingName.Maintenance: Maintenance = keyvalue[1] == "1"; break;
                             case SettingName.MemoryLimitMB: MemoryLimitMB = keyvalue[1]; break;
                             case SettingName.BackupBeforeUpdate: BackupBeforeUpdate = keyvalue[1] == "1"; break;
                             case SettingName.BackupCrontab: BackupCrontab = keyvalue[1] == "1"; break;

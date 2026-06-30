@@ -66,6 +66,7 @@ namespace WindowsGSM
             // Basic Game Server Settings
             public bool AutoRestart;
             public bool AutoStart;
+            public bool Maintenance; // #69
             public bool AutoUpdate;
             public bool UpdateOnStart;
             public bool BackupOnStart;
@@ -1155,6 +1156,7 @@ namespace WindowsGSM
 
             // Basic Game Server Settings
             _serverMetadata[i].AutoRestart = serverConfig.AutoRestart;
+            _serverMetadata[i].Maintenance = serverConfig.Maintenance; // #69
             _serverMetadata[i].AutoStart = serverConfig.AutoStart;
             _serverMetadata[i].AutoUpdate = serverConfig.AutoUpdate;
             _serverMetadata[i].UpdateOnStart = serverConfig.UpdateOnStart;
@@ -1193,6 +1195,7 @@ namespace WindowsGSM
             {
                 int serverId = int.Parse(server.ID);
 
+                if (GetServerMetadata(serverId).Maintenance) { continue; } // #69 : ne pas auto-démarrer un serveur en maintenance
                 if (GetServerMetadata(serverId).AutoStart && GetServerMetadata(server.ID).ServerStatus == ServerStatus.Stopped)
                 {
                     await GameServer_Start(server, " | Auto Start");
@@ -3205,7 +3208,7 @@ namespace WindowsGSM
 
                 if (GetServerMetadata(server.ID).ServerStatus == ServerStatus.Started)
                 {
-                    bool autoRestart = GetServerMetadata(serverId).AutoRestart;
+                    bool autoRestart = GetServerMetadata(serverId).AutoRestart && !GetServerMetadata(serverId).Maintenance; // #69 : pas de relance en maintenance
 
                     // #17 : si le serveur crash en boucle, on suspend l'auto-restart au lieu de relancer à l'infini
                     if (autoRestart)
@@ -4555,6 +4558,23 @@ namespace WindowsGSM
             if (server == null) { return; }
             _serverMetadata[int.Parse(server.ID)].MemoryWatchdog = switch_memwatchdog.IsChecked == true;
             ServerConfig.SetSetting(server.ID, ServerConfig.SettingName.MemoryWatchdog, GetServerMetadata(server.ID).MemoryWatchdog ? "1" : "0");
+        }
+
+        // #69 : bascule le mode maintenance du serveur sélectionné (suspend auto-start + auto-restart).
+        private void Actions_ToggleMaintenance_Click(object sender, RoutedEventArgs e)
+        {
+            var server = (ServerTable)ServerGrid.SelectedItem;
+            if (server == null) { System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            bool on = !GetServerMetadata(server.ID).Maintenance;
+            _serverMetadata[int.Parse(server.ID)].Maintenance = on;
+            ServerConfig.SetSetting(server.ID, ServerConfig.SettingName.Maintenance, on ? "1" : "0");
+            Log(server.ID, on
+                ? "[Maintenance] ACTIVÉE — auto-start et auto-restart suspendus pour ce serveur."
+                : "[Maintenance] désactivée — auto-start/restart réactivés.");
+            System.Windows.MessageBox.Show(on
+                ? $"Mode maintenance ACTIVÉ pour #{server.ID} {server.Name}.\nAuto-start et auto-restart sont suspendus : le serveur ne sera pas relancé automatiquement (idéal pour intervenir sans que WGSM le redémarre)."
+                : $"Mode maintenance désactivé pour #{server.ID} {server.Name}.",
+                "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // #20 : toggle "backup avant update" (par serveur, off par défaut)

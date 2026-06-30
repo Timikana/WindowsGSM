@@ -144,14 +144,22 @@ namespace WindowsGSM.DiscordBot
 
 		private async Task On_Bot_Ready()
 		{
+			// #131 : ne PAS écraser le nom/avatar perso du bot à chaque connexion. Par défaut on respecte
+			// ce qui est configuré dans le portail développeur Discord. Brandage "WindowsGSM" opt-in via
+			// HKCU\SOFTWARE\WindowsGSM\DiscordBotBranding="True".
 			try
 			{
-				Stream stream = Application.GetResourceStream(new Uri($"pack://application:,,,/Images/WindowsGSM{(string.IsNullOrWhiteSpace(_donorType) ? string.Empty : $"-{_donorType}")}.png")).Stream;
-				await _client.CurrentUser.ModifyAsync(x =>
+				bool brand = false;
+				try { using var rk = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\WindowsGSM"); brand = (rk?.GetValue("DiscordBotBranding")?.ToString() == "True"); } catch { }
+				if (brand)
 				{
-					x.Username = "WindowsGSM";
-					x.Avatar = new Image(stream);
-				});
+					Stream stream = Application.GetResourceStream(new Uri($"pack://application:,,,/Images/WindowsGSM{(string.IsNullOrWhiteSpace(_donorType) ? string.Empty : $"-{_donorType}")}.png")).Stream;
+					await _client.CurrentUser.ModifyAsync(x =>
+					{
+						x.Username = "WindowsGSM";
+						x.Avatar = new Image(stream);
+					});
+				}
 			}
 			catch
 			{
