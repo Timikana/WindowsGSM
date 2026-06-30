@@ -47,7 +47,10 @@ namespace WindowsGSM.Functions.WebApi
             if (!cfg.Enabled) { LastError = "API désactivée."; return false; }
             if (string.IsNullOrWhiteSpace(cfg.Token) && !cfg.WebUiEnabled) { LastError = "Token requis (ou active le portail web avec des comptes)."; return false; }
             _token = cfg.Token;
-            _webUi = cfg.WebUiEnabled;
+            // Le portail web (auth + rôles) est une fonction donateur : ne s'active que pour un donateur/propriétaire.
+            _webUi = cfg.WebUiEnabled && Donator.DonatorManager.IsDonator;
+            if (cfg.WebUiEnabled && !_webUi) { AppLog.Warn("WebApi", "Portail web ignoré : fonction réservée aux donateurs."); }
+            if (string.IsNullOrWhiteSpace(_token) && !_webUi) { LastError = "Token requis (le portail web est réservé aux donateurs)."; _listener = null; return false; }
             _listener = new HttpListener();
             string host = string.IsNullOrWhiteSpace(cfg.BindAddress) ? "127.0.0.1" : cfg.BindAddress.Trim();
             _listener.Prefixes.Add($"http://{host}:{cfg.Port}/");

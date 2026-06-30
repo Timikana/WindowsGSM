@@ -63,8 +63,26 @@ namespace WindowsGSM.Functions.WebApi
             root.Children.Add(new TextBlock { Text = "Page de connexion + tableau de bord (start/stop/restart/backup) avec comptes et rôles. Auth par cookie de session (HttpOnly, SameSite=Strict).", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
             var webUi = new Wpf.Ui.Controls.ToggleSwitch { Content = "Activer le portail web", IsChecked = cfg.WebUiEnabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 8) };
             root.Children.Add(webUi);
+            root.Children.Add(new TextBlock { Text = "★ Fonction donateur.", Foreground = Accent, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) });
+            // Le portail web (auth + rôles) est réservé aux donateurs (comme les notifications multi-canaux).
+            webUi.Checked += (s, e) =>
+            {
+                if (!Donator.DonatorManager.IsDonator)
+                {
+                    var d = new Donator.DonatorDialog("Portail web (authentification + rôles)") { Owner = this };
+                    if (d.ShowDialog() != true) { webUi.IsChecked = false; }
+                }
+            };
             var usersBtn = new Wpf.Ui.Controls.Button { Content = "Comptes web…", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 0, 12) };
-            usersBtn.Click += (s, e) => { var d = new WebUsersDialog { Owner = this }; d.ShowDialog(); };
+            usersBtn.Click += (s, e) =>
+            {
+                if (!Donator.DonatorManager.IsDonator)
+                {
+                    var dd = new Donator.DonatorDialog("Portail web (authentification + rôles)") { Owner = this };
+                    if (dd.ShowDialog() != true) { return; }
+                }
+                var d = new WebUsersDialog { Owner = this }; d.ShowDialog();
+            };
             root.Children.Add(usersBtn);
 
             root.Children.Add(new TextBlock
