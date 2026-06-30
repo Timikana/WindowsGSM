@@ -6,8 +6,8 @@ using System.Linq;
 namespace WindowsGSM.Functions.ConfigEditor
 {
     /// <summary>
-    /// Découverte heuristique des fichiers de config "serveur" dans serverfiles (INI / property-XML /
-    /// server.properties / cfg), en filtrant le bruit (steamapps, logs, crash, runtimes…).
+    /// Heuristic discovery of "server" config files in serverfiles (INI / property-XML /
+    /// server.properties / cfg), filtering out noise (steamapps, logs, crash, runtimes...).
     /// </summary>
     public static class ConfigDiscovery
     {
@@ -52,7 +52,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 }
             }
 
-            // Connus d'abord, puis chemins les moins profonds.
+            // Known ones first, then the shallowest paths.
             res.Sort((a, b) =>
             {
                 bool ka = Known.Contains(Path.GetFileName(a)), kb = Known.Contains(Path.GetFileName(b));

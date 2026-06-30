@@ -9,8 +9,8 @@ using System.Windows.Media;
 namespace WindowsGSM.Functions.Mods
 {
     /// <summary>
-    /// Manager de mods UNIFIÉ (tous jeux) : détecte le mécanisme du jeu (dossier de mods-fichiers,
-    /// sous-dossiers, Steam Workshop, ou aucun) et affiche l'UI adaptée. Style Fluent, barre titre sombre.
+    /// UNIFIED mod manager (all games): detects the game's mechanism (file mods folder,
+    /// subfolders, Steam Workshop, or none) and shows the matching UI. Fluent style, dark title bar.
     /// </summary>
     public class ModsDialog : Window
     {
@@ -43,7 +43,7 @@ namespace WindowsGSM.Functions.Mods
 
             var outer = new DockPanel { Margin = new Thickness(14) };
 
-            // En-tête
+            // Header
             var header = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
             header.Children.Add(new TextBlock { Text = MechanismLabel(), Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15 });
             if (!string.IsNullOrEmpty(_profile?.Notes))
@@ -53,19 +53,19 @@ namespace WindowsGSM.Functions.Mods
             DockPanel.SetDock(header, Dock.Top);
             outer.Children.Add(header);
 
-            // Bas : statut + fermer
+            // Bottom: status + close
             var bottom = new DockPanel { Margin = new Thickness(0, 10, 0, 0) };
             _status = new TextBlock { Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
             DockPanel.SetDock(_status, Dock.Left);
             bottom.Children.Add(_status);
-            var close = new Wpf.Ui.Controls.Button { Content = "Fermer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), HorizontalAlignment = HorizontalAlignment.Right };
+            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), HorizontalAlignment = HorizontalAlignment.Right };
             close.Click += (s, e) => Close();
             DockPanel.SetDock(close, Dock.Right);
             bottom.Children.Add(close);
             DockPanel.SetDock(bottom, Dock.Bottom);
             outer.Children.Add(bottom);
 
-            // Marge droite = gouttière pour la scrollbar overlay Fluent (sinon elle recouvre le contenu).
+            // Right margin = gutter for the Fluent overlay scrollbar (otherwise it covers the content).
             _body = new StackPanel { Margin = new Thickness(0, 0, 16, 0) };
             outer.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _body });
 
@@ -75,10 +75,10 @@ namespace WindowsGSM.Functions.Mods
 
         private string MechanismLabel()
         {
-            if (_profile == null) { return "Mods — jeu non reconnu"; }
+            if (_profile == null) { return "Mods — unrecognized game"; }
             switch (_profile.Mechanism)
             {
-                case ModMechanism.Folder: return $"Mods-fichiers — {_game}";
+                case ModMechanism.Folder: return $"File mods — {_game}";
                 case ModMechanism.Workshop: return $"Steam Workshop — {_game}";
                 default: return $"Mods — {_game}";
             }
@@ -90,15 +90,15 @@ namespace WindowsGSM.Functions.Mods
 
             if (_profile == null)
             {
-                _body.Children.Add(Info("Ce jeu n'a pas de profil de mods connu. Tu peux ouvrir le dossier du serveur et gérer les fichiers manuellement."));
-                _body.Children.Add(OpenButton("Ouvrir le dossier du serveur", _serverFiles));
+                _body.Children.Add(Info("This game has no known mod profile. You can open the server folder and manage the files manually."));
+                _body.Children.Add(OpenButton("Open the server folder", _serverFiles));
                 return;
             }
 
             switch (_profile.Mechanism)
             {
                 case ModMechanism.None:
-                    _body.Children.Add(Info("Aucun système de mods serveur pour ce jeu."));
+                    _body.Children.Add(Info("No server mod system for this game."));
                     break;
                 case ModMechanism.Workshop:
                     BuildWorkshopView();
@@ -109,18 +109,18 @@ namespace WindowsGSM.Functions.Mods
             }
         }
 
-        // ---- Vue mods-fichiers ----
+        // ---- File mods view ----
         private void BuildFolderView()
         {
             string modDir = ModFolder.ModDirPath(_serverFiles, _profile);
 
-            // Barre d'actions
+            // Action bar
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            var addBtn = new Wpf.Ui.Controls.Button { Content = "Ajouter un mod…", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var addBtn = new Wpf.Ui.Controls.Button { Content = "Add a mod…", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
             addBtn.Click += (s, e) => AddMod();
-            var openBtn = new Wpf.Ui.Controls.Button { Content = "Ouvrir le dossier", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var openBtn = new Wpf.Ui.Controls.Button { Content = "Open the folder", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
             openBtn.Click += (s, e) => { try { Directory.CreateDirectory(modDir); WindowsGSM.Shell.Open(modDir); } catch (Exception ex) { Fail(ex.Message); } };
-            var refreshBtn = new Wpf.Ui.Controls.Button { Content = "Actualiser", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5) };
+            var refreshBtn = new Wpf.Ui.Controls.Button { Content = "Refresh", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5) };
             refreshBtn.Click += (s, e) => BuildBody();
             actions.Children.Add(addBtn);
             actions.Children.Add(openBtn);
@@ -132,7 +132,7 @@ namespace WindowsGSM.Functions.Mods
             var mods = ModFolder.List(_serverFiles, _profile);
             if (mods.Count == 0)
             {
-                _body.Children.Add(Info("Aucun mod pour l'instant. Clique « Ajouter un mod… » ou dépose des fichiers dans le dossier."));
+                _body.Children.Add(Info("No mods yet. Click \"Add a mod…\" or drop files into the folder."));
                 return;
             }
 
@@ -157,7 +157,7 @@ namespace WindowsGSM.Functions.Mods
 
                 var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
                 meta.Children.Add(new TextBlock { Text = m.Name, Foreground = m.Enabled ? Fg : Dim, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-                string sub = (m.IsDirectory ? "dossier" : SizeStr(m.SizeBytes)) + (m.Enabled ? "" : " · désactivé");
+                string sub = (m.IsDirectory ? "folder" : SizeStr(m.SizeBytes)) + (m.Enabled ? "" : " · disabled");
                 meta.Children.Add(new TextBlock { Text = sub, Foreground = Dim, FontSize = 11 });
                 dp.Children.Add(meta);
 
@@ -172,7 +172,7 @@ namespace WindowsGSM.Functions.Mods
             {
                 ModFolder.Toggle(_serverFiles, _profile, item);
                 _status.Foreground = Accent;
-                _status.Text = $"« {item.Name} » {(item.Enabled ? "activé" : "désactivé")}. Redémarre le serveur pour appliquer.";
+                _status.Text = $"\"{item.Name}\" {(item.Enabled ? "enabled" : "disabled")}. Restart the server to apply.";
                 BuildBody();
             }
             catch (Exception ex) { Fail(ex.Message); }
@@ -183,37 +183,37 @@ namespace WindowsGSM.Functions.Mods
             try
             {
                 string filter = _profile.Extensions != null && _profile.Extensions.Length > 0
-                    ? "Mods|" + string.Join(";", Array.ConvertAll(_profile.Extensions, x => "*" + x)) + "|Tous les fichiers|*.*"
-                    : "Tous les fichiers|*.*";
-                var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Choisir un ou plusieurs mods", Multiselect = true, Filter = filter };
+                    ? "Mods|" + string.Join(";", Array.ConvertAll(_profile.Extensions, x => "*" + x)) + "|All files|*.*"
+                    : "All files|*.*";
+                var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Choose one or more mods", Multiselect = true, Filter = filter };
                 if (dlg.ShowDialog(this) == true)
                 {
                     foreach (string f in dlg.FileNames) { ModFolder.AddFile(_serverFiles, _profile, f); }
                     _status.Foreground = Accent;
-                    _status.Text = $"{dlg.FileNames.Length} mod(s) ajouté(s).";
+                    _status.Text = $"{dlg.FileNames.Length} mod(s) added.";
                     BuildBody();
                 }
             }
             catch (Exception ex) { Fail(ex.Message); }
         }
 
-        // ---- Vue Steam Workshop ----
+        // ---- Steam Workshop view ----
         private void BuildWorkshopView()
         {
             if (_ws == null) { _ws = WorkshopConfig.Load(_serverId); }
 
-            // Ligne d'ajout
+            // Add row
             var add = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            add.Children.Add(new TextBlock { Text = "Ajouter :", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+            add.Children.Add(new TextBlock { Text = "Add:", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
             var idBox = new TextBox { Width = 150, VerticalAlignment = VerticalAlignment.Center };
-            ApplyPlaceholder(idBox, "ID Workshop");
+            ApplyPlaceholder(idBox, "Workshop ID");
             var nameBox = new TextBox { Width = 220, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
-            ApplyPlaceholder(nameBox, "Nom (optionnel)");
+            ApplyPlaceholder(nameBox, "Name (optional)");
             var addBtn = new Wpf.Ui.Controls.Button { Content = "+", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(12, 2, 12, 2) };
             addBtn.Click += (s, e) =>
             {
                 string id = new string((idBox.Text ?? "").Trim().Where(char.IsDigit).ToArray());
-                if (id.Length == 0) { Fail("ID Workshop invalide (chiffres uniquement)."); return; }
+                if (id.Length == 0) { Fail("Invalid Workshop ID (digits only)."); return; }
                 _ws.Items.Add(new WorkshopEntry { Id = id, Name = (nameBox.Text ?? "").Trim(), Enabled = true });
                 _ws.Save();
                 BuildBody();
@@ -223,17 +223,17 @@ namespace WindowsGSM.Functions.Mods
             add.Children.Add(addBtn);
             _body.Children.Add(add);
 
-            // Actions globales
+            // Global actions
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
             if (!_profile.ServerAutoDownloads)
             {
-                var dl = new Wpf.Ui.Controls.Button { Content = "Télécharger (SteamCMD)", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+                var dl = new Wpf.Ui.Controls.Button { Content = "Download (SteamCMD)", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
                 dl.Click += async (s, e) => await DownloadAll(dl);
                 actions.Children.Add(dl);
             }
             if (!string.IsNullOrEmpty(_profile.ConfigKey) && !string.IsNullOrEmpty(_profile.ConfigFileRelative))
             {
-                var apply = new Wpf.Ui.Controls.Button { Content = $"Écrire {_profile.ConfigKey} dans la config", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5) };
+                var apply = new Wpf.Ui.Controls.Button { Content = $"Write {_profile.ConfigKey} to the config", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5) };
                 apply.Click += (s, e) =>
                 {
                     try { _status.Foreground = Accent; _status.Text = WorkshopManager.ApplyToConfig(_serverFiles, _profile, _ws.Items); }
@@ -245,7 +245,7 @@ namespace WindowsGSM.Functions.Mods
 
             if (_ws.Items.Count == 0)
             {
-                _body.Children.Add(Info("Aucun mod Workshop. Colle un ID (le nombre dans l'URL Steam Workshop) et clique +."));
+                _body.Children.Add(Info("No Workshop mods. Paste an ID (the number in the Steam Workshop URL) and click +."));
                 return;
             }
 
@@ -268,14 +268,14 @@ namespace WindowsGSM.Functions.Mods
                 DockPanel.SetDock(toggle, Dock.Left);
                 dp.Children.Add(toggle);
 
-                var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Retirer de la liste" };
+                var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Remove from the list" };
                 del.Click += (s, e) => { _ws.Items.Remove(captured); _ws.Save(); BuildBody(); };
                 DockPanel.SetDock(del, Dock.Right);
                 dp.Children.Add(del);
 
                 var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
                 meta.Children.Add(new TextBlock { Text = string.IsNullOrEmpty(entry.Name) ? entry.Id : $"{entry.Name}", Foreground = Fg, FontWeight = FontWeights.SemiBold });
-                meta.Children.Add(new TextBlock { Text = "ID " + entry.Id + (entry.Enabled ? "" : " · désactivé"), Foreground = Dim, FontSize = 11 });
+                meta.Children.Add(new TextBlock { Text = "ID " + entry.Id + (entry.Enabled ? "" : " · disabled"), Foreground = Dim, FontSize = 11 });
                 dp.Children.Add(meta);
 
                 card.Child = dp;
@@ -292,12 +292,12 @@ namespace WindowsGSM.Functions.Mods
                 foreach (var e in _ws.Items.Where(x => x.Enabled).ToList())
                 {
                     _status.Foreground = Dim;
-                    _status.Text = $"Téléchargement {e.Id}…";
+                    _status.Text = $"Downloading {e.Id}…";
                     var (success, msg) = await WorkshopManager.DownloadAsync(_profile.WorkshopAppId, e.Id);
                     if (success) { ok++; } else { fail++; }
                 }
                 _status.Foreground = fail == 0 ? Accent : Warn;
-                _status.Text = $"Téléchargement terminé : {ok} OK, {fail} échec(s). Puis « Écrire {_profile.ConfigKey} » si applicable.";
+                _status.Text = $"Download finished: {ok} OK, {fail} failure(s). Then \"Write {_profile.ConfigKey}\" if applicable.";
             }
             catch (Exception ex) { Fail(ex.Message); }
             finally { btn.IsEnabled = true; }
@@ -305,15 +305,15 @@ namespace WindowsGSM.Functions.Mods
 
         private static void ApplyPlaceholder(TextBox box, string hint)
         {
-            // PlaceholderText via Wpf.Ui si dispo ; sinon laissé vide (cosmétique).
+            // PlaceholderText via Wpf.Ui if available; otherwise left empty (cosmetic).
             box.ToolTip = hint;
         }
 
-        // ---- Helpers UI ----
+        // ---- UI helpers ----
         private void Fail(string msg)
         {
             _status.Foreground = Warn;
-            _status.Text = "Erreur : " + msg;
+            _status.Text = "Error: " + msg;
             Functions.AppLog.Warn("Mods/UI", msg);
         }
 
@@ -328,9 +328,9 @@ namespace WindowsGSM.Functions.Mods
 
         private static string SizeStr(long bytes)
         {
-            if (bytes >= 1024 * 1024) { return (bytes / 1024.0 / 1024.0).ToString("0.0") + " Mo"; }
-            if (bytes >= 1024) { return (bytes / 1024.0).ToString("0") + " Ko"; }
-            return bytes + " o";
+            if (bytes >= 1024 * 1024) { return (bytes / 1024.0 / 1024.0).ToString("0.0") + " MB"; }
+            if (bytes >= 1024) { return (bytes / 1024.0).ToString("0") + " KB"; }
+            return bytes + " B";
         }
     }
 }

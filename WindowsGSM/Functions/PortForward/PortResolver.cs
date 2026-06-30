@@ -4,10 +4,10 @@ using System.Linq;
 namespace WindowsGSM.Functions.PortForward
 {
     /// <summary>
-    /// Construit la liste de ports SUGGÉRÉS pour un serveur. Base = ce que WGSM connaît de fiable
-    /// (port de jeu + port de requête) ; affinée par <see cref="GamePortQuirks"/> pour les jeux à
-    /// particularités (ex. Satisfactory 1.1 : 7777 TCP+UDP + 8888/TCP, query 15777 abandonné).
-    /// Port de jeu et extras suggérés activés ; RCON/ports exotiques restent à ajouter manuellement.
+    /// Builds the list of SUGGESTED ports for a server. Base = what WGSM reliably knows
+    /// (game port + query port); refined by <see cref="GamePortQuirks"/> for games with
+    /// specifics (e.g. Satisfactory 1.1: 7777 TCP+UDP + 8888/TCP, query 15777 dropped).
+    /// Game port and suggested extras enabled; RCON/exotic ports remain to be added manually.
     /// </summary>
     public static class PortResolver
     {
@@ -23,7 +23,7 @@ namespace WindowsGSM.Functions.PortForward
                 {
                     Port = gp,
                     Protocol = quirk?.GamePortProtocol ?? ProtocolTable.GamePort(gameFullName),
-                    Label = "Jeu",
+                    Label = "Game",
                     Enabled = true
                 });
             }

@@ -19,7 +19,7 @@ namespace WindowsGSM.GameServer
         public dynamic QueryMethod = new Query.A2S();
 
         public string Port = "27015";
-        public string QueryPort = "27015";   // Source : query A2S sur le port de jeu
+        public string QueryPort = "27015";   // Source: A2S query on the game port
         public string Defaultmap = "dm_crossfire";
         public string Maxplayers = "32";
         public string Additional = string.Empty;
@@ -31,12 +31,12 @@ namespace WindowsGSM.GameServer
             _serverData = serverData;
         }
 
-        public async void CreateServerCFG() { /* cfg dans bms\cfg\server.cfg (optionnel) */ }
+        public async void CreateServerCFG() { /* cfg in bms\cfg\server.cfg (optional) */ }
 
         public async Task<Process> Start()
         {
             string exe = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID, StartPath);
-            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} introuvable ({exe})"; return null; }
+            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} not found ({exe})"; return null; }
 
             string map = string.IsNullOrWhiteSpace(_serverData.ServerMap) ? Defaultmap : _serverData.ServerMap;
             string param = "-console -game bms";

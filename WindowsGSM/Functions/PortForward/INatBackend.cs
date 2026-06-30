@@ -3,12 +3,12 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.PortForward
 {
     /// <summary>
-    /// Abstraction du mécanisme d'ouverture de port sur la box (UPnP IGD ou NAT-PMP). Permet de
-    /// brancher soit une lib (Mono.Nat), soit une implémentation maison, sans toucher au reste.
+    /// Abstraction of the port-opening mechanism on the router (UPnP IGD or NAT-PMP). Lets you
+    /// plug in either a library (Mono.Nat) or a homemade implementation, without touching the rest.
     /// </summary>
     public interface INatBackend
     {
-        /// <summary>true si une passerelle compatible a été trouvée sur le réseau.</summary>
+        /// <summary>true if a compatible gateway was found on the network.</summary>
         Task<bool> IsAvailableAsync();
 
         Task<bool> MapAsync(int port, PortProtocol protocol, string description);

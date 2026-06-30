@@ -23,7 +23,7 @@ namespace WindowsGSM.Functions
             _donorType = donorType ?? string.Empty;
         }
 
-        // #163 : si l'IP configurée n'est pas routable (0.0.0.0/localhost/vide), afficher l'IP PUBLIQUE.
+        // #163: if the configured IP is not routable (0.0.0.0/localhost/empty), display the PUBLIC IP.
         private static string _cachedPublicIp;
         private static DateTime _publicIpAt = DateTime.MinValue;
         private static async Task<string> PublicIpIfNeeded(string ip)
@@ -46,14 +46,14 @@ namespace WindowsGSM.Functions
         {
             serverip = await PublicIpIfNeeded(serverip); // #163
 
-            // Multi-canaux : diffuse aussi vers les canaux globaux configures (ntfy, etc.),
-            // independamment de Discord (fonctionne meme si aucun webhook Discord n'est defini).
+            // Multi-channel: also broadcasts to the configured global channels (ntfy, etc.),
+            // independently of Discord (works even if no Discord webhook is defined).
             try
             {
                 string extra = string.IsNullOrWhiteSpace(_customMessage) ? string.Empty : "\n" + _customMessage;
                 await Notifications.Notifier.Broadcast($"{servername} [{servergame}]", $"{serverstatus}\n{serverip}:{serverport}{extra}");
             }
-            catch { /* best-effort : ne jamais bloquer l'alerte Discord */ }
+            catch { /* best-effort: never block the Discord alert */ }
 
             if (string.IsNullOrWhiteSpace(_webhookUrl))
             {

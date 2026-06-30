@@ -8,7 +8,7 @@ namespace WindowsGSM.Functions
 {
     class ServerTable : INotifyPropertyChanged
     {
-        // Profondeur de l'historique CPU/RAM pour les mini-graphes du dashboard.
+        // Depth of the CPU/RAM history for the dashboard mini-charts.
         private const int HISTORY_LEN = 40;
         public string ID { get; set; }
         public string PID { get; set; }
@@ -22,7 +22,7 @@ namespace WindowsGSM.Functions
         public string Defaultmap { get; set; }
         public string Maxplayers { get; set; }
 
-        // Badge "MAJ dispo" (P1-1) : notifiant -> la cellule se rafraîchit sans recharger la grille.
+        // "Update available" badge (P1-1): notifying -> the cell refreshes without reloading the grid.
         private bool _updateAvailable;
         public bool UpdateAvailable
         {
@@ -36,7 +36,7 @@ namespace WindowsGSM.Functions
             set { if (_updateTooltip != value) { _updateTooltip = value; OnPropertyChanged(); } }
         }
 
-        // #15 : conflit de port (un autre serveur utilise le même Port ou Query Port).
+        // #15: port conflict (another server uses the same Port or Query Port).
         private bool _portConflict;
         public bool PortConflict
         {
@@ -73,10 +73,10 @@ namespace WindowsGSM.Functions
             }
         }
 
-        // ===== P2-3 + Dashboard : stats live par serveur =====
-        // Les valeurs sont calculées UNE fois par tick via Sample() puis mises en cache,
-        // pour que la grille (Items.Refresh) ET les tuiles du dashboard (binding notifiant)
-        // lisent la même mesure sans double lecture du process.
+        // ===== P2-3 + Dashboard: live per-server stats =====
+        // The values are computed ONCE per tick via Sample() then cached,
+        // so that the grid (Items.Refresh) AND the dashboard tiles (notifying binding)
+        // read the same measurement without reading the process twice.
         private bool _online;
         public bool Online
         {
@@ -91,7 +91,7 @@ namespace WindowsGSM.Functions
         public double CpuPercent => (_cpuPct < 0) ? 0 : _cpuPct;
         public long RamMB => (_ramMb < 0) ? 0 : _ramMb;
 
-        // Joueurs en ligne via A2S (mis à jour par une boucle dédiée dans MainWindow).
+        // Online players via A2S (updated by a dedicated loop in MainWindow).
         private string _players = "—";
         public string Players
         {
@@ -99,8 +99,8 @@ namespace WindowsGSM.Functions
             set { if (_players != value) { _players = value; OnPropertyChanged(); } }
         }
 
-        // Historiques pour les sparklines du dashboard (copie défensive à chaque tick
-        // pour forcer le binding à se rafraîchir).
+        // Histories for the dashboard sparklines (defensive copy on each tick
+        // to force the binding to refresh).
         private readonly List<double> _cpuHist = new List<double>();
         private readonly List<double> _ramHist = new List<double>();
         public IReadOnlyList<double> CpuHistory { get; private set; } = new List<double>();
@@ -110,8 +110,8 @@ namespace WindowsGSM.Functions
         private DateTime _lastCpuAt;
 
         /// <summary>
-        /// Échantillonne CPU/RAM du process (à appeler 1× par tick de refresh) et
-        /// notifie les bindings. Appelé depuis la boucle de rafraîchissement de la grille.
+        /// Samples the process CPU/RAM (to be called once per refresh tick) and
+        /// notifies the bindings. Called from the grid's refresh loop.
         /// </summary>
         public void Sample()
         {
@@ -135,7 +135,7 @@ namespace WindowsGSM.Functions
                     }
                     else
                     {
-                        pct = 0; // premier échantillon : pas encore de delta
+                        pct = 0; // first sample: no delta yet
                     }
                     _lastCpuTime = cpuNow;
                     _lastCpuAt = now;
@@ -155,7 +155,7 @@ namespace WindowsGSM.Functions
             _ramMb = mb;
             Online = pct >= 0;
 
-            // Historiques (0 quand hors-ligne pour garder une courbe continue).
+            // Histories (0 when offline to keep a continuous curve).
             Push(_cpuHist, pct < 0 ? 0 : pct);
             Push(_ramHist, mb < 0 ? 0 : mb);
             CpuHistory = new List<double>(_cpuHist);

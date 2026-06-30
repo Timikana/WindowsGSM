@@ -70,7 +70,7 @@ namespace WindowsGSM.DiscordBot
                             break;
                         }
 
-                        // Commandes globales (permission complète requise) : list, players (sans id)
+                        // Global commands (full permission required): list, players (without id)
                         if (splits[0] == "list" && serverIds.Contains("0"))
                         {
                             await Action_List(message);
@@ -151,7 +151,7 @@ namespace WindowsGSM.DiscordBot
                         MainWindow.ServerStatus serverStatus = WindowsGSM.GetServerStatus(args[1]);
                         if (serverStatus == MainWindow.ServerStatus.Stopped)
                         {
-                            await message.Channel.SendMessageAsync($"⏳ Démarrage du serveur #{args[1]} en cours…");
+                            await message.Channel.SendMessageAsync($"⏳ Starting server #{args[1]}...");
                             bool started = await WindowsGSM.StartServerById(args[1], message.Author.Id.ToString(), message.Author.Username);
                             await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) {(started ? "Started" : "Fail to Start")}.");
                         }
@@ -191,7 +191,7 @@ namespace WindowsGSM.DiscordBot
                         MainWindow.ServerStatus serverStatus = WindowsGSM.GetServerStatus(args[1]);
                         if (serverStatus == MainWindow.ServerStatus.Started)
                         {
-                            await message.Channel.SendMessageAsync($"⏳ Arrêt du serveur #{args[1]} en cours…");
+                            await message.Channel.SendMessageAsync($"⏳ Stopping server #{args[1]}...");
                             bool started = await WindowsGSM.StopServerById(args[1], message.Author.Id.ToString(), message.Author.Username);
                             await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) {(started ? "Stopped" : "Fail to Stop")}.");
                         }
@@ -231,7 +231,7 @@ namespace WindowsGSM.DiscordBot
                         MainWindow.ServerStatus serverStatus = WindowsGSM.GetServerStatus(args[1]);
                         if (serverStatus == MainWindow.ServerStatus.Started)
                         {
-                            await message.Channel.SendMessageAsync($"⏳ Redémarrage du serveur #{args[1]} en cours…");
+                            await message.Channel.SendMessageAsync($"⏳ Restarting server #{args[1]}...");
                             bool started = await WindowsGSM.RestartServerById(args[1], message.Author.Id.ToString(), message.Author.Username);
                             await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) {(started ? "Restarted" : "Fail to Restart")}.");
                         }
@@ -381,7 +381,7 @@ namespace WindowsGSM.DiscordBot
                         }
                         else
                         {
-                            await message.Channel.SendMessageAsync($"⏳ Kill du serveur #{args[1]} en cours…");
+                            await message.Channel.SendMessageAsync($"⏳ Killing server #{args[1]}...");
                             bool killed = await WindowsGSM.KillServerById(args[1], message.Author.Id.ToString(), message.Author.Username);
                             await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) {(killed ? "Killed" : "Fail to Kill")}.");
                             await SendServerEmbed(message, Color.Red, args[1], WindowsGSM.GetServerStatus(args[1]).ToString(), WindowsGSM.GetServerName(args[1]));
@@ -438,7 +438,7 @@ namespace WindowsGSM.DiscordBot
                     MainWindow WindowsGSM = (MainWindow)Application.Current.MainWindow;
                     if (WindowsGSM.IsServerExist(args[1]))
                     {
-                        await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) {WindowsGSM.GetServerName(args[1])} — Joueurs : **{WindowsGSM.GetServerPlayers(args[1])}**");
+                        await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) {WindowsGSM.GetServerName(args[1])} — Players: **{WindowsGSM.GetServerPlayers(args[1])}**");
                     }
                     else
                     {
@@ -469,7 +469,7 @@ namespace WindowsGSM.DiscordBot
 
                 if (string.IsNullOrEmpty(ids)) { ids = servers = players = "—"; }
 
-                var embed = new EmbedBuilder { Color = Color.Teal, Title = "Joueurs en ligne (A2S)" };
+                var embed = new EmbedBuilder { Color = Color.Teal, Title = "Players online (A2S)" };
                 embed.AddField("ID", ids, inline: true);
                 embed.AddField("Server Name", servers, inline: true);
                 embed.AddField("Players", players, inline: true);
@@ -497,14 +497,14 @@ namespace WindowsGSM.DiscordBot
                     await message.Channel.SendMessageAsync($"Server (ID: {args[1]}) does not exists.");
                     return;
                 }
-                if (string.IsNullOrWhiteSpace(tail)) { tail = "(console vide)"; }
-                // Discord limite à 2000 caractères : on tronque le bloc de code.
+                if (string.IsNullOrWhiteSpace(tail)) { tail = "(console empty)"; }
+                // Discord limits to 2000 characters: we truncate the code block.
                 if (tail.Length > 1900) { tail = tail.Substring(tail.Length - 1900); }
-                await message.Channel.SendMessageAsync($"**Console #{args[1]}** (dernières {lines} lignes)\n```\n{tail}\n```");
+                await message.Channel.SendMessageAsync($"**Console #{args[1]}** (last {lines} lines)\n```\n{tail}\n```");
             }
             else
             {
-                await message.Channel.SendMessageAsync($"Usage: {Configs.GetBotPrefix()}wgsm console `<SERVERID>` `[lignes]`");
+                await message.Channel.SendMessageAsync($"Usage: {Configs.GetBotPrefix()}wgsm console `<SERVERID>` `[lines]`");
             }
         }
 

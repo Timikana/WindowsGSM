@@ -22,7 +22,7 @@ namespace WindowsGSM.Functions
         private readonly string _serverId;
         public string BackupLocation;
         public int MaximumBackups = DefaultMaximumBackups;
-        // #179 : sous-dossiers (relatifs à serverfiles) à inclure, séparés par ';'. Vide = tout serverfiles.
+        // #179: subfolders (relative to serverfiles) to include, separated by ';'. Empty = all of serverfiles.
         public string BackupFolders = string.Empty;
 
         public BackupConfig(string serverId)
@@ -42,7 +42,7 @@ namespace WindowsGSM.Functions
             Shell.Open(ServerPath.GetServersConfigs(_serverId, "BackupConfig.cfg"));
         }
 
-        /// <summary>Persiste l'emplacement et le nombre max de sauvegardes dans BackupConfig.cfg.</summary>
+        /// <summary>Persists the location and the maximum number of backups in BackupConfig.cfg.</summary>
         public void Save()
         {
             string configPath = ServerPath.GetServersConfigs(_serverId, "BackupConfig.cfg");
@@ -73,7 +73,7 @@ namespace WindowsGSM.Functions
                     }
                 }
             }
-            catch { /* .cfg verrouillé/corrompu : valeurs par défaut */ }
+            catch { /* .cfg locked/corrupted: default values */ }
         }
     }
 }

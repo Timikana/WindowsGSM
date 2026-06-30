@@ -7,8 +7,8 @@ using System.Windows.Media;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Ajout d'un serveur dédié Steam par AppID : recherche par nom (apps.json) OU saisie directe de l'AppID,
-    /// puis résolution auto de l'exécutable/arguments (AppInfo). Renvoie un <see cref="SteamApps.LaunchProfile"/>.
+    /// Adding a Steam dedicated server by AppID: search by name (apps.json) OR direct AppID entry,
+    /// then auto-resolution of the executable/arguments (AppInfo). Returns a <see cref="SteamApps.LaunchProfile"/>.
     /// </summary>
     public class GenericSteamDialog : Window
     {
@@ -24,7 +24,7 @@ namespace WindowsGSM.Functions
 
         public GenericSteamDialog()
         {
-            Title = "Ajouter un serveur Steam (AppID)";
+            Title = "Add a Steam server (AppID)";
             Width = 620; Height = 560;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             Background = new SolidColorBrush(Color.FromRgb(0x1f, 0x1f, 0x1f));
@@ -34,16 +34,16 @@ namespace WindowsGSM.Functions
 
             var intro = new TextBlock
             {
-                Text = "Cherche un jeu par nom, ou saisis directement un AppID Steam. WGSM résout l'exécutable et les arguments automatiquement, installe via SteamCMD, puis ajoute le serveur.",
+                Text = "Search for a game by name, or directly enter a Steam AppID. WGSM resolves the executable and arguments automatically, installs via SteamCMD, then adds the server.",
                 Foreground = new SolidColorBrush(Color.FromRgb(0x9a, 0x9a, 0x9a)),
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10)
             };
             DockPanel.SetDock(intro, Dock.Top); outer.Children.Add(intro);
 
-            // Barre recherche
+            // Search bar
             var searchBar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
             DockPanel.SetDock(searchBar, Dock.Top);
-            var btnSearch = new Wpf.Ui.Controls.Button { Content = "Rechercher", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
+            var btnSearch = new Wpf.Ui.Controls.Button { Content = "Search", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
             btnSearch.Click += async (s, e) => await DoSearch();
             _search.KeyDown += async (s, e) => { if (e.Key == System.Windows.Input.Key.Enter) { await DoSearch(); } };
             DockPanel.SetDock(btnSearch, Dock.Right);
@@ -51,11 +51,11 @@ namespace WindowsGSM.Functions
             searchBar.Children.Add(_search);
             outer.Children.Add(searchBar);
 
-            // Ligne AppID + boutons bas
+            // AppID row + bottom buttons
             var bottom = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
             DockPanel.SetDock(bottom, Dock.Bottom);
-            _install = new Wpf.Ui.Controls.Button { Content = "Installer", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var cancel = new Wpf.Ui.Controls.Button { Content = "Annuler", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            _install = new Wpf.Ui.Controls.Button { Content = "Install", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var cancel = new Wpf.Ui.Controls.Button { Content = "Cancel", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
             _install.Click += async (s, e) => await DoInstall();
             cancel.Click += (s, e) => Close();
             bottom.Children.Add(_install); bottom.Children.Add(cancel);
@@ -63,7 +63,7 @@ namespace WindowsGSM.Functions
 
             var appidRow = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
             DockPanel.SetDock(appidRow, Dock.Bottom);
-            var lbl = new TextBlock { Text = "AppID :", Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+            var lbl = new TextBlock { Text = "AppID:", Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
             DockPanel.SetDock(lbl, Dock.Left);
             appidRow.Children.Add(lbl);
             appidRow.Children.Add(_appid);
@@ -71,32 +71,32 @@ namespace WindowsGSM.Functions
 
             DockPanel.SetDock(_status, Dock.Bottom); outer.Children.Add(_status);
 
-            // Liste résultats
+            // Results list
             _list.SelectionChanged += (s, e) =>
             {
                 if (_list.SelectedItem is Row r) { _appid.Text = r.AppId; }
             };
             var gv = new GridView();
-            gv.Columns.Add(new GridViewColumn { Header = "Jeu", DisplayMemberBinding = new System.Windows.Data.Binding("Name"), Width = 430 });
+            gv.Columns.Add(new GridViewColumn { Header = "Game", DisplayMemberBinding = new System.Windows.Data.Binding("Name"), Width = 430 });
             gv.Columns.Add(new GridViewColumn { Header = "AppID", DisplayMemberBinding = new System.Windows.Data.Binding("AppId"), Width = 110 });
             _list.View = gv;
-            outer.Children.Add(_list); // remplit le centre
+            outer.Children.Add(_list); // fills the center
 
             Content = outer;
         }
 
         private async System.Threading.Tasks.Task DoSearch()
         {
-            _status.Text = "Recherche…";
+            _status.Text = "Searching…";
             try
             {
                 List<SteamApps.AppEntry> res = await SteamApps.SearchAsync(_search.Text, 100);
                 var rows = new List<Row>();
                 foreach (var a in res) { rows.Add(new Row { AppId = a.AppId, Name = a.Name }); }
                 _list.ItemsSource = rows;
-                _status.Text = rows.Count == 0 ? "Aucun résultat (vérifie le nom, ou saisis l'AppID directement)." : $"{rows.Count} résultat(s). Sélectionne une ligne, puis Installer.";
+                _status.Text = rows.Count == 0 ? "No results (check the name, or enter the AppID directly)." : $"{rows.Count} result(s). Select a row, then Install.";
             }
-            catch (Exception ex) { _status.Text = "Erreur recherche : " + ex.Message; }
+            catch (Exception ex) { _status.Text = "Search error: " + ex.Message; }
         }
 
         private async System.Threading.Tasks.Task DoInstall()
@@ -104,18 +104,18 @@ namespace WindowsGSM.Functions
             string appid = (_appid.Text ?? string.Empty).Trim();
             if (string.IsNullOrEmpty(appid) || !ulong.TryParse(appid, out _))
             {
-                _status.Text = "Saisis un AppID numérique (ou sélectionne un jeu dans la liste).";
+                _status.Text = "Enter a numeric AppID (or select a game from the list).";
                 return;
             }
 
             _install.IsEnabled = false;
-            _status.Text = "Résolution de l'exécutable (AppInfo)…";
+            _status.Text = "Resolving the executable (AppInfo)…";
             try
             {
                 SteamApps.LaunchProfile prof = await SteamApps.ResolveLaunchAsync(appid);
                 if (!prof.Found || string.IsNullOrEmpty(prof.Executable))
                 {
-                    _status.Text = $"Impossible de résoudre l'exécutable Windows pour l'AppID {appid} (jeu absent de SteamAppInfo ou sans lancement Windows).";
+                    _status.Text = $"Unable to resolve the Windows executable for AppID {appid} (game missing from SteamAppInfo or no Windows launch).";
                     _install.IsEnabled = true;
                     return;
                 }
@@ -125,7 +125,7 @@ namespace WindowsGSM.Functions
             }
             catch (Exception ex)
             {
-                _status.Text = "Erreur résolution : " + ex.Message;
+                _status.Text = "Resolution error: " + ex.Message;
                 _install.IsEnabled = true;
             }
         }

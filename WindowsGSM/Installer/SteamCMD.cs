@@ -53,9 +53,9 @@ namespace WindowsGSM.Installer
             }
         }
 
-        // Durcissement (anti-injection) : empeche d'injecter des +commandes SteamCMD via des champs
-        // qui finissent dans la ligne d'arguments. Les AppID Steam sont toujours numeriques ; un
-        // guillemet ne peut pas apparaitre legitimement dans un chemin Windows ni un nom de mod.
+        // Hardening (anti-injection): prevents injecting SteamCMD +commands through fields
+        // that end up on the argument line. Steam AppIDs are always numeric; a quote cannot
+        // legitimately appear in a Windows path or a mod name.
         private static string SanitizeAppId(string appId)
             => new string((appId ?? string.Empty).Where(char.IsDigit).ToArray());
 
@@ -134,7 +134,7 @@ namespace WindowsGSM.Installer
         {
             forceInstallDir = SanitizeArg(forceInstallDir);
             modName = SanitizeArg(modName);
-            custom = SanitizeArg(custom); // garde espaces/tirets (ex. -beta latest_experimental), retire guillemets/retours ligne
+            custom = SanitizeArg(custom); // keeps spaces/dashes (e.g. -beta latest_experimental), strips quotes/newlines
             appId = SanitizeAppId(appId);
 
             var sb = new StringBuilder();

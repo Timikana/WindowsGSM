@@ -19,7 +19,7 @@ namespace WindowsGSM.GameServer
         public dynamic QueryMethod = new Query.A2S();
 
         public string Port = "7777";
-        public string QueryPort = "7779";   // SCUM : query = port de jeu + 2
+        public string QueryPort = "7779";   // SCUM: query = game port + 2
         public string Defaultmap = "";
         public string Maxplayers = "64";
         public string Additional = string.Empty;
@@ -31,12 +31,12 @@ namespace WindowsGSM.GameServer
             _serverData = serverData;
         }
 
-        public async void CreateServerCFG() { /* SCUM génère sa config au 1er lancement */ }
+        public async void CreateServerCFG() { /* SCUM generates its config on first launch */ }
 
         public async Task<Process> Start()
         {
             string exe = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID, StartPath);
-            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} introuvable ({exe})"; return null; }
+            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} not found ({exe})"; return null; }
 
             string param = "-log";
             param += string.IsNullOrWhiteSpace(_serverData.ServerPort) ? string.Empty : $" -port={_serverData.ServerPort}";

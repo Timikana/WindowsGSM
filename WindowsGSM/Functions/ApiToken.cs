@@ -3,8 +3,8 @@ using System.IO;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Jeton d'API par serveur (ex. Satisfactory : server.GenerateAPIToken), chiffré au repos via
-    /// DPAPI (Secret). Stocké dans servers/&lt;id&gt;/configs/apitoken.txt. Jamais saisi via le chat.
+    /// Per-server API token (e.g. Satisfactory: server.GenerateAPIToken), encrypted at rest via
+    /// DPAPI (Secret). Stored in servers/&lt;id&gt;/configs/apitoken.txt. Never entered via chat.
     /// </summary>
     public static class ApiToken
     {

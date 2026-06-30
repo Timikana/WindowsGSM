@@ -101,7 +101,7 @@ namespace WindowsGSM.GameServer
             {
                 if (p.StartInfo.RedirectStandardInput)
                 {
-                    // #109/#133 : sauvegarder AVANT d'arrêter (avant : kill direct -> perte de progression).
+                    // #109/#133: save BEFORE stopping (previously: direct kill -> loss of progress).
                     try
                     {
                         p.StandardInput.WriteLine("/save");

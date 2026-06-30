@@ -3,8 +3,8 @@ using System.Collections.Generic;
 namespace WindowsGSM.Functions.ConfigEditor
 {
     /// <summary>
-    /// Contrat commun à tous les modèles de config éditables (INI/propxml universel, Palworld inline…).
-    /// L'UI ne connaît que ça : une liste d'entrées clé/valeur + Set + Save fidèle.
+    /// Common contract for all editable config models (universal INI/propxml, inline Palworld...).
+    /// The UI only knows this much: a list of key/value entries + Set + faithful Save.
     /// </summary>
     public interface IConfigModel
     {
@@ -15,13 +15,13 @@ namespace WindowsGSM.Functions.ConfigEditor
         void Save();
     }
 
-    /// <summary>Une entrée clé/valeur (partagée entre tous les modèles).</summary>
+    /// <summary>A key/value entry (shared across all models).</summary>
     public class ConfigEntry
     {
-        public string Section;   // "" si pas de section
+        public string Section;   // "" if no section
         public string Key;
         public string Value;
-        public int LineIndex;    // pour les modèles à lignes (ini/propxml) ; -1 sinon
+        public int LineIndex;    // for line-based models (ini/propxml); -1 otherwise
         public string Display => string.IsNullOrEmpty(Section) ? Key : $"[{Section}] {Key}";
     }
 }

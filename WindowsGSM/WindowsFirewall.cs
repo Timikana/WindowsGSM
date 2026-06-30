@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 
 namespace WindowsGSM
 {
-    // Migration .NET 10 : COM tardif (late-bound, dynamic) au lieu de l'interop type
-    // NetFwTypeLib. Evite la <COMReference> (non supportee par 'dotnet build' / MSBuild Core)
-    // tout en gardant exactement le meme comportement (pare-feu Windows via HNetCfg.FwMgr).
+    // .NET 10 migration: late-bound COM (dynamic) instead of the NetFwTypeLib type interop.
+    // Avoids the <COMReference> (not supported by 'dotnet build' / MSBuild Core) while keeping
+    // exactly the same behavior (Windows firewall via HNetCfg.FwMgr).
     class WindowsFirewall
     {
         private readonly string Name;

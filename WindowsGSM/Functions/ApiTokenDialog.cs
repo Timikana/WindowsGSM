@@ -5,8 +5,8 @@ using System.Windows.Media;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Saisie du jeton d'API d'un serveur (ex. Satisfactory). Champ masqué, stocké chiffré (DPAPI) via
-    /// <see cref="ApiToken"/>. Le jeton n'est JAMAIS saisi via le chat : uniquement ici.
+    /// Entry of a server's API token (e.g. Satisfactory). Masked field, stored encrypted (DPAPI) via
+    /// <see cref="ApiToken"/>. The token is NEVER entered via chat: only here.
     /// </summary>
     public class ApiTokenDialog : Window
     {
@@ -27,8 +27,8 @@ namespace WindowsGSM.Functions
             var outer = new DockPanel { Margin = new Thickness(14) };
 
             string help = isSatisfactory
-                ? "Satisfactory : saisis le MOT DE PASSE du serveur (Client ou Admin) — WGSM obtient un jeton tout seul\nvia l'API pour lire le nombre de joueurs (lecture seule). Un token d'API (server.GenerateAPIToken) marche aussi."
-                : "Jeton d'API utilisé pour interroger ce serveur. Colle-le ci-dessous.";
+                ? "Satisfactory: enter the server PASSWORD (Client or Admin) — WGSM obtains a token by itself\nvia the API to read the player count (read-only). An API token (server.GenerateAPIToken) also works."
+                : "API token used to query this server. Paste it below.";
 
             var intro = new TextBlock
             {
@@ -51,9 +51,9 @@ namespace WindowsGSM.Functions
             outer.Children.Add(_box);
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
-            var save = new Wpf.Ui.Controls.Button { Content = "Enregistrer", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var clear = new Wpf.Ui.Controls.Button { Content = "Effacer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Fermer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var save = new Wpf.Ui.Controls.Button { Content = "Save", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var clear = new Wpf.Ui.Controls.Button { Content = "Clear", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
             save.Click += (s, e) => { ApiToken.Set(_serverId, _box.Password); DialogResult = true; Close(); };
             clear.Click += (s, e) => { _box.Password = string.Empty; };
             close.Click += (s, e) => Close();

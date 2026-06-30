@@ -10,10 +10,10 @@ using System.Windows.Media;
 namespace WindowsGSM.Functions.ConfigEditor
 {
     /// <summary>
-    /// Éditeur de configuration « stylé par jeu » : si le jeu a un schéma curaté (libellés FR,
-    /// toggles/sliders/combos, secrets masqués) on l'affiche regroupé par thème ; sinon édition brute
-    /// clé/valeur. Tout autre fichier de conf trouvé dans serverfiles est éditable en mode brut via le
-    /// sélecteur du haut. Sauvegarde fidèle (backup .wgsmbak).
+    /// "Per-game styled" configuration editor: if the game has a curated schema (readable labels,
+    /// toggles/sliders/combos, masked secrets) it is displayed grouped by theme; otherwise raw
+    /// key/value editing. Any other config file found in serverfiles is editable in raw mode via the
+    /// top selector. Faithful save (.wgsmbak backup).
     /// </summary>
     public class ConfigEditorDialog : Window
     {
@@ -50,23 +50,23 @@ namespace WindowsGSM.Functions.ConfigEditor
 
             var outer = new DockPanel { Margin = new Thickness(14) };
 
-            // --- En-tête : sélecteur de fichier ---
+            // --- Header: file selector ---
             var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-            header.Children.Add(new TextBlock { Text = "Fichier :", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            header.Children.Add(new TextBlock { Text = "File:", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
             _fileSelector = new ComboBox { MinWidth = 420, VerticalAlignment = VerticalAlignment.Center };
             _fileSelector.SelectionChanged += (s, e) => { if (_fileSelector.SelectedItem is FileItem fi) { LoadFile(fi); } };
             header.Children.Add(_fileSelector);
             DockPanel.SetDock(header, Dock.Top);
             outer.Children.Add(header);
 
-            // --- Boutons bas ---
+            // --- Bottom buttons ---
             var buttons = new DockPanel { Margin = new Thickness(0, 10, 0, 0) };
             _status = new TextBlock { Foreground = Dim, VerticalAlignment = VerticalAlignment.Center };
             DockPanel.SetDock(_status, Dock.Left);
             buttons.Children.Add(_status);
             var btnRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var save = new Wpf.Ui.Controls.Button { Content = "Enregistrer", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Fermer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var save = new Wpf.Ui.Controls.Button { Content = "Save", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
             save.Click += (s, e) => SaveCurrent();
             close.Click += (s, e) => Close();
             btnRow.Children.Add(save);
@@ -75,8 +75,8 @@ namespace WindowsGSM.Functions.ConfigEditor
             DockPanel.SetDock(buttons, Dock.Bottom);
             outer.Children.Add(buttons);
 
-            // --- Corps défilant ---
-            // Marge droite = gouttière pour la scrollbar overlay Fluent (sinon elle recouvre les valeurs).
+            // --- Scrolling body ---
+            // Right margin = gutter for the Fluent overlay scrollbar (otherwise it covers the values).
             _body = new StackPanel { Margin = new Thickness(0, 0, 16, 0) };
             outer.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _body });
 
@@ -88,7 +88,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         {
             public string FullPath;
             public string Display;
-            public GameConfigSchema Schema;   // null = édition brute
+            public GameConfigSchema Schema;   // null = raw editing
             public override string ToString() => Display;
         }
 
@@ -97,7 +97,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             var items = new List<FileItem>();
             var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // Fichier(s) principal(aux) curatés (un jeu peut en avoir plusieurs : ARK = 2).
+            // Curated primary file(s) (a game may have several: ARK = 2).
             foreach (var schema in _schemas)
             {
                 string primary = null;
@@ -108,11 +108,11 @@ namespace WindowsGSM.Functions.ConfigEditor
                 }
                 if (primary == null || taken.Contains(primary)) { continue; }
                 taken.Add(primary);
-                string label = string.IsNullOrEmpty(schema.Label) ? $"réglages {schema.GameMatch}" : schema.Label;
+                string label = string.IsNullOrEmpty(schema.Label) ? $"{schema.GameMatch} settings" : schema.Label;
                 items.Add(new FileItem { FullPath = primary, Display = $"★ {Path.GetFileName(primary)} — {label}", Schema = schema });
             }
 
-            // Autres fichiers de conf découverts (mode brut).
+            // Other config files discovered (raw mode).
             foreach (string f in ConfigDiscovery.Find(_serverFiles))
             {
                 if (taken.Contains(f)) { continue; }
@@ -123,12 +123,12 @@ namespace WindowsGSM.Functions.ConfigEditor
             if (items.Count == 0)
             {
                 _fileSelector.IsEnabled = false;
-                _body.Children.Add(new TextBlock { Text = "Aucun fichier de configuration trouvé dans serverfiles.\n(Le serveur n'est peut-être pas encore installé.)", Foreground = Dim, TextWrapping = TextWrapping.Wrap });
+                _body.Children.Add(new TextBlock { Text = "No configuration file found in serverfiles.\n(The server may not be installed yet.)", Foreground = Dim, TextWrapping = TextWrapping.Wrap });
                 return;
             }
 
             foreach (var it in items) { _fileSelector.Items.Add(it); }
-            _fileSelector.SelectedIndex = 0; // déclenche LoadFile
+            _fileSelector.SelectedIndex = 0; // triggers LoadFile
         }
 
         private void LoadFile(FileItem fi)
@@ -144,7 +144,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             }
             catch (Exception ex)
             {
-                _body.Children.Add(new TextBlock { Text = "Lecture impossible : " + ex.Message, Foreground = Dim, TextWrapping = TextWrapping.Wrap });
+                _body.Children.Add(new TextBlock { Text = "Cannot read: " + ex.Message, Foreground = Dim, TextWrapping = TextWrapping.Wrap });
                 return;
             }
 
@@ -152,7 +152,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             else { BuildRaw(); }
         }
 
-        // ---- Vue curatée (schéma par jeu) ----
+        // ---- Curated view (per-game schema) ----
         private void BuildCurated()
         {
             var handled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -161,18 +161,18 @@ namespace WindowsGSM.Functions.ConfigEditor
             foreach (var spec in _activeSchema.Fields)
             {
                 var entry = _model.Entries.FirstOrDefault(e => string.Equals(e.Key, spec.Key, StringComparison.OrdinalIgnoreCase));
-                if (entry == null) { continue; } // clé absente de ce fichier → on saute
+                if (entry == null) { continue; } // key absent from this file -> skip
                 handled.Add(spec.Key);
 
                 if (spec.Group != lastGroup) { AddGroupHeader(spec.Group); lastGroup = spec.Group; }
                 _body.Children.Add(BuildFieldRow(spec, entry));
             }
 
-            // Repli : toutes les clés non couvertes par le schéma, éditables en brut.
+            // Fallback: all keys not covered by the schema, editable in raw mode.
             var rest = _model.Entries.Where(e => !handled.Contains(e.Key)).ToList();
             if (rest.Count > 0)
             {
-                var exp = new Expander { Header = $"Autres réglages ({rest.Count}) — édition brute", Foreground = Dim, Margin = new Thickness(0, 12, 0, 0) };
+                var exp = new Expander { Header = $"Other settings ({rest.Count}) — raw editing", Foreground = Dim, Margin = new Thickness(0, 12, 0, 0) };
                 var inner = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
                 foreach (var e in rest) { inner.Children.Add(BuildRawRow(e)); }
                 exp.Content = inner;
@@ -180,12 +180,12 @@ namespace WindowsGSM.Functions.ConfigEditor
             }
         }
 
-        // ---- Vue brute (fichier sans schéma) ----
+        // ---- Raw view (file without a schema) ----
         private void BuildRaw()
         {
             if (_model.Entries.Count == 0)
             {
-                _body.Children.Add(new TextBlock { Text = "Aucune entrée clé/valeur reconnue dans ce fichier.", Foreground = Dim });
+                _body.Children.Add(new TextBlock { Text = "No recognized key/value entry in this file.", Foreground = Dim });
                 return;
             }
             string lastSection = null;
@@ -208,7 +208,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             });
         }
 
-        // ---- Lignes ----
+        // ---- Rows ----
         private FrameworkElement BuildFieldRow(FieldSpec spec, ConfigEntry entry)
         {
             var dp = new DockPanel { Margin = new Thickness(0, 3, 0, 3) };
@@ -341,17 +341,17 @@ namespace WindowsGSM.Functions.ConfigEditor
                 foreach (var a in _applies) { a(); }
                 _model.Save();
                 _status.Foreground = Accent;
-                _status.Text = "✔ Enregistré (sauvegarde .wgsmbak créée). Redémarre le serveur pour appliquer.";
+                _status.Text = "✔ Saved (.wgsmbak backup created). Restart the server to apply.";
             }
             catch (Exception ex)
             {
                 _status.Foreground = new SolidColorBrush(Color.FromRgb(0xe0, 0x6c, 0x6c));
-                _status.Text = "Échec : " + ex.Message;
+                _status.Text = "Failed: " + ex.Message;
                 Functions.AppLog.Warn("ConfigEditor/Save", ex.Message);
             }
         }
 
-        // ---- Helpers valeur ----
+        // ---- Value helpers ----
         private string MaybeQuote(string v) => _palworld ? "\"" + (v ?? "").Replace("\"", "") + "\"" : (v ?? "");
 
         private static string Unquote(string v)

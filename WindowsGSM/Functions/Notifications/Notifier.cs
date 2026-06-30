@@ -4,16 +4,16 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.Notifications
 {
     /// <summary>
-    /// Point d'entrée unique des canaux de notification globaux (en plus des webhooks Discord
-    /// par-serveur). Diffuse un message texte vers tous les canaux activés. Best-effort : l'échec
-    /// d'un canal n'empêche pas les autres, et n'interrompt jamais l'appelant.
-    /// Palier 1 : ntfy. Brancher ici Telegram / e-mail / webhook au palier 2.
+    /// Single entry point for the global notification channels (in addition to the per-server
+    /// Discord webhooks). Broadcasts a text message to all enabled channels. Best-effort: one
+    /// channel's failure does not prevent the others, and never interrupts the caller.
+    /// Tier 1: ntfy. Wire up Telegram / email / webhook here at tier 2.
     /// </summary>
     public static class Notifier
     {
         public static async Task Broadcast(string title, string message)
         {
-            // Fonction réservée aux donateurs (ou au propriétaire). Verrou aussi côté envoi, pas seulement l'UI.
+            // Donor-only feature (or owner). Lock on the send side too, not only the UI.
             if (!Donator.DonatorManager.IsDonator) { return; }
 
             var cfg = NotificationConfig.Load();

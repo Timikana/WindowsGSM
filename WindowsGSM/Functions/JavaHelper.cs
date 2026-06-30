@@ -81,7 +81,7 @@ namespace WindowsGSM.Functions
             return FindJavaExecutableAbsolutePath().Length > 0;
         }
 
-        /// <summary>Version majeure du Java le plus récent trouvé (8, 11, 17, 21…). 0 si aucun.</summary>
+        /// <summary>Major version of the newest Java found (8, 11, 17, 21…). 0 if none.</summary>
         public static int GetNewestJavaMajorVersion()
         {
             string path = FindNewestJavaExecutableAbsolutePath();
@@ -99,12 +99,12 @@ namespace WindowsGSM.Functions
             return int.TryParse(head, out int major) ? major : 0;
         }
 
-        /// <summary>Java majeur requis pour une version Minecraft donnée ("1.20.4"→17, "1.20.6"→21…).</summary>
+        /// <summary>Major Java required for a given Minecraft version ("1.20.4"→17, "1.20.6"→21…).</summary>
         public static int RequiredJavaForMinecraft(string mcVersion)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(mcVersion)) { return 0; } // inconnu -> ne pas bloquer
+                if (string.IsNullOrWhiteSpace(mcVersion)) { return 0; } // unknown -> do not block
                 var p = mcVersion.Split('.');
                 if (p.Length < 2 || !int.TryParse(p[1], out int minor)) { return 0; }
                 int patch = (p.Length >= 3 && int.TryParse(new string(p[2].TakeWhile(char.IsDigit).ToArray()), out int pa)) ? pa : 0;

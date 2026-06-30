@@ -71,11 +71,11 @@ namespace WindowsGSM
             public bool UpdateOnStart;
             public bool BackupOnStart;
 
-            // #16 : surveillance RAM (par serveur)
+            // #16: RAM monitoring (per server)
             public bool MemoryWatchdog;
             public string MemoryLimitMB;
             public bool BackupBeforeUpdate; // #20
-            public bool BackupCrontab;          // sauvegarde planifiée
+            public bool BackupCrontab;          // scheduled backup
             public string BackupCrontabFormat;
 
             // Discord Alert Settings
@@ -155,9 +155,9 @@ namespace WindowsGSM
             InitializeComponent();
             Title = $"WindowsGSM {WGSM_VERSION}";
 
-            // Plan B .NET 10 : MahApps casse le déplacement de la fenêtre (NRE get_CriticalHandle).
-            // On gère le drag de la barre de titre nous-mêmes (DragMove natif WPF).
-            // FluentWindow gère le déplacement nativement (titlebar W11)
+            // Plan B .NET 10: MahApps breaks window dragging (NRE get_CriticalHandle).
+            // We handle the title bar drag ourselves (native WPF DragMove).
+            // FluentWindow handles dragging natively (W11 title bar)
             this.Loaded += (s, e) => ShowHomeMenu(0);
 
             //Close SplashScreen
@@ -196,7 +196,7 @@ namespace WindowsGSM
 
             MahAppSwitch_HardWareAcceleration.IsChecked = (key.GetValue(RegistryKeyName.HardWareAcceleration) ?? true).ToString() == "True";
             MahAppSwitch_UIAnimation.IsChecked = (key.GetValue(RegistryKeyName.UIAnimation) ?? true).ToString() == "True";
-            MahAppSwitch_DarkTheme.IsChecked = (key.GetValue(RegistryKeyName.DarkTheme) ?? true).ToString() == "True"; // défaut dark (UI moderne)
+            MahAppSwitch_DarkTheme.IsChecked = (key.GetValue(RegistryKeyName.DarkTheme) ?? true).ToString() == "True"; // dark by default (modern UI)
             MahAppSwitch_StartOnBoot.IsChecked = (key.GetValue(RegistryKeyName.StartOnBoot) ?? false).ToString() == "True";
             MahAppSwitch_RestartOnCrash.IsChecked = (key.GetValue(RegistryKeyName.RestartOnCrash) ?? false).ToString() == "True";
             MahAppSwitch_DonorConnect.Click -= DonorConnect_IsCheckedChanged;
@@ -225,14 +225,14 @@ namespace WindowsGSM
             key.Close();
 
             RenderOptions.ProcessRenderMode = MahAppSwitch_HardWareAcceleration.IsChecked == true ? System.Windows.Interop.RenderMode.SoftwareOnly : System.Windows.Interop.RenderMode.Default;
-            // WindowTransitionsEnabled retire (FluentWindow)
+            // WindowTransitionsEnabled removed (FluentWindow)
             Wpf.Ui.Appearance.ApplicationThemeManager.Apply(MahAppSwitch_DarkTheme.IsChecked == true ? Wpf.Ui.Appearance.ApplicationTheme.Dark : Wpf.Ui.Appearance.ApplicationTheme.Light);
             //Not required - it is set in windows settings
             //SetStartOnBoot(MahAppSwitch_StartOnBoot.IsChecked ?? false);
             if (MahAppSwitch_DiscordBotAutoStart.IsChecked == true)
             {
-                // L'event Click du ToggleSwitch ne se déclenche pas sur un IsChecked programmatique :
-                // on démarre explicitement (après le chargement de la fenêtre).
+                // The ToggleSwitch Click event does not fire on a programmatic IsChecked:
+                // we start it explicitly (after the window has loaded).
                 switch_DiscordBot.IsChecked = true;
                 _ = Dispatcher.InvokeAsync(async () => await StartDiscordBotAsync());
             }
@@ -376,36 +376,36 @@ namespace WindowsGSM
 
             StartServerTableRefresh();
 
-            StartPlayerCountRefresh(); // joueurs en ligne (A2S)
+            StartPlayerCountRefresh(); // online players (A2S)
 
-            // Les tuiles du dashboard sont liées à une collection dédiée (mêmes instances que la grille).
+            // The dashboard tiles are bound to a dedicated collection (same instances as the grid).
             try { dashboard_tiles.ItemsSource = _dashboardTiles; } catch { }
 
             StartDashBoardRefresh();
 
-            // P1-1 : vérif "MAJ dispo" en tâche de fond (ne bloque pas le démarrage)
+            // P1-1: check "update available" in the background (does not block startup)
             _ = CheckServerUpdatesAsync();
 
-            // P3-7 : surveillance espace disque par serveur
+            // P3-7: per-server disk space monitoring
             StartDiskSpaceCheck();
 
-            // #16 : surveillance mémoire (auto-restart si activé dans Réglages)
+            // #16: memory monitoring (auto-restart if enabled in Settings)
             StartMemoryWatchdog();
 
-            // #19 : nettoyage auto des vieux logs/backups
+            // #19: auto-cleanup of old logs/backups
             StartDiskCleanup();
 
-            // Sauvegarde planifiée par serveur
+            // Per-server scheduled backup
             StartBackupCrontabCheck();
 
-            // #207/#25 : API web de contrôle à distance (opt-in, token obligatoire)
+            // #207/#25: remote-control web API (opt-in, token required)
             StartWebApi();
 
-            // Suivi de disponibilité (uptime) par serveur
+            // Per-server uptime tracking
             StartUptimeTracking();
         }
 
-        // ===== Stats de disponibilité par serveur =====
+        // ===== Per-server uptime stats =====
         private readonly Dictionary<string, UptimeStats> _uptimeStats = new Dictionary<string, UptimeStats>();
         private readonly Dictionary<string, bool> _uptimeWasOnline = new Dictionary<string, bool>();
 
@@ -419,7 +419,7 @@ namespace WindowsGSM
         {
             while (true)
             {
-                await Task.Delay(60 * 1000); // accumulation par minute
+                await Task.Delay(60 * 1000); // accumulate per minute
                 try
                 {
                     foreach (var server in ServerGrid.Items.Cast<ServerTable>().ToList())
@@ -430,7 +430,7 @@ namespace WindowsGSM
                             bool online = meta != null && meta.ServerStatus == ServerStatus.Started;
                             var st = GetUptime(server.ID);
                             bool was = _uptimeWasOnline.TryGetValue(server.ID, out var w) && w;
-                            if (online && !was) { st.Starts++; }   // transition -> nouveau démarrage
+                            if (online && !was) { st.Starts++; }   // transition -> new start
                             if (online) { st.OnlineSeconds += 60; }
                             _uptimeWasOnline[server.ID] = online;
                             st.Save(server.ID);
@@ -442,13 +442,13 @@ namespace WindowsGSM
             }
         }
 
-        // ===== Sauvegarde planifiée (par serveur) : à l'heure définie, stop -> backup -> restart =====
+        // ===== Scheduled backup (per server): at the set time, stop -> backup -> restart =====
         private readonly Dictionary<string, DateTime> _lastBackupSchedCheck = new Dictionary<string, DateTime>();
         private async void StartBackupCrontabCheck()
         {
             while (true)
             {
-                await Task.Delay(60 * 1000); // contrôle chaque minute
+                await Task.Delay(60 * 1000); // check every minute
                 try
                 {
                     foreach (var server in ServerGrid.Items.Cast<ServerTable>().ToList())
@@ -464,17 +464,17 @@ namespace WindowsGSM
                             _lastBackupSchedCheck[server.ID] = DateTime.Now;
                             if (next <= DateTime.Now)
                             {
-                                Log(server.ID, $"[Backup planifié] #{server.ID} {server.Name}…");
+                                Log(server.ID, $"[Scheduled backup] #{server.ID} {server.Name}…");
                                 bool wasRunning = meta.ServerStatus == ServerStatus.Started;
                                 try
                                 {
                                     if (wasRunning) { await GameServer_Stop(server); }
-                                    await GameServer_Backup(server, " | Backup planifié");
+                                    await GameServer_Backup(server, " | Scheduled backup");
                                 }
-                                catch (Exception ex) { Log(server.ID, "[Backup planifié] Erreur : " + ex.Message); }
+                                catch (Exception ex) { Log(server.ID, "[Scheduled backup] Error: " + ex.Message); }
                                 finally
                                 {
-                                    // relance si le serveur tournait avant (garde-fou : toujours essayer de relancer)
+                                    // restart if the server was running before (safeguard: always try to restart)
                                     if (wasRunning && GetServerMetadata(server.ID).ServerStatus == ServerStatus.Stopped)
                                     {
                                         try
@@ -484,10 +484,10 @@ namespace WindowsGSM
                                             {
                                                 _serverMetadata[int.Parse(server.ID)].ServerStatus = ServerStatus.Started;
                                                 SetServerStatus(server, "Started", ServerCache.GetPID(server.ID).ToString());
-                                                Log(server.ID, "[Backup planifié] Serveur relancé.");
+                                                Log(server.ID, "[Scheduled backup] Server restarted.");
                                             }
                                         }
-                                        catch (Exception ex) { Log(server.ID, "[Backup planifié] Échec relance : " + ex.Message); }
+                                        catch (Exception ex) { Log(server.ID, "[Scheduled backup] Restart failed: " + ex.Message); }
                                     }
                                 }
                             }
@@ -499,7 +499,7 @@ namespace WindowsGSM
             }
         }
 
-        // ===== #19 : auto-nettoyage disque (logs + backups plus vieux que X jours) =====
+        // ===== #19: disk auto-cleanup (logs + backups older than X days) =====
         private const int CLEANUP_RETENTION_DAYS = 30;
         private async void StartDiskCleanup()
         {
@@ -521,28 +521,28 @@ namespace WindowsGSM
 
                     await Task.Run(() =>
                     {
-                        CleanDir(ServerPath.GetLogs());                       // logs WindowsGSM
+                        CleanDir(ServerPath.GetLogs());                       // WindowsGSM logs
                         for (int i = 1; i <= MAX_SERVER; i++)
                         {
-                            CleanDir(ServerPath.GetBackups(i.ToString()));    // backups par serveur
+                            CleanDir(ServerPath.GetBackups(i.ToString()));    // per-server backups
                         }
                     });
 
-                    if (removed > 0) { Log("System", $"[Auto-clean] {removed} fichier(s) de plus de {CLEANUP_RETENTION_DAYS} jours supprimé(s) (logs/backups)."); }
+                    if (removed > 0) { Log("System", $"[Auto-clean] {removed} file(s) older than {CLEANUP_RETENTION_DAYS} days deleted (logs/backups)."); }
                 }
                 catch { }
-                await Task.Delay(24 * 60 * 60 * 1000); // 1×/jour
+                await Task.Delay(24 * 60 * 60 * 1000); // once/day
             }
         }
 
-        // ===== #16 : surveillance RAM PAR SERVEUR (auto-restart), activable + seuil Mo dans le panneau du serveur =====
+        // ===== #16: PER-SERVER RAM monitoring (auto-restart), toggleable + MB threshold in the server panel =====
         private readonly Dictionary<string, int> _ramOverCount = new Dictionary<string, int>();
 
         private async void StartMemoryWatchdog()
         {
             while (true)
             {
-                await Task.Delay(2 * 60 * 1000); // contrôle toutes les 2 min
+                await Task.Delay(2 * 60 * 1000); // check every 2 min
                 try
                 {
                     foreach (var server in ServerGrid.Items.Cast<ServerTable>().ToList())
@@ -560,13 +560,13 @@ namespace WindowsGSM
                             {
                                 int c = (_ramOverCount.TryGetValue(server.ID, out var v) ? v : 0) + 1;
                                 _ramOverCount[server.ID] = c;
-                                if (c >= 3) // ~6 min au-dessus du seuil avant d'agir
+                                if (c >= 3) // ~6 min above the threshold before acting
                                 {
                                     _ramOverCount[server.ID] = 0;
-                                    Log(server.ID, $"[RAM Watchdog] {server.Name} : {mb} Mo (> {limitMb} Mo) soutenu -> redémarrage propre.");
+                                    Log(server.ID, $"[RAM Watchdog] {server.Name}: {mb} MB (> {limitMb} MB) sustained -> clean restart.");
                                     if (meta.DiscordAlert)
                                     {
-                                        try { var wh = new DiscordWebhook(meta.DiscordWebhook, meta.DiscordMessage, g_DonorType); await wh.Send(server.ID, server.Game, $"⚠️ RAM élevée ({mb} Mo) → redémarrage", server.Name, server.IP, server.Port); } catch { }
+                                        try { var wh = new DiscordWebhook(meta.DiscordWebhook, meta.DiscordMessage, g_DonorType); await wh.Send(server.ID, server.Game, $"⚠️ High RAM ({mb} MB) → restart", server.Name, server.IP, server.Port); } catch { }
                                     }
                                     await GameServer_Restart(server);
                                 }
@@ -580,8 +580,8 @@ namespace WindowsGSM
             }
         }
 
-        // ===== P3-7 : alerte espace disque faible par serveur (log + Discord) =====
-        private const double DISK_ALERT_THRESHOLD_GB = 5.0; // seuil par défaut (Go) - configurable ultérieurement
+        // ===== P3-7: per-server low disk space alert (log + Discord) =====
+        private const double DISK_ALERT_THRESHOLD_GB = 5.0; // default threshold (GB) - configurable later
         private readonly HashSet<string> _diskAlerted = new HashSet<string>();
 
         private async void StartDiskSpaceCheck()
@@ -601,38 +601,38 @@ namespace WindowsGSM
                             double freeGb = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
                             if (freeGb < DISK_ALERT_THRESHOLD_GB)
                             {
-                                if (_diskAlerted.Add(server.ID)) // 1re détection de cet épisode -> évite le spam
+                                if (_diskAlerted.Add(server.ID)) // first detection of this episode -> avoids spam
                                 {
-                                    Log(server.ID, $"[ALERTE] Espace disque faible sur {drive.Name} : {freeGb:0.0} Go libres (seuil {DISK_ALERT_THRESHOLD_GB} Go).");
+                                    Log(server.ID, $"[ALERT] Low disk space on {drive.Name}: {freeGb:0.0} GB free (threshold {DISK_ALERT_THRESHOLD_GB} GB).");
                                     if (GetServerMetadata(server.ID) != null && GetServerMetadata(server.ID).DiscordAlert)
                                     {
                                         var webhook = new DiscordWebhook(GetServerMetadata(server.ID).DiscordWebhook, GetServerMetadata(server.ID).DiscordMessage, g_DonorType);
-                                        await webhook.Send(server.ID, server.Game, $"⚠️ Disque faible ({freeGb:0.0} Go)", server.Name, server.IP, server.Port);
+                                        await webhook.Send(server.ID, server.Game, $"⚠️ Low disk ({freeGb:0.0} GB)", server.Name, server.IP, server.Port);
                                     }
                                 }
                             }
                             else
                             {
-                                _diskAlerted.Remove(server.ID); // espace revenu -> ré-alerte possible plus tard
+                                _diskAlerted.Remove(server.ID); // space recovered -> can re-alert later
                             }
                         }
                         catch { }
                     }
                 }
                 catch { }
-                await Task.Delay(15 * 60 * 1000); // toutes les 15 min
+                await Task.Delay(15 * 60 * 1000); // every 15 min
             }
         }
 
-        // ===== P1-1 : Badge "MAJ disponible" par serveur Steam =====
-        // Compare le build installé (appmanifest .acf) au build public (SteamCMD app_info_print).
-        // Lecture seule, en tâche de fond, build distant mis en cache ~10 min (1 appel SteamCMD/AppID).
+        // ===== P1-1: "Update available" badge per Steam server =====
+        // Compares the installed build (appmanifest .acf) to the public build (SteamCMD app_info_print).
+        // Read-only, in the background, remote build cached ~10 min (1 SteamCMD call/AppID).
         private readonly Dictionary<string, string> _remoteBuildCache = new Dictionary<string, string>();
-        // Persiste le badge par serveur (survit aux LoadServerTable périodiques qui recréent les lignes)
+        // Persists the badge per server (survives periodic LoadServerTable calls that recreate the rows)
         private readonly Dictionary<string, string> _updateTooltips = new Dictionary<string, string>();
         private DateTime _remoteBuildCacheTime = DateTime.MinValue;
         private bool _updateCheckRunning = false;
-        // #13 : anti-spam de l'alerte "MAJ dispo" (1 alerte Discord par épisode de MAJ)
+        // #13: anti-spam for the "update available" alert (1 Discord alert per update episode)
         private readonly HashSet<string> _updateAlerted = new HashSet<string>();
 
         public async Task CheckServerUpdatesAsync()
@@ -641,7 +641,7 @@ namespace WindowsGSM
             _updateCheckRunning = true;
             try
             {
-                // Cache distant expiré (>10 min) -> on repart à neuf
+                // Remote cache expired (>10 min) -> start fresh
                 if ((DateTime.Now - _remoteBuildCacheTime).TotalMinutes > 10)
                 {
                     _remoteBuildCache.Clear();
@@ -658,14 +658,14 @@ namespace WindowsGSM
                         dynamic gameServer = GameServer.Data.Class.Get(row.Game, new ServerConfig(row.ID), PluginsList);
                         if (gameServer != null)
                         {
-                            // AppId / GetLocalBuild / GetRemoteBuild n'existent que sur les jeux SteamCMD.
+                            // AppId / GetLocalBuild / GetRemoteBuild only exist on SteamCMD games.
                             string appId = null;
                             try { appId = (string)gameServer.AppId; } catch { appId = null; }
                             if (!string.IsNullOrEmpty(appId))
                             {
                                 string local = string.Empty;
                                 try { local = gameServer.GetLocalBuild(); } catch { local = string.Empty; }
-                                if (!string.IsNullOrEmpty(local)) // serveur réellement installé
+                                if (!string.IsNullOrEmpty(local)) // server actually installed
                                 {
                                     string remote;
                                     if (!_remoteBuildCache.TryGetValue(appId, out remote))
@@ -676,17 +676,17 @@ namespace WindowsGSM
                                     if (!string.IsNullOrEmpty(remote) && local != remote)
                                     {
                                         available = true;
-                                        tooltip = $"Mise à jour disponible : {local} → {remote}";
-                                        // #13 : alerte (log + Discord) à la 1re détection seulement
+                                        tooltip = $"Update available: {local} → {remote}";
+                                        // #13: alert (log + Discord) on first detection only
                                         if (_updateAlerted.Add(row.ID))
                                         {
-                                            Log("UpdateCheck", $"#{row.ID} {row.Name} : MAJ dispo {local} -> {remote}");
+                                            Log("UpdateCheck", $"#{row.ID} {row.Name}: update available {local} -> {remote}");
                                             if (GetServerMetadata(row.ID) != null && GetServerMetadata(row.ID).DiscordAlert)
                                             {
                                                 try
                                                 {
                                                     var webhook = new DiscordWebhook(GetServerMetadata(row.ID).DiscordWebhook, GetServerMetadata(row.ID).DiscordMessage, g_DonorType);
-                                                    await webhook.Send(row.ID, row.Game, $"🔔 MAJ dispo ({local} → {remote})", row.Name, row.IP, row.Port);
+                                                    await webhook.Send(row.ID, row.Game, $"🔔 Update available ({local} → {remote})", row.Name, row.IP, row.Port);
                                                 }
                                                 catch { }
                                             }
@@ -696,10 +696,10 @@ namespace WindowsGSM
                             }
                         }
                     }
-                    catch { /* jeu non-Steam ou erreur -> pas de badge */ }
+                    catch { /* non-Steam game or error -> no badge */ }
 
-                    // Persiste (survit aux rebuilds de LoadServerTable) + maj de la ligne VIVANTE (pas l'instance capturée,
-                    // qui a pu être remplacée par un LoadServerTable périodique pendant l'appel SteamCMD).
+                    // Persists (survives LoadServerTable rebuilds) + updates the LIVE row (not the captured instance,
+                    // which may have been replaced by a periodic LoadServerTable during the SteamCMD call).
                     string rowId = row.ID;
                     if (available) { _updateTooltips[rowId] = tooltip; } else { _updateTooltips.Remove(rowId); _updateAlerted.Remove(rowId); }
                     bool fAvailable = available; string fTooltip = tooltip;
@@ -760,8 +760,8 @@ namespace WindowsGSM
             //Add games to ComboBox
             SortedList sortedList = new SortedList();
             List<DictionaryEntry> gameName = GameServer.Data.Icon.ResourceManager.GetResourceSet(System.Globalization.CultureInfo.CurrentUICulture, true, true).Cast<DictionaryEntry>().ToList();
-            // #74/#71 : indexeur (et pas .Add) pour ne pas lever sur clé dupliquée (plugin dont le FullName
-            // collisionne avec un jeu natif ou un autre plugin) -> plus de doublon ni de plantage de la liste.
+            // #74/#71: use the indexer (not .Add) to avoid throwing on a duplicate key (a plugin whose FullName
+            // collides with a native game or another plugin) -> no more duplicates or list crash.
             gameName.ForEach(delegate (DictionaryEntry entry) { sortedList[entry.Key] = $"/WindowsGSM;component/{entry.Value}"; });
             PluginsList.ForEach(delegate (PluginMetadata plugin)
             {
@@ -771,7 +771,7 @@ namespace WindowsGSM
                 }
             });
 
-            label_GameServerCount.Content = $"{sortedList.Count} game servers supported"; // dédoublonné
+            label_GameServerCount.Content = $"{sortedList.Count} game servers supported"; // deduplicated
 
             for (int i = 0; i < sortedList.Count; i++)
             {
@@ -993,8 +993,8 @@ namespace WindowsGSM
             ProgressRing_LoadPlugins.Visibility = Visibility.Collapsed;
         }
 
-        // Source dédiée des tuiles du dashboard : mêmes instances ServerTable que la grille
-        // (les notifications Sample()/Players se propagent donc aux tuiles).
+        // Dedicated source for the dashboard tiles: same ServerTable instances as the grid
+        // (so Sample()/Players notifications propagate to the tiles).
         private readonly System.Collections.ObjectModel.ObservableCollection<ServerTable> _dashboardTiles
             = new System.Collections.ObjectModel.ObservableCollection<ServerTable>();
 
@@ -1090,7 +1090,7 @@ namespace WindowsGSM
                         QueryPort = serverConfig.ServerQueryPort,
                         Defaultmap = serverConfig.ServerMap,
                         Maxplayers = (GetServerMetadata(i).ServerStatus != ServerStatus.Started) ? serverConfig.ServerMaxPlayer : livePlayerData[i],
-                        // P1-1 : restaure le badge MAJ (calculé en tâche de fond) après recréation de la ligne
+                        // P1-1: restore the update badge (computed in the background) after the row is recreated
                         UpdateAvailable = _updateTooltips.ContainsKey(i.ToString()),
                         UpdateTooltip = _updateTooltips.TryGetValue(i.ToString(), out var _tt) ? _tt : null
                     };
@@ -1116,11 +1116,11 @@ namespace WindowsGSM
             grid_action.Visibility = (ServerGrid.Items.Count != 0) ? Visibility.Visible : Visibility.Hidden;
             label_select.Visibility = grid_action.Visibility == Visibility.Hidden ? Visibility.Visible : Visibility.Hidden;
 
-            ApplyServerFilter(); // P1-2 : ré-applique le filtre de recherche après recréation des lignes
-            DetectPortConflicts(); // #15 : repère les ports partagés entre serveurs
+            ApplyServerFilter(); // P1-2: re-applies the search filter after the rows are recreated
+            DetectPortConflicts(); // #15: flags ports shared between servers
         }
 
-        // #15 : marque les serveurs qui partagent un même Port ou Query Port.
+        // #15: flags servers that share the same Port or Query Port.
         private void DetectPortConflicts()
         {
             try
@@ -1143,11 +1143,11 @@ namespace WindowsGSM
                         if (!string.IsNullOrWhiteSpace(p) && p != "0" && byPort.TryGetValue(p, out var l) && l.Count > 1)
                         {
                             var others = l.Where(x => x != s).Select(x => "#" + x.ID).Distinct();
-                            conflicts.Add($"port {p} partagé avec {string.Join(", ", others)}");
+                            conflicts.Add($"port {p} shared with {string.Join(", ", others)}");
                         }
                     }
                     s.PortConflict = conflicts.Count > 0;
-                    s.PortConflictTooltip = conflicts.Count > 0 ? "⚠ Conflit : " + string.Join(" ; ", conflicts.Distinct()) : null;
+                    s.PortConflictTooltip = conflicts.Count > 0 ? "⚠ Conflict: " + string.Join(" ; ", conflicts.Distinct()) : null;
                 }
             }
             catch { }
@@ -1198,7 +1198,7 @@ namespace WindowsGSM
             {
                 int serverId = int.Parse(server.ID);
 
-                if (GetServerMetadata(serverId).Maintenance) { continue; } // #69 : ne pas auto-démarrer un serveur en maintenance
+                if (GetServerMetadata(serverId).Maintenance) { continue; } // #69: do not auto-start a server in maintenance
                 if (GetServerMetadata(serverId).AutoStart && GetServerMetadata(server.ID).ServerStatus == ServerStatus.Stopped)
                 {
                     await GameServer_Start(server, " | Auto Start");
@@ -1219,10 +1219,10 @@ namespace WindowsGSM
         {
             while (true)
             {
-                await Task.Delay(5 * 1000); // P2-3 : 5s pour des stats CPU/RAM/uptime "live"
+                await Task.Delay(5 * 1000); // P2-3: 5s for "live" CPU/RAM/uptime stats
                 try
                 {
-                    // Échantillonne CPU/RAM 1× par tick (alimente grille + tuiles dashboard).
+                    // Samples CPU/RAM once per tick (feeds grid + dashboard tiles).
                     foreach (ServerTable s in ServerGrid.Items.Cast<ServerTable>().ToList())
                     {
                         s.Sample();
@@ -1233,8 +1233,8 @@ namespace WindowsGSM
             }
         }
 
-        // Joueurs en ligne (A2S Steam Query) : boucle dédiée, cadence lente pour ne pas
-        // marteler les serveurs. Met à jour ServerTable.Players (notifiant -> grille + tuiles).
+        // Online players (A2S Steam Query): dedicated loop, slow cadence to avoid
+        // hammering the servers. Updates ServerTable.Players (notifying -> grid + tiles).
         private async void StartPlayerCountRefresh()
         {
             while (true)
@@ -1250,12 +1250,12 @@ namespace WindowsGSM
                     }
                 }
                 catch { }
-                await Task.Delay(60 * 1000); // refresh joueurs : 1 min (cadence lente pour ne pas marteler)
+                await Task.Delay(60 * 1000); // players refresh: 1 min (slow cadence to avoid hammering)
             }
         }
 
-        // Choisit la bonne méthode de comptage selon le jeu : A2S par défaut, API native pour
-        // les jeux sans A2S (Palworld = REST, Satisfactory = HTTPS).
+        // Picks the right counting method per game: A2S by default, native API for
+        // games without A2S (Palworld = REST, Satisfactory = HTTPS).
         private async Task<SteamQuery.Info?> QueryServerPlayersAsync(ServerTable s)
         {
             string game = s.Game ?? string.Empty;
@@ -1267,7 +1267,7 @@ namespace WindowsGSM
                 {
                     return await Functions.NativePlayerQuery.PalworldAsync(s.IP, restPort, pwd).ConfigureAwait(true);
                 }
-                return null; // Palworld n'expose pas l'A2S : pas de repli
+                return null; // Palworld does not expose A2S: no fallback
             }
 
             if (game.StartsWith("Satisfactory", StringComparison.OrdinalIgnoreCase))
@@ -1287,16 +1287,16 @@ namespace WindowsGSM
                 {
                     return await Functions.NativePlayerQuery.SevenDaysTelnetAsync(s.IP, tport, tpwd, tmax).ConfigureAwait(true);
                 }
-                return null; // 7DtD sans Telnet activé : pas d'A2S fiable
+                return null; // 7DtD without Telnet enabled: no reliable A2S
             }
 
-            // Défaut : A2S (QueryPort sinon Port).
+            // Default: A2S (QueryPort, otherwise Port).
             string portStr = !string.IsNullOrWhiteSpace(s.QueryPort) && s.QueryPort != "0" ? s.QueryPort : s.Port;
             if (!int.TryParse(portStr, out int port)) { return null; }
             return await SteamQuery.GetInfoAsync(s.IP, port).ConfigureAwait(true);
         }
 
-        // Lit TelnetEnabled / TelnetPort / TelnetPassword / ServerMaxPlayerCount d'un serveur 7 Days to Die.
+        // Reads TelnetEnabled / TelnetPort / TelnetPassword / ServerMaxPlayerCount of a 7 Days to Die server.
         private (bool enabled, int port, string password, int max) ReadSevenDaysTelnet(string serverId)
         {
             try
@@ -1320,7 +1320,7 @@ namespace WindowsGSM
             }
         }
 
-        // Lit RESTAPIEnabled / RESTAPIPort / AdminPassword dans le PalWorldSettings.ini d'un serveur Palworld.
+        // Reads RESTAPIEnabled / RESTAPIPort / AdminPassword from a Palworld server's PalWorldSettings.ini.
         private (bool enabled, int port, string password) ReadPalworldRest(string serverId)
         {
             try
@@ -1366,7 +1366,7 @@ namespace WindowsGSM
                         if (meta.AutoScroll) { console.ScrollToEnd(); }
                     }
                 }
-                catch { /* une ligne transitoire ne doit pas tuer le rafraîchissement console */ }
+                catch { /* a transient line must not kill the console refresh */ }
             }
         }
 
@@ -1416,7 +1416,7 @@ namespace WindowsGSM
 
                 dashboard_players_count.Content = GetActivePlayers().ToString();
 
-                // Dashboard santé : synthèse exploitant les détections (MAJ, conflits, alertes)
+                // Dashboard health: summary leveraging the detections (updates, conflicts, alerts)
                 try
                 {
                     int total = ServerGrid.Items.Count;
@@ -1424,16 +1424,16 @@ namespace WindowsGSM
                     int updates = _updateTooltips.Count;
                     int conflicts = ServerGrid.Items.Cast<ServerTable>().Count(s => s.PortConflict);
                     int diskAl = _diskAlerted.Count;
-                    string ok = (updates == 0 && conflicts == 0 && diskAl == 0) ? "  ✅ rien à signaler" : string.Empty;
+                    string ok = (updates == 0 && conflicts == 0 && diskAl == 0) ? "  ✅ nothing to report" : string.Empty;
                     dashboard_health.Text =
-                        $"🟢 {online}/{total} serveur(s) en ligne" +
-                        $"     🔔 {updates} mise(s) à jour dispo" +
-                        $"     🔴 {conflicts} conflit(s) de port" +
-                        $"     ⚠️ {diskAl} alerte(s) disque" + ok;
+                        $"🟢 {online}/{total} server(s) online" +
+                        $"     🔔 {updates} update(s) available" +
+                        $"     🔴 {conflicts} port conflict(s)" +
+                        $"     ⚠️ {diskAl} disk alert(s)" + ok;
                 }
                 catch { }
 
-                try { Refresh_DashBoard_LiveChart(); } catch { /* ne pas tuer la boucle dashboard */ }
+                try { Refresh_DashBoard_LiveChart(); } catch { /* do not kill the dashboard loop */ }
 
                 await Task.Delay(2000);
             }
@@ -1449,10 +1449,10 @@ namespace WindowsGSM
             return ServerGrid.Items.Cast<ServerTable>().Where(s => s.Maxplayers != null && s.Maxplayers.Contains('/')).Sum(s => int.TryParse(s.Maxplayers.Split('/')[0], out int count) ? count : 0);
         }
 
-        // ===== #207/#25 : API web de contrôle à distance =====
+        // ===== #207/#25: remote-control web API =====
         private Functions.WebApi.WebApiServer _webApi;
 
-        /// <summary>(Re)démarre l'API web selon la config (opt-in). Appelée au lancement et après modif de la config.</summary>
+        /// <summary>(Re)starts the web API according to the config (opt-in). Called at launch and after config changes.</summary>
         public void StartWebApi()
         {
             try
@@ -1472,7 +1472,7 @@ namespace WindowsGSM
             catch (Exception ex) { Functions.AppLog.Warn("WebApi/Start", ex.Message); }
         }
 
-        /// <summary>JSON de l'état des serveurs (exécuté sur le thread UI).</summary>
+        /// <summary>JSON of the servers' status (run on the UI thread).</summary>
         public string Api_GetServersJson()
         {
             var list = new System.Collections.Generic.List<object>();
@@ -1483,34 +1483,34 @@ namespace WindowsGSM
             return Newtonsoft.Json.JsonConvert.SerializeObject(list);
         }
 
-        /// <summary>Déclenche une action sur un serveur (start/stop/restart/backup) ; fire-and-forget. Thread UI.</summary>
+        /// <summary>Triggers an action on a server (start/stop/restart/backup); fire-and-forget. UI thread.</summary>
         public (bool, string) Api_DoAction(string id, string action)
         {
             var s = ServerGrid.Items.Cast<ServerTable>().FirstOrDefault(x => x.ID == id);
-            if (s == null) { return (false, $"serveur {id} introuvable"); }
+            if (s == null) { return (false, $"server {id} not found"); }
             switch (action)
             {
-                case "start": _ = GameServer_Start(s, " | API"); return (true, "démarrage demandé");
-                case "stop": _ = GameServer_Stop(s); return (true, "arrêt demandé");
-                case "restart": _ = GameServer_Restart(s); return (true, "redémarrage demandé");
-                case "backup": _ = GameServer_Backup(s, " | API"); return (true, "sauvegarde demandée");
-                default: return (false, $"action inconnue : {action}");
+                case "start": _ = GameServer_Start(s, " | API"); return (true, "start requested");
+                case "stop": _ = GameServer_Stop(s); return (true, "stop requested");
+                case "restart": _ = GameServer_Restart(s); return (true, "restart requested");
+                case "backup": _ = GameServer_Backup(s, " | API"); return (true, "backup requested");
+                default: return (false, $"unknown action: {action}");
             }
         }
 
-        // Déplacement maison de la fenêtre (contourne le bug MahApps get_CriticalHandle sur .NET).
-        // On bloque le thumb MahApps (e.Handled) et on appelle DragMove() natif WPF.
+        // Custom window dragging (works around the MahApps get_CriticalHandle bug on .NET).
+        // We block the MahApps thumb (e.Handled) and call native WPF DragMove().
         private void MainWindow_TitleBarDrag(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton != MouseButton.Left) return;
 
-            // Ignore les clics sur un bouton/menu (min/max/close, barre de menus, etc.)
+            // Ignore clicks on a button/menu (min/max/close, menu bar, etc.)
             for (DependencyObject d = e.OriginalSource as DependencyObject; d != null; d = VisualTreeHelper.GetParent(d))
             {
                 if (d is System.Windows.Controls.Primitives.ButtonBase || d is System.Windows.Controls.MenuItem) return;
             }
 
-            // Seulement dans la zone de la barre de titre (hauteur MahApps par défaut ~30px)
+            // Only within the title bar area (default MahApps height ~30px)
             const double titleBarHeight = 32;
             if (e.GetPosition(this).Y > titleBarHeight) return;
 
@@ -1521,13 +1521,13 @@ namespace WindowsGSM
                 return;
             }
 
-            e.Handled = true; // empêche le thumb MahApps défaillant -> plus de NRE
+            e.Handled = true; // prevents the faulty MahApps thumb -> no more NRE
             try { this.DragMove(); } catch { }
         }
 
-        // .NET : Process.StartInfo leve InvalidOperationException si le process a ete RE-ATTACHE
-        // (recupere par PID, non demarre par cette instance). On retombe alors sur la config
-        // EmbedConsole du serveur. Corrige le crash au clic sur un serveur deja demarre.
+        // .NET: Process.StartInfo throws InvalidOperationException if the process was RE-ATTACHED
+        // (recovered by PID, not started by this instance). We then fall back to the server's
+        // EmbedConsole config. Fixes the crash when clicking an already-started server.
         private bool IsEmbeddedConsole(Process p, string serverId)
         {
             if (p == null) return false;
@@ -1545,8 +1545,8 @@ namespace WindowsGSM
                 .Select(s => (type: s.Key, players: s.Sum(p => p.players)))
                 .ToList();
 
-            // LiveCharts2 : on reconstruit axes + series a chaque rafraichissement (graphe petit,
-            // mis a jour periodiquement). Plus simple et robuste que la mutation en place.
+            // LiveCharts2: we rebuild axes + series on every refresh (small chart,
+            // updated periodically). Simpler and more robust than mutating in place.
             double maxValue = 10;
             if (typePlayers.Count > 0)
             {
@@ -1584,14 +1584,14 @@ namespace WindowsGSM
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
 
-            // Referme tous les ports UPnP qu'on a ouverts (best-effort, non bloquant).
+            // Closes all UPnP ports we opened (best-effort, non-blocking).
             try { Functions.PortForward.PortForwardManager.CleanupAllAsync().ConfigureAwait(false); } catch { }
 
             // Stop Discord Bot
             g_DiscordBot.Stop().ConfigureAwait(false);
         }
 
-        // ===== P1-2 : recherche / filtre de la grille (nom / jeu / état / id) =====
+        // ===== P1-2: grid search / filter (name / game / status / id) =====
         private void TextBox_Search_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             ApplyServerFilter();
@@ -1754,7 +1754,7 @@ namespace WindowsGSM
             }
         }
 
-        // Ajout d'un serveur dédié Steam GÉNÉRIQUE par AppID (flow dédié, n'altère pas l'install standard).
+        // Adds a GENERIC dedicated Steam server by AppID (dedicated flow, does not alter the standard install).
         private async void Servers_AddGenericSteam_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Functions.GenericSteamDialog { Owner = this };
@@ -1767,13 +1767,13 @@ namespace WindowsGSM
             Directory.CreateDirectory(installPath);
             newServerConfig.CreateServerDirectory();
 
-            // Profil écrit AVANT instanciation : le ctor GenericSteam lit configs/wgsm-generic.json.
+            // Profile written BEFORE instantiation: the GenericSteam ctor reads configs/wgsm-generic.json.
             GameServer.GenericSteam.SaveProfile(newServerConfig.ServerID, prof.AppId, prof.Name, prof.Executable, prof.Arguments);
 
             string servergame = GameServer.GenericSteam.FullName;
             string servername = string.IsNullOrWhiteSpace(prof.Name) ? $"Steam #{prof.AppId}" : prof.Name;
 
-            Log(newServerConfig.ServerID, $"Ajout Steam generique : {servername} (AppID {prof.AppId}) - installation SteamCMD...");
+            Log(newServerConfig.ServerID, $"Add generic Steam: {servername} (AppID {prof.AppId}) - SteamCMD installation...");
 
             dynamic gameServer = GameServer.Data.Class.Get(servergame, newServerConfig, PluginsList);
             Process installer = await gameServer.Install();
@@ -1798,15 +1798,15 @@ namespace WindowsGSM
                 newServerConfig.SetData(servergame, servername, gameServer);
                 newServerConfig.CreateWindowsGSMConfig();
                 LoadServerTable();
-                Log(newServerConfig.ServerID, "Ajout Steam generique : succes.");
-                System.Windows.MessageBox.Show($"{servername} (AppID {prof.AppId}) installe.\nExecutable : {prof.Executable} {prof.Arguments}", "Serveur ajoute", MessageBoxButton.OK, MessageBoxImage.Information);
+                Log(newServerConfig.ServerID, "Add generic Steam: success.");
+                System.Windows.MessageBox.Show($"{servername} (AppID {prof.AppId}) installed.\nExecutable: {prof.Executable} {prof.Arguments}", "Server added", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
                 string err = string.Empty;
                 try { err = gameServer.Error ?? string.Empty; } catch { }
-                Log(newServerConfig.ServerID, "Ajout Steam generique : echec installation. " + err);
-                System.Windows.MessageBox.Show($"Installation echouee (AppID {prof.AppId}).\n{err}", "Echec", MessageBoxButton.OK, MessageBoxImage.Error);
+                Log(newServerConfig.ServerID, "Add generic Steam: installation failed. " + err);
+                System.Windows.MessageBox.Show($"Installation failed (AppID {prof.AppId}).\n{err}", "Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -2102,19 +2102,19 @@ namespace WindowsGSM
             }
         }
 
-        // #18 : duplique la config du serveur sélectionné vers un nouvel ID libre (ports incrémentés).
+        // #18: duplicates the selected server's config to a new free ID (incremented ports).
         private void Duplicate_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { System.Windows.MessageBox.Show("Sélectionne d'abord un serveur à dupliquer.", "Dupliquer", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            if (server == null) { System.Windows.MessageBox.Show("Select a server to duplicate first.", "Duplicate", MessageBoxButton.OK, MessageBoxImage.Information); return; }
 
-            // 1er ID libre
+            // First free ID
             int newId = -1;
             for (int i = 1; i <= MAX_SERVER; i++)
             {
                 if (!Directory.Exists(ServerPath.GetServers(i.ToString()))) { newId = i; break; }
             }
-            if (newId == -1) { System.Windows.MessageBox.Show($"Aucun ID libre (max {MAX_SERVER}).", "Dupliquer", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (newId == -1) { System.Windows.MessageBox.Show($"No free ID (max {MAX_SERVER}).", "Duplicate", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             string srcCfg = ServerPath.GetServersConfigs(server.ID, "WindowsGSM.cfg");
             if (!File.Exists(srcCfg)) { return; }
@@ -2125,7 +2125,7 @@ namespace WindowsGSM
                 dst.CreateServerDirectory();
                 File.Copy(srcCfg, ServerPath.GetServersConfigs(newId.ToString(), "WindowsGSM.cfg"), true);
 
-                // ports : on incrémente à partir de la source en évitant ceux déjà utilisés
+                // ports: increment from the source, skipping those already in use
                 var used = new HashSet<int>();
                 foreach (var s in ServerGrid.Items.Cast<ServerTable>())
                 {
@@ -2137,16 +2137,16 @@ namespace WindowsGSM
                 int newPort = basePort + 1; while (used.Contains(newPort)) { newPort++; } used.Add(newPort);
                 int newQuery = baseQuery + 1; while (used.Contains(newQuery)) { newQuery++; } used.Add(newQuery);
 
-                ServerConfig.SetSetting(newId.ToString(), ServerConfig.SettingName.ServerName, (server.Name ?? "Server") + " (copie)");
+                ServerConfig.SetSetting(newId.ToString(), ServerConfig.SettingName.ServerName, (server.Name ?? "Server") + " (copy)");
                 ServerConfig.SetSetting(newId.ToString(), ServerConfig.SettingName.ServerPort, newPort.ToString());
                 ServerConfig.SetSetting(newId.ToString(), ServerConfig.SettingName.ServerQueryPort, newQuery.ToString());
 
                 LoadServerTable();
-                Log("System", $"Serveur #{server.ID} dupliqué -> #{newId} ({server.Name} (copie), ports {newPort}/{newQuery}). Lance Install/Import pour les fichiers.");
+                Log("System", $"Server #{server.ID} duplicated -> #{newId} ({server.Name} (copy), ports {newPort}/{newQuery}). Run Install/Import for the files.");
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Échec de la duplication : " + ex.Message, "Dupliquer", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Duplication failed: " + ex.Message, "Duplicate", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -2390,7 +2390,7 @@ namespace WindowsGSM
             await GameServer_Update(server);
         }
 
-        // #14 : met à jour d'un coup tous les serveurs Stopped marqués "MAJ dispo" (badge orange).
+        // #14: updates at once all Stopped servers flagged "update available" (orange badge).
         private async void Actions_UpdateAllAvailable_Click(object sender, RoutedEventArgs e)
         {
             var targets = ServerGrid.Items.Cast<ServerTable>()
@@ -2399,23 +2399,23 @@ namespace WindowsGSM
 
             if (targets.Count == 0)
             {
-                System.Windows.MessageBox.Show("Aucun serveur arrêté avec une mise à jour disponible.", "Tout mettre à jour", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("No stopped server with an available update.", "Update all", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             var names = string.Join("\n", targets.Select(s => $"#{s.ID} {s.Name}"));
-            MessageBoxResult result = System.Windows.MessageBox.Show($"Mettre à jour ces {targets.Count} serveur(s) ?\n\n{names}", "Tout mettre à jour", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = System.Windows.MessageBox.Show($"Update these {targets.Count} server(s)?\n\n{names}", "Update all", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
 
             foreach (var server in targets)
             {
-                Log(server.ID, $"[Update all] Mise à jour de #{server.ID} {server.Name}…");
+                Log(server.ID, $"[Update all] Updating #{server.ID} {server.Name}…");
                 await GameServer_Update(server);
             }
-            Log("System", $"[Update all] Terminé ({targets.Count} serveur(s)).");
+            Log("System", $"[Update all] Done ({targets.Count} server(s)).");
         }
 
-        // Backup ALL : sauvegarde tous les serveurs arrêtés.
+        // Backup ALL: backs up all stopped servers.
         private async void Actions_BackupAll_Click(object sender, RoutedEventArgs e)
         {
             var targets = ServerGrid.Items.Cast<ServerTable>()
@@ -2423,17 +2423,17 @@ namespace WindowsGSM
                 .ToList();
             if (targets.Count == 0)
             {
-                System.Windows.MessageBox.Show("Aucun serveur arrêté à sauvegarder.", "Tout sauvegarder", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("No stopped server to back up.", "Back up all", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            var result = System.Windows.MessageBox.Show($"Sauvegarder ces {targets.Count} serveur(s) arrêté(s) ?", "Tout sauvegarder", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show($"Back up these {targets.Count} stopped server(s)?", "Back up all", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
             foreach (var server in targets)
             {
-                Log(server.ID, $"[Backup all] Sauvegarde de #{server.ID} {server.Name}…");
+                Log(server.ID, $"[Backup all] Backing up #{server.ID} {server.Name}…");
                 await GameServer_Backup(server, " | Backup all");
             }
-            Log("System", $"[Backup all] Terminé ({targets.Count} serveur(s)).");
+            Log("System", $"[Backup all] Done ({targets.Count} server(s)).");
         }
 
         private async void Actions_UpdateValidate_Click(object sender, RoutedEventArgs e)
@@ -2591,9 +2591,9 @@ namespace WindowsGSM
             dynamic gameServer = GameServer.Data.Class.Get(server.Game, new ServerConfig(server.ID), PluginsList);
             if (gameServer == null) { return null; }
 
-            // Euro/American Truck Simulator : le serveur dedie CRASHE au demarrage sans
-            // save\server_packages.sii + .dat (donnees map/DLC, exportees depuis le client via
-            // export_server_packages). On previent clairement au lieu de laisser un crash obscur.
+            // Euro/American Truck Simulator: the dedicated server CRASHES at startup without
+            // save\server_packages.sii + .dat (map/DLC data, exported from the client via
+            // export_server_packages). We warn clearly instead of leaving an obscure crash.
             if ((server.Game ?? "").ToLowerInvariant().Contains("truck simulator"))
             {
                 try
@@ -2604,10 +2604,10 @@ namespace WindowsGSM
                     {
                         var mb = new Wpf.Ui.Controls.MessageBox
                         {
-                            Title = "server_packages manquant",
-                            Content = "Ce serveur Truck Simulator n'a pas de save\\server_packages.sii + .dat : il va probablement crasher au démarrage.\n\nDepuis le CLIENT (config.cfg : uset g_console \"1\"), lance le jeu avec TOUS tes DLC chargés, ouvre la console (~) et tape :\n    export_server_packages\nPuis redémarre ce serveur : le plugin copie les fichiers automatiquement.\n\nDémarrer quand même ?",
-                            PrimaryButtonText = "Démarrer quand même",
-                            CloseButtonText = "Annuler"
+                            Title = "server_packages missing",
+                            Content = "This Truck Simulator server has no save\\server_packages.sii + .dat: it will probably crash at startup.\n\nFrom the CLIENT (config.cfg: uset g_console \"1\"), launch the game with ALL your DLC loaded, open the console (~) and type:\n    export_server_packages\nThen restart this server: the plugin copies the files automatically.\n\nStart anyway?",
+                            PrimaryButtonText = "Start anyway",
+                            CloseButtonText = "Cancel"
                         };
                         var res = await mb.ShowDialogAsync();
                         if (res != Wpf.Ui.Controls.MessageBoxResult.Primary) { return null; }
@@ -2723,13 +2723,13 @@ namespace WindowsGSM
 
             StartQuery(server);
 
-            // Auto port-forward UPnP (best-effort, opt-in via configs/portforward.json ; master OFF par défaut)
+            // Auto port-forward UPnP (best-effort, opt-in via configs/portforward.json; master OFF by default)
             try
             {
                 var portCfg = new Functions.ServerConfig(server.ID);
                 _ = Functions.PortForward.PortForwardManager.OpenForServerAsync(server.ID, server.Game, portCfg.ServerPort, portCfg.ServerQueryPort);
             }
-            catch { /* ne jamais bloquer le démarrage du serveur */ }
+            catch { /* never block the server startup */ }
 
             if (MahAppSwitch_SendStatistics.IsChecked == true)
             {
@@ -2760,7 +2760,7 @@ namespace WindowsGSM
             ServerCache.SaveProcessName(server.ID, string.Empty);
             ServerCache.SaveWindowsIntPtr(server.ID, (IntPtr)0);
 
-            // Referme les ports UPnP ouverts pour ce serveur (best-effort).
+            // Closes the UPnP ports opened for this server (best-effort).
             try { _ = Functions.PortForward.PortForwardManager.CloseForServerAsync(server.ID); } catch { }
 
             if (p != null && !p.HasExited)
@@ -2809,8 +2809,8 @@ namespace WindowsGSM
         }
 
         #region Actions - Game Server
-        // Anti double-démarrage : verrou par serveur couvrant toute l'opération (y compris les
-        // await Backup/Update on start, fenêtre où deux clics passaient le garde de statut).
+        // Anti double-start: per-server lock covering the whole operation (including the
+        // await Backup/Update on start, a window where two clicks slipped past the status guard).
         private readonly HashSet<string> _startingServers = new HashSet<string>();
 
         private async Task GameServer_Start(ServerTable server, string notes = "")
@@ -2934,8 +2934,8 @@ namespace WindowsGSM
             SetServerStatus(server, "Started", ServerCache.GetPID(server.ID).ToString());
         }
 
-        // P1-1b : vide les caches SteamCMD qui causent un "Access Denied / Failed to get manifest"
-        // laissant le build figé (piège connu Palworld). Lecture/suppression de fichiers de cache uniquement.
+        // P1-1b: clears the SteamCMD caches that cause an "Access Denied / Failed to get manifest"
+        // leaving the build stuck (known Palworld trap). Reads/deletes cache files only.
         private void ClearSteamUpdateCaches(string serverId, string appId)
         {
             try
@@ -2950,9 +2950,9 @@ namespace WindowsGSM
                 }
                 string vdf = Path.Combine(ServerPath.GetBin("steamcmd"), "appcache", "appinfo.vdf");
                 if (File.Exists(vdf)) { File.Delete(vdf); }
-                Log(serverId, $"[Recovery] Caches SteamCMD vidés (appmanifest_{appId}.acf, downloading, temp, appinfo.vdf).");
+                Log(serverId, $"[Recovery] SteamCMD caches cleared (appmanifest_{appId}.acf, downloading, temp, appinfo.vdf).");
             }
-            catch (Exception ex) { Log(serverId, "[Recovery] Échec nettoyage caches: " + ex.Message); }
+            catch (Exception ex) { Log(serverId, "[Recovery] Cache cleanup failed: " + ex.Message); }
         }
 
         private async Task<bool> GameServer_Update(ServerTable server, string notes = "", bool validate = false, bool isRetry = false)
@@ -2962,11 +2962,11 @@ namespace WindowsGSM
                 return false;
             }
 
-            // #20 : sauvegarde avant la mise à jour si activé (pas sur la relance interne)
+            // #20: back up before the update if enabled (not on the internal retry)
             if (!isRetry && GetServerMetadata(server.ID).BackupBeforeUpdate)
             {
-                Log(server.ID, "Backup avant mise à jour…");
-                await GameServer_Backup(server, " | Avant MAJ");
+                Log(server.ID, "Backup before update…");
+                await GameServer_Backup(server, " | Before update");
             }
 
             //Begin Update
@@ -2984,33 +2984,33 @@ namespace WindowsGSM
             {
                 await Task.Run(() => { p.WaitForExit(); });
 
-                // Fix: ne pas se fier au seul fait que steamcmd s'est termine.
-                // SteamCMD peut echouer en silence (ex: "Access Denied" sur le manifeste) en
-                // laissant le build inchange ET un exit code 0. On RE-LIT le build reellement
-                // installe et on ne declare "Updated" que s'il correspond au build distant.
+                // Fix: do not rely on the mere fact that steamcmd finished.
+                // SteamCMD can fail silently (e.g. "Access Denied" on the manifest) leaving
+                // the build unchanged AND an exit code 0. We RE-READ the actually installed
+                // build and only declare "Updated" if it matches the remote build.
                 string installedVersion = gameServer.GetLocalBuild();
                 bool updateOk = !string.IsNullOrWhiteSpace(installedVersion)
                                 && (string.IsNullOrWhiteSpace(remoteVersion) || installedVersion == remoteVersion);
                 if (updateOk)
                 {
                     Log(server.ID, $"Server: Updated {(validate ? "Validate " : string.Empty)}({installedVersion})");
-                    // re-check du badge MAJ après update réussi
+                    // re-check the update badge after a successful update
                     _remoteBuildCache.Clear(); _remoteBuildCacheTime = DateTime.MinValue;
                     _ = CheckServerUpdatesAsync();
                 }
                 else
                 {
-                    // P1-1b : récupération auto du piège "Access Denied / manifeste figé" -> vider caches + 1 seule relance
+                    // P1-1b: auto-recovery from the "Access Denied / stuck manifest" trap -> clear caches + a single retry
                     string appId = null; try { appId = (string)gameServer.AppId; } catch { appId = null; }
                     if (!isRetry && !string.IsNullOrEmpty(appId))
                     {
-                        Log(server.ID, "[Recovery] Build inchangé (Access Denied probable) -> nettoyage caches SteamCMD et nouvelle tentative...");
+                        Log(server.ID, "[Recovery] Build unchanged (Access Denied likely) -> clearing SteamCMD caches and retrying...");
                         ClearSteamUpdateCaches(server.ID, appId);
-                        _serverMetadata[int.Parse(server.ID)].ServerStatus = ServerStatus.Stopped; // requis avant relance
+                        _serverMetadata[int.Parse(server.ID)].ServerStatus = ServerStatus.Stopped; // required before retry
                         return await GameServer_Update(server, notes + " [retry]", validate, isRetry: true);
                     }
-                    Log(server.ID, $"Server: Fail to update (build installe '{installedVersion}' != attendu '{remoteVersion}')");
-                    Log(server.ID, "[ERROR] SteamCMD a termine mais le build n'a pas change même après nettoyage des caches. Vérifier la sortie SteamCMD.");
+                    Log(server.ID, $"Server: Fail to update (installed build '{installedVersion}' != expected '{remoteVersion}')");
+                    Log(server.ID, "[ERROR] SteamCMD finished but the build did not change even after clearing the caches. Check the SteamCMD output.");
                 }
             }
             else
@@ -3091,11 +3091,11 @@ namespace WindowsGSM
                 {
                     if (string.IsNullOrWhiteSpace(backupFolders))
                     {
-                        ZipFile.CreateFromDirectory(startPath, zipFile); // tout le serveur (comportement par défaut)
+                        ZipFile.CreateFromDirectory(startPath, zipFile); // the whole server (default behavior)
                     }
                     else
                     {
-                        // #179 : ne sauvegarder QUE les sous-dossiers choisis (relatifs à serverfiles), ex. "savegame".
+                        // #179: back up ONLY the chosen subfolders (relative to serverfiles), e.g. "savegame".
                         string sf = ServerPath.GetServersServerFiles(server.ID);
                         using (var zip = ZipFile.Open(zipFile, System.IO.Compression.ZipArchiveMode.Create))
                         {
@@ -3156,40 +3156,40 @@ namespace WindowsGSM
             SetServerStatus(server, "Restoring");
 
             string extractPath = ServerPath.GetServers(server.ID);
-            string safetyPath = extractPath + ".old_restore"; // dossier de repli pour rollback atomique
+            string safetyPath = extractPath + ".old_restore"; // fallback folder for atomic rollback
 
             string error = string.Empty;
             await Task.Run(() =>
             {
                 try
                 {
-                    // 1) On ÉCARTE l'ancien dossier (rename) au lieu de le supprimer -> permet un rollback.
+                    // 1) We SET ASIDE the old folder (rename) instead of deleting it -> allows a rollback.
                     if (Directory.Exists(safetyPath)) { Directory.Delete(safetyPath, true); }
                     if (Directory.Exists(extractPath)) { Directory.Move(extractPath, safetyPath); }
 
-                    // 2) Extraction de la sauvegarde.
+                    // 2) Extract the backup.
                     ZipFile.ExtractToDirectory(backupPath, extractPath);
 
-                    // 3) Succès -> on supprime l'ancien dossier mis de côté.
+                    // 3) Success -> delete the old set-aside folder.
                     if (Directory.Exists(safetyPath)) { Directory.Delete(safetyPath, true); }
                 }
                 catch (Exception e)
                 {
                     error = e.Message;
-                    // ROLLBACK : l'extraction a échoué -> on restaure le dossier original.
+                    // ROLLBACK: extraction failed -> restore the original folder.
                     try
                     {
                         if (Directory.Exists(extractPath)) { Directory.Delete(extractPath, true); }
                         if (Directory.Exists(safetyPath)) { Directory.Move(safetyPath, extractPath); }
                     }
-                    catch { /* dernier recours : on garde au moins .old_restore sur disque */ }
+                    catch { /* last resort: keep at least .old_restore on disk */ }
                 }
             });
 
             if (error != string.Empty)
             {
                 _serverMetadata[int.Parse(server.ID)].ServerStatus = ServerStatus.Stopped;
-                Log(server.ID, "Server: Fail to restore backup (serveur d'origine restauré)");
+                Log(server.ID, "Server: Fail to restore backup (original server restored)");
                 Log(server.ID, $"[ERROR] {error}");
                 SetServerStatus(server, "Stopped");
                 return false;
@@ -3267,7 +3267,7 @@ namespace WindowsGSM
         }
         #endregion
 
-        // #17 : anti-boucle de crash (N crashs rapprochés -> on suspend l'auto-restart + alerte)
+        // #17: anti crash-loop (N crashes close together -> suspend auto-restart + alert)
         private const int CRASH_LOOP_COUNT = 3;
         private const int CRASH_LOOP_WINDOW_MIN = 5;
         private readonly Dictionary<string, List<DateTime>> _crashTimes = new Dictionary<string, List<DateTime>>();
@@ -3282,9 +3282,9 @@ namespace WindowsGSM
 
                 if (GetServerMetadata(server.ID).ServerStatus == ServerStatus.Started)
                 {
-                    bool autoRestart = GetServerMetadata(serverId).AutoRestart && !GetServerMetadata(serverId).Maintenance; // #69 : pas de relance en maintenance
+                    bool autoRestart = GetServerMetadata(serverId).AutoRestart && !GetServerMetadata(serverId).Maintenance; // #69: no restart while in maintenance
 
-                    // #17 : si le serveur crash en boucle, on suspend l'auto-restart au lieu de relancer à l'infini
+                    // #17: if the server crashes in a loop, suspend auto-restart instead of restarting forever
                     if (autoRestart)
                     {
                         if (!_crashTimes.TryGetValue(server.ID, out var times)) { times = new List<DateTime>(); _crashTimes[server.ID] = times; }
@@ -3293,12 +3293,12 @@ namespace WindowsGSM
                         times.RemoveAll(t => (now - t).TotalMinutes > CRASH_LOOP_WINDOW_MIN);
                         if (times.Count >= CRASH_LOOP_COUNT)
                         {
-                            autoRestart = false; // on coupe la relance pour cet épisode
+                            autoRestart = false; // cut off the restart for this episode
                             times.Clear();
-                            Log(server.ID, $"[Anti-crash-loop] {CRASH_LOOP_COUNT} crashs en moins de {CRASH_LOOP_WINDOW_MIN} min -> auto-restart suspendu, intervention requise.");
+                            Log(server.ID, $"[Anti-crash-loop] {CRASH_LOOP_COUNT} crashes in under {CRASH_LOOP_WINDOW_MIN} min -> auto-restart suspended, intervention required.");
                             if (GetServerMetadata(serverId).DiscordAlert)
                             {
-                                try { var wh = new DiscordWebhook(GetServerMetadata(serverId).DiscordWebhook, GetServerMetadata(serverId).DiscordMessage, g_DonorType); await wh.Send(server.ID, server.Game, "⛔ Boucle de crash → auto-restart suspendu", server.Name, server.IP, server.Port); } catch { }
+                                try { var wh = new DiscordWebhook(GetServerMetadata(serverId).DiscordWebhook, GetServerMetadata(serverId).DiscordMessage, g_DonorType); await wh.Send(server.ID, server.Game, "⛔ Crash loop → auto-restart suspended", server.Name, server.IP, server.Port); } catch { }
                             }
                         }
                     }
@@ -3419,9 +3419,9 @@ namespace WindowsGSM
                         //Update the server
                         await gameServer.Update();
 
-                        // Fix: re-lire le build installe pour confirmer le succes reel.
-                        // gameServer.Error reste vide sur un echec silencieux de steamcmd -> on
-                        // compare le build local effectif au build distant avant de declarer "Updated".
+                        // Fix: re-read the installed build to confirm real success.
+                        // gameServer.Error stays empty on a silent steamcmd failure -> we
+                        // compare the effective local build to the remote build before declaring "Updated".
                         string installedVersion = gameServer.GetLocalBuild();
                         bool updateOk = string.IsNullOrWhiteSpace(gameServer.Error)
                                         && !string.IsNullOrWhiteSpace(installedVersion)
@@ -3439,8 +3439,8 @@ namespace WindowsGSM
                         }
                         else
                         {
-                            Log(server.ID, $"Server: Fail to update (build installe '{installedVersion}' != attendu '{remoteVersion}')");
-                            Log(server.ID, "[ERROR] " + (string.IsNullOrWhiteSpace(gameServer.Error) ? "SteamCMD a termine mais le build n'a pas change (ex: 'Access Denied' sur le manifeste)." : gameServer.Error));
+                            Log(server.ID, $"Server: Fail to update (installed build '{installedVersion}' != expected '{remoteVersion}')");
+                            Log(server.ID, "[ERROR] " + (string.IsNullOrWhiteSpace(gameServer.Error) ? "SteamCMD finished but the build did not change (e.g. 'Access Denied' on the manifest)." : gameServer.Error));
                         }
 
                         //Start the server
@@ -3581,7 +3581,7 @@ namespace WindowsGSM
 
                 if (!IsValidIPAddress(server.IP) || !IsValidPort(server.QueryPort))
                 {
-                    await Task.Delay(5000); // évite une boucle serrée (CPU 100%) tant que l'adresse est invalide
+                    await Task.Delay(5000); // avoids a tight loop (CPU 100%) while the address is invalid
                     continue;
                 }
 
@@ -3592,11 +3592,11 @@ namespace WindowsGSM
                     dynamic query = gameServer.QueryMethod;
                     query.SetAddressPort(server.IP, int.Parse(server.QueryPort));
                     players = await query.GetPlayersAndMaxPlayers();
-                    // #61 : récupère la map COURANTE (best-effort). GetInfo n'existe que sur la query A2S native ;
-                    // pour une query de plugin sans GetInfo, l'appel dynamique lève -> capturé, pas de map (sans dommage).
+                    // #61: fetch the CURRENT map (best-effort). GetInfo only exists on the native A2S query;
+                    // for a plugin query without GetInfo, the dynamic call throws -> caught, no map (harmless).
                     try { var info = await query.GetInfo(); if (info != null) { liveMap = info["Map"] as string; } } catch { }
                 }
-                catch { players = null; } // code plugin tiers : ne doit jamais tuer la boucle/l'app
+                catch { players = null; } // third-party plugin code: must never kill the loop/app
 
                 if (players != null)
                 {
@@ -3791,11 +3791,11 @@ namespace WindowsGSM
             backupConfig.Open();
         }
 
-        // #22 : journal d'actions par serveur (filtre les logs WindowsGSM par [#id]).
+        // #22: per-server action log (filters the WindowsGSM logs by [#id]).
         private async void Browse_ActionHistory_Click(object sender, RoutedEventArgs e)
         {
             var server = (Functions.ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { await this.ShowMessageAsync("Historique des actions", "Sélectionne d'abord un serveur."); return; }
+            if (server == null) { await this.ShowMessageAsync("Action History", "Select a server first."); return; }
 
             var lines = new System.Collections.Generic.List<string>();
             try
@@ -3805,7 +3805,7 @@ namespace WindowsGSM
                 {
                     string tag = $"[#{server.ID}]";
                     var files = Directory.GetFiles(logsDir, "L*.log").OrderBy(f => f).ToList();
-                    foreach (var f in files.Skip(Math.Max(0, files.Count - 7))) // ~7 derniers jours
+                    foreach (var f in files.Skip(Math.Max(0, files.Count - 7))) // ~last 7 days
                     {
                         try { foreach (var ln in File.ReadAllLines(f)) { if (ln.Contains(tag)) { lines.Add(ln); } } } catch { }
                     }
@@ -3814,23 +3814,23 @@ namespace WindowsGSM
             catch { }
 
             string text = (lines.Count == 0)
-                ? "Aucune action enregistrée pour ce serveur."
-                : string.Join("\n", lines.Skip(Math.Max(0, lines.Count - 50))); // 50 dernières
-            await this.ShowMessageAsync($"Historique — #{server.ID} {server.Name}", text);
+                ? "No action recorded for this server."
+                : string.Join("\n", lines.Skip(Math.Max(0, lines.Count - 50))); // last 50
+            await this.ShowMessageAsync($"History — #{server.ID} {server.Name}", text);
         }
 
-        // Stats de disponibilité du serveur sélectionné
+        // Uptime stats for the selected server
         private async void Browse_Uptime_Click(object sender, RoutedEventArgs e)
         {
             var server = (Functions.ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { await this.ShowMessageAsync("Disponibilité", "Sélectionne d'abord un serveur."); return; }
+            if (server == null) { await this.ShowMessageAsync("Uptime", "Select a server first."); return; }
             var st = GetUptime(server.ID);
-            string msg = $"Suivi depuis : {st.TrackedSince:dd/MM/yyyy HH:mm}\n\n"
-                       + $"Démarrages : {st.Starts}\n"
-                       + $"Crashs : {st.Crashes}\n"
-                       + $"Temps en ligne cumulé : {st.OnlineTimeString()}\n"
-                       + $"Disponibilité : {st.AvailabilityPercent():0.0} %";
-            await this.ShowMessageAsync($"Disponibilité — #{server.ID} {server.Name}", msg);
+            string msg = $"Tracked since: {st.TrackedSince:dd/MM/yyyy HH:mm}\n\n"
+                       + $"Starts: {st.Starts}\n"
+                       + $"Crashes: {st.Crashes}\n"
+                       + $"Total online time: {st.OnlineTimeString()}\n"
+                       + $"Uptime: {st.AvailabilityPercent():0.0} %";
+            await this.ShowMessageAsync($"Uptime — #{server.ID} {server.Name}", msg);
         }
 
         private void Browse_ServerConfigs_Click(object sender, RoutedEventArgs e)
@@ -3907,7 +3907,7 @@ namespace WindowsGSM
                 key?.SetValue(RegistryKeyName.UIAnimation, (MahAppSwitch_UIAnimation.IsChecked == true).ToString());
             }
 
-            // WindowTransitionsEnabled retire (FluentWindow)
+            // WindowTransitionsEnabled removed (FluentWindow)
         }
 
         private void DarkTheme_IsCheckedChanged(object sender, EventArgs e)
@@ -4257,7 +4257,7 @@ namespace WindowsGSM
             var row = ServerGrid.SelectedItem as ServerTable;
             if (row == null)
             {
-                System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "Éditeur de config", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("Select a server from the list first.", "Config Editor", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             try
@@ -4273,7 +4273,7 @@ namespace WindowsGSM
             var row = ServerGrid.SelectedItem as ServerTable;
             if (row == null)
             {
-                System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "Mods", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("Select a server from the list first.", "Mods", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             try
@@ -4290,8 +4290,8 @@ namespace WindowsGSM
             {
                 if (!Functions.Donator.DonatorManager.IsDonator)
                 {
-                    var d = new Functions.Donator.DonatorDialog("Notifications multi-canaux") { Owner = this };
-                    if (d.ShowDialog() != true) { return; } // pas débloqué
+                    var d = new Functions.Donator.DonatorDialog("Multi-channel notifications") { Owner = this };
+                    if (d.ShowDialog() != true) { return; } // not unlocked
                 }
                 new Functions.Notifications.NotificationsDialog { Owner = this }.ShowDialog();
             }
@@ -4323,7 +4323,7 @@ namespace WindowsGSM
                     }
                     catch { }
                 }
-                // Pas de MessageBox natif : le dialogue affiche lui-même l'état vide (cohérent au thème).
+                // No native MessageBox: the dialog shows the empty state itself (consistent with the theme).
                 string sel = (ServerGrid.SelectedItem as ServerTable)?.ID;
                 new Functions.Doctor.ServerDoctorDialog(servers, sel) { Owner = this }.ShowDialog();
             }
@@ -4335,7 +4335,7 @@ namespace WindowsGSM
             var row = (ServerTable)ServerGrid.SelectedItem;
             if (row == null)
             {
-                System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "API Token", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("Select a server from the list first.", "API Token", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -4636,7 +4636,7 @@ namespace WindowsGSM
             ServerConfig.SetSetting(server.ID, ServerConfig.SettingName.AutoStart, GetServerMetadata(server.ID).AutoStart ? "1" : "0");
         }
 
-        // #16 : toggle surveillance RAM (par serveur) + seuil Mo
+        // #16: toggle RAM monitoring (per server) + MB threshold
         private void Button_MemWatchdog_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
@@ -4645,24 +4645,24 @@ namespace WindowsGSM
             ServerConfig.SetSetting(server.ID, ServerConfig.SettingName.MemoryWatchdog, GetServerMetadata(server.ID).MemoryWatchdog ? "1" : "0");
         }
 
-        // #69 : bascule le mode maintenance du serveur sélectionné (suspend auto-start + auto-restart).
+        // #69: toggles maintenance mode for the selected server (suspends auto-start + auto-restart).
         private void Actions_ToggleMaintenance_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            if (server == null) { System.Windows.MessageBox.Show("Select a server from the list first.", "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information); return; }
             bool on = !GetServerMetadata(server.ID).Maintenance;
             _serverMetadata[int.Parse(server.ID)].Maintenance = on;
             ServerConfig.SetSetting(server.ID, ServerConfig.SettingName.Maintenance, on ? "1" : "0");
             Log(server.ID, on
-                ? "[Maintenance] ACTIVÉE — auto-start et auto-restart suspendus pour ce serveur."
-                : "[Maintenance] désactivée — auto-start/restart réactivés.");
+                ? "[Maintenance] ENABLED — auto-start and auto-restart suspended for this server."
+                : "[Maintenance] disabled — auto-start/restart re-enabled.");
             System.Windows.MessageBox.Show(on
-                ? $"Mode maintenance ACTIVÉ pour #{server.ID} {server.Name}.\nAuto-start et auto-restart sont suspendus : le serveur ne sera pas relancé automatiquement (idéal pour intervenir sans que WGSM le redémarre)."
-                : $"Mode maintenance désactivé pour #{server.ID} {server.Name}.",
+                ? $"Maintenance mode ENABLED for #{server.ID} {server.Name}.\nAuto-start and auto-restart are suspended: the server will not be restarted automatically (ideal for intervening without WGSM restarting it)."
+                : $"Maintenance mode disabled for #{server.ID} {server.Name}.",
                 "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // #20 : toggle "backup avant update" (par serveur, off par défaut)
+        // #20: toggle "backup before update" (per server, off by default)
         private void Button_BackupBeforeUpdate_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
@@ -4675,7 +4675,7 @@ namespace WindowsGSM
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
             if (server == null) { return; }
-            // garde un nombre valide (Mo) ; défaut 8000 si saisie invalide
+            // keep a valid number (MB); default 8000 if the input is invalid
             string val = new string((textBox_memlimit.Text ?? string.Empty).Where(char.IsDigit).ToArray());
             if (string.IsNullOrEmpty(val) || !long.TryParse(val, out long mb) || mb < 256) { val = "8000"; }
             textBox_memlimit.Text = val;
@@ -4723,19 +4723,19 @@ namespace WindowsGSM
             button_discordtest.IsEnabled = GetServerMetadata(server.ID).DiscordAlert;
         }
 
-        // #21 : le bouton Edit ouvre l'ASSISTANT (construction guidée du cron). Saisie manuelle en option.
+        // #21: the Edit button opens the WIZARD (guided cron building). Manual entry optional.
         private void Button_CrontabEdit_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
             if (server == null) { return; }
 
-            // remplir les listes heures/minutes une fois
+            // fill the hours/minutes lists once
             if (cw_hour.Items.Count == 0)
             {
                 for (int h = 0; h < 24; h++) { cw_hour.Items.Add(h.ToString("D2")); }
                 for (int m = 0; m < 60; m += 5) { cw_minute.Items.Add(m.ToString("D2")); }
             }
-            // pré-remplir depuis le cron existant (M H * * D) si possible
+            // pre-fill from the existing cron (M H * * D) if possible
             int hour = 6, min = 0;
             var parts = (ServerConfig.GetSetting(server.ID, ServerConfig.SettingName.CrontabFormat) ?? string.Empty).Split(' ');
             if (parts.Length >= 2 && int.TryParse(parts[0], out int pm) && int.TryParse(parts[1], out int ph)) { min = pm; hour = ph; }
@@ -4752,7 +4752,7 @@ namespace WindowsGSM
             bool weekly = cw_freq.SelectedIndex == 1;
             if (weekly)
             {
-                int dow = (cw_day.SelectedIndex + 1) % 7; // Lundi=1..Samedi=6, Dimanche=0
+                int dow = (cw_day.SelectedIndex + 1) % 7; // Monday=1..Saturday=6, Sunday=0
                 return $"{min} {hour} * * {dow}";
             }
             return $"{min} {hour} * * *";
@@ -4761,10 +4761,10 @@ namespace WindowsGSM
         private void CrontabWizard_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             if (cw_preview == null) { return; }
-            cw_day.IsEnabled = cw_freq.SelectedIndex == 1; // jour seulement en hebdo
+            cw_day.IsEnabled = cw_freq.SelectedIndex == 1; // day only when weekly
             string cron = BuildCronFromWizard();
             string next = CrontabSchedule.TryParse(cron)?.GetNextOccurrence(DateTime.Now).ToString("ddd, dd/MM/yyyy HH:mm") ?? "?";
-            cw_preview.Text = $"cron : {cron}    (prochain : {next})";
+            cw_preview.Text = $"cron: {cron}    (next: {next})";
         }
 
         private void CrontabWizard_Cancel(object sender, RoutedEventArgs e) => ToggleMahappFlyout(MahAppFlyout_CrontabWizard);
@@ -4858,23 +4858,23 @@ namespace WindowsGSM
             }
         }
 
-        // Démarrage du bot partagé par le toggle ET l'auto-start (l'auto-start ne peut pas
-        // s'appuyer sur l'event Click qui ne se déclenche pas sur un IsChecked programmatique).
+        // Bot startup shared by the toggle AND the auto-start (auto-start cannot
+        // rely on the Click event, which does not fire on a programmatic IsChecked).
         private async Task StartDiscordBotAsync()
         {
             switch_DiscordBot.IsEnabled = false;
-            DiscordBotLog("Démarrage du Discord Bot en cours…");
+            DiscordBotLog("Starting the Discord Bot…");
             bool botOk = await g_DiscordBot.Start();
             switch_DiscordBot.IsChecked = botOk;
             button_DiscordBotInvite.IsEnabled = botOk;
-            // La raison précise d'un échec est déjà journalisée par Bot.Start() (token / intent / réseau).
-            DiscordBotLog(botOk ? "Discord Bot started." : "Discord Bot : échec du démarrage (voir la raison ci-dessus).");
+            // The precise reason for a failure is already logged by Bot.Start() (token / intent / network).
+            DiscordBotLog(botOk ? "Discord Bot started." : "Discord Bot: startup failed (see the reason above).");
             switch_DiscordBot.IsEnabled = true;
-            // La résolution des noms d'admins se fait via OnDiscordBotReady() quand le bot est réellement Ready.
+            // Admin name resolution happens via OnDiscordBotReady() when the bot is actually Ready.
         }
 
-        // Appelé par Bot quand la connexion est établie (Ready) : (re)peuple et résout les noms d'admins,
-        // quel que soit le mode de démarrage (auto ou manuel) et après une reconnexion.
+        // Called by Bot when the connection is established (Ready): (re)populates and resolves admin names,
+        // regardless of the startup mode (auto or manual) and after a reconnection.
         public void OnDiscordBotReady()
         {
             try
@@ -4936,7 +4936,7 @@ namespace WindowsGSM
                 button_DiscordBotDashboardEdit.Content = "Edit";
                 textBox_DiscordBotDashboard.IsEnabled = false;
                 DiscordBot.Configs.SetDashboardChannel(textBox_DiscordBotDashboard.Text);
-                // Sauvegarde aussi le taux de rafraîchissement (10–900 s).
+                // Also saves the refresh rate (10–900 s).
                 double rate = numericUpDown_DiscordRefreshRate.Value ?? 30;
                 DiscordBot.Configs.SetDashboardRefreshRate((int)rate);
             }
@@ -4969,13 +4969,13 @@ namespace WindowsGSM
             var adminListItem = (DiscordBot.AdminListItem)listBox_DiscordBotAdminList.SelectedItem;
             if (adminListItem == null)
             {
-                System.Windows.MessageBox.Show("Sélectionne d'abord un admin dans la liste.", "Admin Discord", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("Select an admin from the list first.", "Discord Admin", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             OpenDiscordAdminOverlay(adminListItem.AdminId, adminListItem.ServerIds, adminListItem.Username);
         }
 
-        // ===== Overlay de gestion d'un admin Discord (ID + permissions serveurs en cases à cocher) =====
+        // ===== Discord admin management overlay (ID + per-server permissions via checkboxes) =====
         private sealed class ServerCheckItem
         {
             public string Id { get; set; }
@@ -4984,19 +4984,19 @@ namespace WindowsGSM
             public string Display => $"#{Id} — {Name}";
         }
 
-        private string _editingAdminId; // null = ajout, sinon édition de cet ID
+        private string _editingAdminId; // null = add, otherwise edit this ID
 
         private void OpenDiscordAdminOverlay(string adminId, string serverIds, string knownUsername = null)
         {
             _editingAdminId = adminId;
-            da_title.Text = adminId == null ? "Ajouter un admin Discord" : "Modifier l'admin Discord";
+            da_title.Text = adminId == null ? "Add a Discord admin" : "Edit the Discord admin";
             da_id.Text = adminId ?? string.Empty;
-            da_id.IsEnabled = adminId == null; // en édition, l'ID n'est pas modifiable (clé)
+            da_id.IsEnabled = adminId == null; // when editing, the ID is not editable (key)
 
-            // Affiche le nom de l'utilisateur édité (valeur déjà connue, puis rafraîchie via le bot).
+            // Shows the name of the edited user (value already known, then refreshed via the bot).
             bool hasName = !string.IsNullOrWhiteSpace(knownUsername)
-                && knownUsername != "…" && knownUsername != "(démarrer le bot)"
-                && knownUsername != "(introuvable)" && knownUsername != "—";
+                && knownUsername != "…" && knownUsername != "(start the bot)"
+                && knownUsername != "(not found)" && knownUsername != "—";
             da_resolved.Text = hasName ? $"✔ {knownUsername}" : string.Empty;
             if (adminId != null && g_DiscordBot.IsConnected)
             {
@@ -5028,11 +5028,11 @@ namespace WindowsGSM
         private async void DiscordAdmin_Resolve_Click(object sender, RoutedEventArgs e)
         {
             string id = da_id.Text.Trim();
-            if (!IsValidDiscordId(id)) { da_resolved.Text = "ID invalide (17–20 chiffres attendus)."; return; }
-            if (!g_DiscordBot.IsConnected) { da_resolved.Text = "Démarre le bot pour vérifier le nom."; return; }
-            da_resolved.Text = "Recherche…";
+            if (!IsValidDiscordId(id)) { da_resolved.Text = "Invalid ID (17–20 digits expected)."; return; }
+            if (!g_DiscordBot.IsConnected) { da_resolved.Text = "Start the bot to verify the name."; return; }
+            da_resolved.Text = "Searching…";
             string name = await g_DiscordBot.ResolveUsername(id);
-            da_resolved.Text = string.IsNullOrEmpty(name) ? "Utilisateur introuvable." : $"✔ {name}";
+            da_resolved.Text = string.IsNullOrEmpty(name) ? "User not found." : $"✔ {name}";
         }
 
         private void DiscordAdmin_Cancel_Click(object sender, RoutedEventArgs e) => ToggleMahappFlyout(MahAppFlyout_DiscordAdmin);
@@ -5042,7 +5042,7 @@ namespace WindowsGSM
             string id = da_id.Text.Trim();
             if (!IsValidDiscordId(id))
             {
-                System.Windows.MessageBox.Show("ID Discord invalide : il doit contenir 17 à 20 chiffres.", "Admin Discord", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("Invalid Discord ID: it must contain 17 to 20 digits.", "Discord Admin", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -5056,7 +5056,7 @@ namespace WindowsGSM
                 var checked_ = (da_serverChecks.ItemsSource as IEnumerable<ServerCheckItem>)?.Where(x => x.IsChecked).Select(x => x.Id).ToList() ?? new List<string>();
                 if (checked_.Count == 0)
                 {
-                    System.Windows.MessageBox.Show("Coche au moins un serveur, ou « Tous les serveurs ».", "Admin Discord", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show("Check at least one server, or \"All servers\".", "Discord Admin", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
                 serverIds = string.Join(",", checked_);
@@ -5106,7 +5106,7 @@ namespace WindowsGSM
                 {
                     AdminId = adminID,
                     ServerIds = serverIDs,
-                    Username = botConnected ? "…" : "(démarrer le bot)"
+                    Username = botConnected ? "…" : "(start the bot)"
                 };
                 listBox_DiscordBotAdminList.Items.Add(item);
                 if (botConnected) { _ = ResolveAdminUsername(item); }
@@ -5114,13 +5114,13 @@ namespace WindowsGSM
             listBox_DiscordBotAdminList.SelectedIndex = listBox_DiscordBotAdminList.Items.Count >= 0 ? selectIndex : -1;
         }
 
-        // Résout l'ID Discord d'un admin en username (via le bot, REST) et met à jour la cellule.
+        // Resolves an admin's Discord ID to a username (via the bot, REST) and updates the cell.
         private async Task ResolveAdminUsername(DiscordBot.AdminListItem item)
         {
             try
             {
                 string name = await g_DiscordBot.ResolveUsername(item.AdminId);
-                item.Username = string.IsNullOrEmpty(name) ? "(introuvable)" : name;
+                item.Username = string.IsNullOrEmpty(name) ? "(not found)" : name;
             }
             catch { item.Username = "—"; }
         }
@@ -5236,7 +5236,7 @@ namespace WindowsGSM
             return GetServerMetadata(server.ID).ServerStatus == ServerStatus.Stopped;
         }
 
-        // ===== Helpers pour les commandes Discord enrichies =====
+        // ===== Helpers for the enriched Discord commands =====
         public string GetServerConnectInfo(string serverId)
         {
             var s = GetServerTableById(serverId);
@@ -5248,7 +5248,7 @@ namespace WindowsGSM
 
         public string GetServerGame(string serverId) => GetServerTableById(serverId)?.Game ?? string.Empty;
 
-        // Dernières lignes de la console d'un serveur (pour la commande Discord console/log).
+        // Last lines of a server's console (for the Discord console/log command).
         public string GetServerConsoleTail(string serverId, int lines)
         {
             try
@@ -5263,7 +5263,7 @@ namespace WindowsGSM
             catch { return string.Empty; }
         }
 
-        // Joueurs en ligne (A2S) déjà calculés par la boucle StartPlayerCountRefresh.
+        // Online players (A2S) already computed by the StartPlayerCountRefresh loop.
         public string GetServerPlayers(string serverId) => GetServerTableById(serverId)?.Players ?? "—";
 
         public async Task<bool> KillServerById(string serverId, string adminID, string adminName)
@@ -5313,7 +5313,7 @@ namespace WindowsGSM
 
         /// <summary>Hide others Flyout and toggle the flyout</summary>
         /// <param name="flyout"></param>
-        // === Shims dialogs : MahApps ShowXxxAsync -> WPF-UI (call sites inchangés) ===
+        // === Dialog shims: MahApps ShowXxxAsync -> WPF-UI (call sites unchanged) ===
         public class ProgressStub
         {
             public void SetIndeterminate() { }
@@ -5358,7 +5358,7 @@ namespace WindowsGSM
             return new ProgressStub();
         }
 
-        // Fermeture d'un dialog overlay en cliquant sur le fond assombri (hors carte) - pattern W11
+        // Closes a dialog overlay by clicking the dimmed background (outside the card) - W11 pattern
         private void Overlay_BackdropClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (ReferenceEquals(e.OriginalSource, sender) && sender is UIElement el)
@@ -5367,14 +5367,14 @@ namespace WindowsGSM
             }
         }
 
-        // Assistant : aide à la création d'un token de bot Discord.
+        // Wizard: help creating a Discord bot token.
         private void TokenHelp_Open_Click(object sender, RoutedEventArgs e) => ToggleMahappFlyout(MahAppFlyout_TokenHelp);
         private void TokenHelp_Close_Click(object sender, RoutedEventArgs e) => ToggleMahappFlyout(MahAppFlyout_TokenHelp);
         private void TokenHelp_OpenPortal_Click(object sender, RoutedEventArgs e) => Shell.Open("https://discord.com/developers/applications");
 
         private void ToggleMahappFlyout(FrameworkElement flyout)
         {
-            // Panneaux overlay WPF-UI : ouvre la cible si fermée, ferme tous les autres.
+            // WPF-UI overlay panels: opens the target if closed, closes all the others.
             foreach (var panel in new FrameworkElement[] {
                 MahAppFlyout_DiscordAlert, MahAppFlyout_EditConfig, MahAppFlyout_ImportGameServer,
                 MahAppFlyout_InstallGameServer, MahAppFlyout_ManageAddons, MahAppFlyout_RestoreBackup,
@@ -5427,7 +5427,7 @@ namespace WindowsGSM
         private void NavSettings_Click(object sender, RoutedEventArgs e) => ToggleMahappFlyout(MahAppFlyout_Settings);
         private void NavBackups_Click(object sender, RoutedEventArgs e) => ShowHomeMenu(3);
 
-        // ===== Onglet Sauvegarde (versioning) =====
+        // ===== Backups tab (versioning) =====
         private class BackupItem { public string Name { get; set; } public string Date { get; set; } public string Size { get; set; } public string FullPath { get; set; } }
 
         private void Backups_PopulateServers()
@@ -5484,7 +5484,7 @@ namespace WindowsGSM
             finally { _loadingBackupSchedule = false; }
         }
 
-        // sauvegarde planifiée : sauve le toggle + l'heure (cron quotidien "0 H * * *") pour le serveur sélectionné
+        // scheduled backup: saves the toggle + the time (daily cron "0 H * * *") for the selected server
         private void BackupSchedule_Changed(object sender, RoutedEventArgs e)
         {
             if (_loadingBackupSchedule) { return; }
@@ -5505,8 +5505,8 @@ namespace WindowsGSM
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server)) { return; }
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped)
-            { System.Windows.MessageBox.Show("Le serveur doit être arrêté pour le sauvegarder.", "Sauvegarde", MessageBoxButton.OK, MessageBoxImage.Information); return; }
-            await GameServer_Backup(server, " | Sauvegarde manuelle");
+            { System.Windows.MessageBox.Show("The server must be stopped to back it up.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            await GameServer_Backup(server, " | Manual backup");
             Backups_RefreshList();
         }
 
@@ -5514,8 +5514,8 @@ namespace WindowsGSM
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server) || !(lv_backups.SelectedItem is BackupItem item)) { return; }
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped)
-            { System.Windows.MessageBox.Show("Le serveur doit être arrêté pour restaurer.", "Restaurer", MessageBoxButton.OK, MessageBoxImage.Information); return; }
-            var r = System.Windows.MessageBox.Show($"Restaurer « {item.Name} » sur #{server.ID} {server.Name} ?\nLes fichiers actuels seront remplacés.", "Restaurer", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            { System.Windows.MessageBox.Show("The server must be stopped to restore.", "Restore", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            var r = System.Windows.MessageBox.Show($"Restore \"{item.Name}\" onto #{server.ID} {server.Name}?\nThe current files will be replaced.", "Restore", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) { return; }
             await GameServer_RestoreBackup(server, item.Name);
         }
@@ -5523,7 +5523,7 @@ namespace WindowsGSM
         private void Backups_Delete_Click(object sender, RoutedEventArgs e)
         {
             if (!(lv_backups.SelectedItem is BackupItem item)) { return; }
-            var r = System.Windows.MessageBox.Show($"Supprimer définitivement « {item.Name} » ?", "Supprimer", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var r = System.Windows.MessageBox.Show($"Permanently delete \"{item.Name}\"?", "Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) { return; }
             try { File.Delete(item.FullPath); } catch (Exception ex) { System.Windows.MessageBox.Show(ex.Message); }
             Backups_RefreshList();
@@ -5536,21 +5536,21 @@ namespace WindowsGSM
             if (Directory.Exists(bc.BackupLocation)) { Shell.Open(bc.BackupLocation); }
         }
 
-        // Modifier l'emplacement (path) des sauvegardes du serveur sélectionné, via sélecteur de dossier.
-        // #179 : choisir les sous-dossiers à sauvegarder (vide = tout).
+        // Change the backup location (path) for the selected server, via a folder picker.
+        // #179: choose the subfolders to back up (empty = everything).
         private async void Backups_ChangeFolders_Click(object sender, RoutedEventArgs e)
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server)) { return; }
             var bc = new BackupConfig(server.ID);
-            string current = string.IsNullOrWhiteSpace(bc.BackupFolders) ? "(tout)" : bc.BackupFolders;
-            string input = await this.ShowInputAsync("Dossiers à sauvegarder",
-                $"Sous-dossiers de serverfiles à inclure, séparés par « ; ». Laisse VIDE pour tout sauvegarder.\n\nActuel : {current}\n\nExemple (Enshrouded) : savegame");
-            if (input == null) { return; } // annulé
+            string current = string.IsNullOrWhiteSpace(bc.BackupFolders) ? "(everything)" : bc.BackupFolders;
+            string input = await this.ShowInputAsync("Folders to back up",
+                $"Subfolders of serverfiles to include, separated by \"; \". Leave EMPTY to back up everything.\n\nCurrent: {current}\n\nExample (Enshrouded): savegame");
+            if (input == null) { return; } // cancelled
             bc.BackupFolders = input.Trim();
             bc.Save();
             Log(server.ID, string.IsNullOrWhiteSpace(bc.BackupFolders)
-                ? "[Backup] sauvegarde complète (tous les dossiers)."
-                : "[Backup] sauvegarde limitée à : " + bc.BackupFolders);
+                ? "[Backup] full backup (all folders)."
+                : "[Backup] backup limited to: " + bc.BackupFolders);
         }
 
         private void Backups_ChangeLocation_Click(object sender, RoutedEventArgs e)
@@ -5561,7 +5561,7 @@ namespace WindowsGSM
 
             var dlg = new Microsoft.Win32.OpenFolderDialog
             {
-                Title = $"Dossier de sauvegarde pour #{server.ID} {server.Name}"
+                Title = $"Backup folder for #{server.ID} {server.Name}"
             };
             try { if (Directory.Exists(oldPath)) { dlg.InitialDirectory = oldPath; } } catch { }
             if (dlg.ShowDialog() != true) { return; }
@@ -5573,12 +5573,12 @@ namespace WindowsGSM
             try { Directory.CreateDirectory(newPath); }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Impossible de créer/accéder au dossier :\n" + ex.Message,
-                    "Dossier de sauvegarde", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Unable to create/access the folder:\n" + ex.Message,
+                    "Backup folder", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // Propose de déplacer les sauvegardes existantes vers le nouvel emplacement.
+            // Offers to move the existing backups to the new location.
             try
             {
                 if (Directory.Exists(oldPath))
@@ -5588,8 +5588,8 @@ namespace WindowsGSM
                     if (zips.Count > 0)
                     {
                         var move = System.Windows.MessageBox.Show(
-                            $"Déplacer les {zips.Count} sauvegarde(s) existante(s) vers le nouveau dossier ?",
-                            "Dossier de sauvegarde", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                            $"Move the {zips.Count} existing backup(s) to the new folder?",
+                            "Backup folder", MessageBoxButton.YesNo, MessageBoxImage.Question);
                         if (move == MessageBoxResult.Yes)
                         {
                             foreach (var z in zips)
@@ -5605,11 +5605,11 @@ namespace WindowsGSM
 
             bc.BackupLocation = newPath;
             bc.Save();
-            Log(server.ID, $"Dossier de sauvegarde changé : {newPath}");
+            Log(server.ID, $"Backup folder changed: {newPath}");
             Backups_RefreshList();
         }
 
-        // Sidebar rétractable (pin/unpin) : le hamburger réduit le menu en icônes-seules ou le réétend.
+        // Collapsible sidebar (pin/unpin): the hamburger collapses the menu to icons-only or re-expands it.
         private bool _sidebarExpanded = true;
         private void NavToggle_Click(object sender, RoutedEventArgs e)
         {
@@ -5620,11 +5620,11 @@ namespace WindowsGSM
         private void SetSidebarExpanded(bool expanded)
         {
             SidebarBorder.Width = expanded ? 190 : 52;
-            NavHome.Content = expanded ? "Accueil" : null;
+            NavHome.Content = expanded ? "Home" : null;
             NavDashboard.Content = expanded ? "Dashboard" : null;
             NavDiscordBot.Content = expanded ? "Discord Bot" : null;
             NavPlugins.Content = expanded ? "Plugins" : null;
-            NavSettings.Content = expanded ? "Réglages" : null;
+            NavSettings.Content = expanded ? "Settings" : null;
             var m = new Thickness(expanded ? 190 : 52, 0, 0, 0);
             hMenu_Home.Margin = m;
             hMenu_Dashboard.Margin = m;

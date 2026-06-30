@@ -112,19 +112,19 @@ namespace WindowsGSM.GameServer
             {
                 if (p.StartInfo.CreateNoWindow)
                 {
-                    // #137 : Eco ne sauvegarde PAS sur un kill (ni sur un shutdown RCON/slash). On force d'abord
-                    // une sauvegarde via la commande admin console "/manage save" (stdin redirigé), puis on arrête.
+                    // #137: Eco does NOT save on a kill (nor on an RCON/slash shutdown). We first force
+                    // a save via the admin console command "/manage save" (redirected stdin), then we stop.
                     try
                     {
                         p.StandardInput.WriteLine("/manage save");
-                        await Task.Delay(8000); // laisse le temps d'écrire les fichiers de sauvegarde
+                        await Task.Delay(8000); // gives time to write the save files
                     }
                     catch { }
                     if (!p.HasExited) { try { p.Kill(); } catch { } }
                 }
                 else
                 {
-                    // Fenêtre console visible : WM_CLOSE. (L'arrêt 100% propre passe par Ctrl+C dans la console.)
+                    // Visible console window: WM_CLOSE. (A fully clean stop goes through Ctrl+C in the console.)
                     p.CloseMainWindow();
                 }
             });

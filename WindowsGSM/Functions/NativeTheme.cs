@@ -6,16 +6,16 @@ using System.Windows.Interop;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Petit utilitaire d'apparence native : applique la barre de titre SOMBRE (DWM immersive dark
-    /// mode) à une fenêtre WPF, pour que les dialogues construits en code s'accordent au thème sombre
-    /// de l'app au lieu d'afficher une barre de titre blanche. Best-effort : silencieux si non supporté.
+    /// Small native-appearance utility: applies the DARK title bar (DWM immersive dark
+    /// mode) to a WPF window, so that dialogs built in code match the app's dark theme
+    /// instead of showing a white title bar. Best-effort: silent if not supported.
     /// </summary>
     public static class NativeTheme
     {
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
-        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20; // Win10 2004+/Win11/Server récents
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20; // Win10 2004+/Win11/recent Server
 
         public static void EnableDarkTitleBar(Window window)
         {
@@ -30,7 +30,7 @@ namespace WindowsGSM.Functions
                     int on = 1;
                     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, sizeof(int));
                 }
-                catch { /* non supporté -> on ignore */ }
+                catch { /* not supported -> we ignore */ }
             }
 
             if (new WindowInteropHelper(window).Handle != IntPtr.Zero) { Apply(); }

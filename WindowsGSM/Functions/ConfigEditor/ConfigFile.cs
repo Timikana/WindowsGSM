@@ -7,9 +7,9 @@ using System.Text.RegularExpressions;
 namespace WindowsGSM.Functions.ConfigEditor
 {
     /// <summary>
-    /// Éditeur de config UNIVERSEL : détecte le format, parse en entrées clé/valeur, et réécrit
-    /// EN PLACE (préserve commentaires, ordre, formatage). Validé round-trip sur 7DtD (property-XML),
-    /// Minecraft (server.properties / key=value) et INI à sections (ARK GameUserSettings.ini…).
+    /// UNIVERSAL config editor: detects the format, parses into key/value entries, and rewrites
+    /// IN PLACE (preserves comments, order, formatting). Round-trip validated on 7DtD (property-XML),
+    /// Minecraft (server.properties / key=value) and sectioned INI (ARK GameUserSettings.ini...).
     /// </summary>
     public class ConfigFile : IConfigModel
     {
@@ -28,7 +28,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         {
             var cf = new ConfigFile { Path = path };
             string text = File.ReadAllText(path);
-            cf._lines = new List<string>(text.Split('\n')); // garde un éventuel \r en fin de ligne (CRLF préservé)
+            cf._lines = new List<string>(text.Split('\n')); // keeps any trailing \r on the line (CRLF preserved)
             cf.Format = Detect(text, path);
             cf.ParseLines();
             return cf;
@@ -40,7 +40,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             {
                 return "propxml";
             }
-            return "ini"; // ini / properties / cfg (sections [..] optionnelles)
+            return "ini"; // ini / properties / cfg (optional [..] sections)
         }
 
         private void ParseLines()
@@ -75,7 +75,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             }
         }
 
-        /// <summary>Modifie la valeur d'une entrée DANS la ligne d'origine (préserve le reste : commentaires, /&gt;…).</summary>
+        /// <summary>Changes an entry's value WITHIN the original line (preserves the rest: comments, /&gt;...).</summary>
         public void Set(ConfigEntry e, string newValue)
         {
             if (e == null || e.LineIndex < 0 || e.LineIndex >= _lines.Count) { return; }
@@ -105,8 +105,8 @@ namespace WindowsGSM.Functions.ConfigEditor
         }
 
         /// <summary>
-        /// Édite la clé si elle existe (dans la section donnée si précisée), sinon l'INSÈRE sous l'en-tête
-        /// de section (créée si absente). Format ini uniquement. Re-parse pour rafraîchir les index de ligne.
+        /// Edits the key if it exists (in the given section if specified), otherwise INSERTS it under the
+        /// section header (created if absent). ini format only. Re-parses to refresh the line indexes.
         /// </summary>
         public void SetOrAdd(string section, string key, string value)
         {
@@ -141,7 +141,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             ParseLines();
         }
 
-        /// <summary>Sauvegarde : backup horodaté (.wgsmbak) puis réécriture fidèle.</summary>
+        /// <summary>Save: timestamped backup (.wgsmbak) then faithful rewrite.</summary>
         public void Save()
         {
             try
@@ -149,7 +149,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 string bak = Path + ".wgsmbak";
                 File.Copy(Path, bak, true);
             }
-            catch { /* backup best-effort */ }
+            catch { /* best-effort backup */ }
             File.WriteAllText(Path, string.Join("\n", _lines));
         }
     }

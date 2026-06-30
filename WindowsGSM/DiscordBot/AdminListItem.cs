@@ -8,7 +8,7 @@ namespace WindowsGSM.DiscordBot
         public string AdminId { get; set; }
         public string ServerIds { get; set; }
 
-        // Résolu en async via le bot (REST /users/{id}) -> notifiant pour rafraîchir la cellule.
+        // Resolved asynchronously via the bot (REST /users/{id}) -> notifies to refresh the cell.
         private string _username = "…";
         public string Username
         {

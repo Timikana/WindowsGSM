@@ -8,8 +8,8 @@ using System.Windows.Media;
 namespace WindowsGSM.Functions.Doctor
 {
     /// <summary>
-    /// Bulletin de santé d'un serveur (construit en code, pas de refonte XAML). Inclut un sélecteur
-    /// de serveur (utile depuis la sidebar globale, sans dépendre de la sélection de la grille).
+    /// A server's health report (built in code, no XAML overhaul). Includes a server picker
+    /// (useful from the global sidebar, without depending on the grid selection).
     /// </summary>
     public class ServerDoctorDialog : Window
     {
@@ -49,9 +49,9 @@ namespace WindowsGSM.Functions.Doctor
 
             var outer = new DockPanel { Margin = new Thickness(14) };
 
-            // --- En-tête : sélecteur de serveur ---
+            // --- Header: server picker ---
             var headPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
-            headPanel.Children.Add(new TextBlock { Text = "Serveur :", Foreground = Fg, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            headPanel.Children.Add(new TextBlock { Text = "Server:", Foreground = Fg, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
             _picker = new ComboBox { MinWidth = 320, VerticalAlignment = VerticalAlignment.Center };
             foreach (var s in _servers) { _picker.Items.Add(s); }
             _picker.SelectedItem = _current;
@@ -65,11 +65,11 @@ namespace WindowsGSM.Functions.Doctor
             DockPanel.SetDock(headPanel, Dock.Top);
             outer.Children.Add(headPanel);
 
-            // --- Boutons bas ---
+            // --- Bottom buttons ---
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
-            _extButton = new Wpf.Ui.Controls.Button { Content = "Joignabilité externe…", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var retest = new Wpf.Ui.Controls.Button { Content = "Re-tester", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Fermer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            _extButton = new Wpf.Ui.Controls.Button { Content = "External reachability…", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var retest = new Wpf.Ui.Controls.Button { Content = "Re-test", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
             _extButton.Click += async (s, e) => await RunExternal();
             retest.Click += (s, e) => { _extBody.Children.Clear(); BuildLocal(); };
             close.Click += (s, e) => Close();
@@ -79,7 +79,7 @@ namespace WindowsGSM.Functions.Doctor
             DockPanel.SetDock(buttons, Dock.Bottom);
             outer.Children.Add(buttons);
 
-            // --- Corps défilant ---
+            // --- Scrolling body ---
             var content = new StackPanel();
             _body = new StackPanel();
             _extBody = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
@@ -96,7 +96,7 @@ namespace WindowsGSM.Functions.Doctor
             _body.Children.Clear();
             if (_current == null)
             {
-                _body.Children.Add(new TextBlock { Text = "Aucun serveur à diagnostiquer.", Foreground = Dim });
+                _body.Children.Add(new TextBlock { Text = "No server to diagnose.", Foreground = Dim });
                 return;
             }
             foreach (var r in ServerDoctor.Run(_current.Id, _current.Game, _current.Port, _current.Query, _current.Running))
@@ -110,18 +110,18 @@ namespace WindowsGSM.Functions.Doctor
             if (_current == null) { return; }
             _extButton.IsEnabled = false;
             _extBody.Children.Clear();
-            _extBody.Children.Add(SectionHeader("Joignabilité externe (via check-host.net)"));
-            _extBody.Children.Add(new TextBlock { Text = "⏳ Test en cours… (ton IP publique est envoyée à check-host.net)", Foreground = Dim, Margin = new Thickness(0, 4, 0, 0) });
+            _extBody.Children.Add(SectionHeader("External reachability (via check-host.net)"));
+            _extBody.Children.Add(new TextBlock { Text = "⏳ Test in progress… (your public IP is sent to check-host.net)", Foreground = Dim, Margin = new Thickness(0, 4, 0, 0) });
             try
             {
                 var results = await ServerDoctor.CheckExternalAsync(_current.Game, _current.Port, _current.Query);
                 _extBody.Children.Clear();
-                _extBody.Children.Add(SectionHeader("Joignabilité externe (via check-host.net)"));
+                _extBody.Children.Add(SectionHeader("External reachability (via check-host.net)"));
                 foreach (var r in results) { _extBody.Children.Add(RowFor(r)); }
             }
             catch (Exception ex)
             {
-                _extBody.Children.Add(new TextBlock { Text = "Erreur : " + ex.Message, Foreground = Dim });
+                _extBody.Children.Add(new TextBlock { Text = "Error: " + ex.Message, Foreground = Dim });
             }
             finally
             {

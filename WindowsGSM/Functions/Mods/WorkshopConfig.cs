@@ -5,15 +5,15 @@ using Newtonsoft.Json;
 
 namespace WindowsGSM.Functions.Mods
 {
-    /// <summary>Un mod Workshop suivi pour un serveur (ID Steam publié + nom libre + activé).</summary>
+    /// <summary>A Workshop mod tracked for a server (published Steam ID + free name + enabled).</summary>
     public class WorkshopEntry
     {
         public string Id;        // publishedfileid
-        public string Name;      // libellé libre (nom du mod)
+        public string Name;      // free label (mod name)
         public bool Enabled = true;
     }
 
-    /// <summary>Liste des mods Workshop d'un serveur, persistée dans configs/wgsm-workshop.json.</summary>
+    /// <summary>List of a server's Workshop mods, persisted in configs/wgsm-workshop.json.</summary>
     public class WorkshopConfig
     {
         public List<WorkshopEntry> Items = new List<WorkshopEntry>();

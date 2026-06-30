@@ -12,10 +12,10 @@ using System.Xml.Linq;
 namespace WindowsGSM.Functions.PortForward
 {
     /// <summary>
-    /// Backend UPnP IGD "maison" (aucune dépendance externe) : découverte SSDP de la passerelle,
-    /// lecture de la description du device pour trouver le service WAN*Connection, puis ouverture/
-    /// fermeture de ports via SOAP (AddPortMapping / DeletePortMapping). Best-effort : tout échec
-    /// renvoie false / est journalisé, jamais d'exception remontée à l'appelant.
+    /// Homemade UPnP IGD backend (no external dependency): SSDP discovery of the gateway,
+    /// reading the device description to find the WAN*Connection service, then opening/
+    /// closing ports via SOAP (AddPortMapping / DeletePortMapping). Best-effort: any failure
+    /// returns false / is logged, no exception ever bubbles up to the caller.
     /// </summary>
     public class UpnpNatBackend : INatBackend
     {
@@ -24,8 +24,8 @@ namespace WindowsGSM.Functions.PortForward
 
         private bool _tried;
         private string _serviceType;   // urn:schemas-upnp-org:service:WANIPConnection:1 / :2 / WANPPPConnection:1
-        private string _controlUrl;    // URL absolue du control endpoint
-        private string _localIp;       // IP interne de cette machine (NewInternalClient)
+        private string _controlUrl;    // absolute URL of the control endpoint
+        private string _localIp;       // internal IP of this machine (NewInternalClient)
 
         public async Task<bool> IsAvailableAsync()
         {
@@ -64,7 +64,7 @@ namespace WindowsGSM.Functions.PortForward
             }
         }
 
-        // ---- Découverte (une seule fois) ----
+        // ---- Discovery (once only) ----
 
         private async Task EnsureDiscoveredAsync()
         {
@@ -76,16 +76,16 @@ namespace WindowsGSM.Functions.PortForward
                 _tried = true;
 
                 var (location, gatewayHost) = await DiscoverAsync();
-                if (location == null) { AppLog.Warn("PortForward", "Aucune passerelle UPnP n'a répondu (UPnP désactivé sur la box ?)."); return; }
+                if (location == null) { AppLog.Warn("PortForward", "No UPnP gateway responded (UPnP disabled on the router?)."); return; }
 
                 await ParseDeviceAsync(location);
-                if (_controlUrl == null) { AppLog.Warn("PortForward", "Passerelle trouvée mais service WAN*Connection introuvable."); return; }
+                if (_controlUrl == null) { AppLog.Warn("PortForward", "Gateway found but WAN*Connection service not found."); return; }
 
                 _localIp = GetLocalIpFor(gatewayHost ?? new Uri(location).Host);
             }
             catch (Exception e)
             {
-                AppLog.Warn("PortForward", "Découverte UPnP : " + e.Message);
+                AppLog.Warn("PortForward", "UPnP discovery: " + e.Message);
             }
             finally { _gate.Release(); }
         }
@@ -153,7 +153,7 @@ namespace WindowsGSM.Functions.PortForward
             string xml = await _http.GetStringAsync(location);
             var doc = XDocument.Parse(xml);
 
-            // Recherche namespace-agnostique d'un <service> WAN*Connection.
+            // Namespace-agnostic search for a <service> WAN*Connection.
             foreach (var svc in doc.Descendants().Where(e => e.Name.LocalName == "service"))
             {
                 string type = svc.Elements().FirstOrDefault(e => e.Name.LocalName == "serviceType")?.Value ?? "";
@@ -166,7 +166,7 @@ namespace WindowsGSM.Functions.PortForward
                 string ctrl = svc.Elements().FirstOrDefault(e => e.Name.LocalName == "controlURL")?.Value;
                 if (string.IsNullOrEmpty(ctrl)) { continue; }
 
-                // Résolution de l'URL de contrôle (URLBase éventuel, sinon relatif à la LOCATION).
+                // Resolve the control URL (optional URLBase, otherwise relative to LOCATION).
                 string urlBase = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "URLBase")?.Value;
                 Uri baseUri = !string.IsNullOrEmpty(urlBase) ? new Uri(urlBase) : new Uri(location);
 
@@ -182,7 +182,7 @@ namespace WindowsGSM.Functions.PortForward
             {
                 using (var s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                 {
-                    s.Connect(host, 1900); // ne transmet rien en UDP, sert juste à choisir l'interface
+                    s.Connect(host, 1900); // sends nothing over UDP, just used to pick the interface
                     return ((IPEndPoint)s.LocalEndPoint).Address.ToString();
                 }
             }

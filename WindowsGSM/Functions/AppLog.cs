@@ -4,10 +4,10 @@ using System.IO;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Journal applicatif minimal, thread-safe et best-effort, pour rendre OBSERVABLES les erreurs
-    /// jusque-là avalées silencieusement (catch {}). Contrairement à Debug.WriteLine, ces écritures
-    /// subsistent en build Release (le build déployé en prod). Écrit dans
-    /// &lt;WGSM&gt;\logs\windowsgsm-app.log. Le logger ne lève jamais : un échec d'écriture est ignoré.
+    /// Minimal application log, thread-safe and best-effort, to make OBSERVABLE the errors
+    /// that were previously swallowed silently (catch {}). Unlike Debug.WriteLine, these writes
+    /// persist in the Release build (the build deployed in production). Writes to
+    /// &lt;WGSM&gt;\logs\windowsgsm-app.log. The logger never throws: a write failure is ignored.
     /// </summary>
     public static class AppLog
     {
@@ -30,7 +30,7 @@ namespace WindowsGSM.Functions
             }
             catch
             {
-                // Un logger ne doit jamais faire planter l'appelant.
+                // A logger must never crash the caller.
             }
         }
     }

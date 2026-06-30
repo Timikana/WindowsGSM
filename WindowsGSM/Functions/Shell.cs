@@ -2,9 +2,9 @@ using System.Diagnostics;
 
 namespace WindowsGSM
 {
-    // Ouvre une URL ou un fichier/dossier via le shell Windows.
-    // Sur .NET (Core/5+), Process.Start(string) a UseShellExecute=false par défaut et
-    // ne peut PAS ouvrir une URL/dossier -> Win32Exception. Ce helper remet UseShellExecute=true.
+    // Opens a URL or a file/folder via the Windows shell.
+    // On .NET (Core/5+), Process.Start(string) has UseShellExecute=false by default and
+    // CANNOT open a URL/folder -> Win32Exception. This helper sets UseShellExecute=true again.
     public static class Shell
     {
         public static void Open(string target)
@@ -13,7 +13,7 @@ namespace WindowsGSM
             {
                 Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
             }
-            catch { /* lien/chemin invalide -> on ignore plutôt que crasher */ }
+            catch { /* invalid link/path -> we ignore rather than crash */ }
         }
     }
 }

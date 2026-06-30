@@ -3,21 +3,21 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.PortForward
 {
     /// <summary>
-    /// Backend par défaut tant qu'aucun moteur UPnP réel n'est branché. Ne fait rien sauf journaliser,
-    /// pour que le reste (config, résolution, cycle de vie) soit testable sans dépendance réseau.
-    /// Sera remplacé par MonoNatBackend (lib) ou un backend SSDP/SOAP maison.
+    /// Default backend as long as no real UPnP engine is plugged in. Does nothing but log,
+    /// so the rest (config, resolution, lifecycle) is testable without a network dependency.
+    /// Will be replaced by MonoNatBackend (library) or a homemade SSDP/SOAP backend.
     /// </summary>
     public class NullNatBackend : INatBackend
     {
         public Task<bool> IsAvailableAsync()
         {
-            AppLog.Warn("PortForward", "Aucun backend UPnP branché (NullNatBackend) — aucun port ouvert.");
+            AppLog.Warn("PortForward", "No UPnP backend plugged in (NullNatBackend) — no port opened.");
             return Task.FromResult(false);
         }
 
         public Task<bool> MapAsync(int port, PortProtocol protocol, string description)
         {
-            AppLog.Warn("PortForward", $"MapAsync ignoré (backend non branché) : {port}/{protocol} '{description}'.");
+            AppLog.Warn("PortForward", $"MapAsync ignored (backend not plugged in): {port}/{protocol} '{description}'.");
             return Task.FromResult(false);
         }
 

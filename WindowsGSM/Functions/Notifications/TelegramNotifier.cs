@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.Notifications
 {
     /// <summary>
-    /// Canal Telegram via l'API Bot (sendMessage). Nécessite un bot (token via @BotFather) et le
-    /// chat_id de destination. Token chiffré au repos.
+    /// Telegram channel via the Bot API (sendMessage). Requires a bot (token via @BotFather) and the
+    /// destination chat_id. Token encrypted at rest.
     /// </summary>
     public class TelegramNotifier : INotifier
     {

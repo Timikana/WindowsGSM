@@ -10,9 +10,9 @@ using WindowsGSM.Functions;
 
 namespace WindowsGSM.GameServer
 {
-    // Minecraft: Fabric Server — NATIF (remplace le plugin FabricMC.cs, plus fiable).
-    // Utilise l'API meta officielle Fabric (meta.fabricmc.net) pour produire un server.jar
-    // auto-suffisant (télécharge MC + loader au 1er lancement). Version MC épinglée à l'install.
+    // Minecraft: Fabric Server — NATIVE (replaces the FabricMC.cs plugin, more reliable).
+    // Uses the official Fabric meta API (meta.fabricmc.net) to produce a self-contained
+    // server.jar (downloads MC + loader on first launch). MC version pinned at install time.
     class FabricMC
     {
         private readonly ServerConfig _serverData;
@@ -54,7 +54,7 @@ namespace WindowsGSM.GameServer
             }
         }
 
-        // Récupère la dernière version MC stable depuis l'API meta Fabric
+        // Gets the latest stable MC version from the Fabric meta API
         private static async Task<string> GetLatestStableGameVersion(WebClient wc)
         {
             string json = await wc.DownloadStringTaskAsync($"{META}/game");
@@ -83,13 +83,13 @@ namespace WindowsGSM.GameServer
                 string installer = await GetLatest(wc, "installer");
                 if (string.IsNullOrEmpty(loader) || string.IsNullOrEmpty(installer))
                 {
-                    Error = "Impossible de récupérer les versions loader/installer depuis l'API Fabric.";
+                    Error = "Unable to retrieve loader/installer versions from the Fabric API.";
                     return false;
                 }
                 string jarUrl = $"{META}/loader/{mcVersion}/{loader}/{installer}/server/jar";
                 string jarPath = ServerPath.GetServersServerFiles(_serverData.ServerID, StartPath);
                 await wc.DownloadFileTaskAsync(jarUrl, jarPath);
-                File.WriteAllText(VersionFile, mcVersion); // épinglage de la version
+                File.WriteAllText(VersionFile, mcVersion); // version pinning
                 return true;
             }
         }
@@ -104,14 +104,14 @@ namespace WindowsGSM.GameServer
         public async Task<Process> Install()
         {
             // EULA
-            if (MessageBox.Show("En continuant, tu acceptes l'EULA Minecraft (https://aka.ms/MinecraftEULA).", "EULA", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-            { Error = "EULA refusée"; return null; }
+            if (MessageBox.Show("By continuing, you accept the Minecraft EULA (https://aka.ms/MinecraftEULA).", "EULA", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            { Error = "EULA declined"; return null; }
 
             // Java
             if (!JavaHelper.IsJREInstalled())
             {
-                if (MessageBox.Show("Java n'est pas installé. L'installer ?", "Java", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                { Error = "Java non installé"; return null; }
+                if (MessageBox.Show("Java is not installed. Install it?", "Java", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                { Error = "Java not installed"; return null; }
                 var jre = await JavaHelper.DownloadJREToServer(_serverData.ServerID);
                 if (!jre.installed) { Error = jre.error; return null; }
             }
@@ -120,16 +120,16 @@ namespace WindowsGSM.GameServer
             {
                 string mcVersion;
                 using (WebClient wc = new TimeoutWebClient()) { mcVersion = await GetLatestStableGameVersion(wc); }
-                // Choix + épinglage de la version (vide = dernière stable)
-                string chosen = PromptVersion("Version Minecraft pour Fabric", mcVersion);
-                if (chosen == null) { Error = "Installation annulée"; return null; }
+                // Version choice + pinning (empty = latest stable)
+                string chosen = PromptVersion("Minecraft version for Fabric", mcVersion);
+                if (chosen == null) { Error = "Installation cancelled"; return null; }
                 if (!string.IsNullOrWhiteSpace(chosen)) { mcVersion = chosen.Trim(); }
 
                 if (!await DownloadServerJar(mcVersion)) { return null; }
                 WriteEula();
-                Notice = $"Fabric installé pour Minecraft {mcVersion} (version épinglée).";
+                Notice = $"Fabric installed for Minecraft {mcVersion} (pinned version).";
             }
-            catch (Exception e) { Error = $"Échec install Fabric : {e.Message}"; return null; }
+            catch (Exception e) { Error = $"Fabric install failed: {e.Message}"; return null; }
 
             return null;
         }
@@ -143,7 +143,7 @@ namespace WindowsGSM.GameServer
             }
             try
             {
-                // garde la version épinglée si présente, sinon dernière stable
+                // keep the pinned version if present, otherwise latest stable
                 string mcVersion = File.Exists(VersionFile) ? File.ReadAllText(VersionFile).Trim() : null;
                 if (string.IsNullOrWhiteSpace(mcVersion))
                 {
@@ -153,28 +153,28 @@ namespace WindowsGSM.GameServer
                 if (File.Exists(jarPath)) { File.Delete(jarPath); }
                 if (!await DownloadServerJar(mcVersion)) { return null; }
                 WriteEula();
-                Notice = $"Fabric mis à jour (Minecraft {mcVersion}).";
+                Notice = $"Fabric updated (Minecraft {mcVersion}).";
             }
-            catch (Exception e) { Error = $"Échec MAJ Fabric : {e.Message}"; return null; }
+            catch (Exception e) { Error = $"Fabric update failed: {e.Message}"; return null; }
             return null;
         }
 
         public async Task<Process> Start()
         {
             string javaPath = JavaHelper.FindJavaExecutableAbsolutePath();
-            if (javaPath.Length == 0) { Error = "Java n'est pas installé"; return null; }
+            if (javaPath.Length == 0) { Error = "Java is not installed"; return null; }
 
             string workingDir = ServerPath.GetServersServerFiles(_serverData.ServerID);
             string jarPath = Path.Combine(workingDir, StartPath);
-            if (!File.Exists(jarPath)) { Error = $"{StartPath} introuvable. Lance l'installation."; return null; }
+            if (!File.Exists(jarPath)) { Error = $"{StartPath} not found. Run the installation."; return null; }
 
-            // Vérifie que la version de Java installée convient à la version MC épinglée.
+            // Checks that the installed Java version is suitable for the pinned MC version.
             string mcPinned = File.Exists(VersionFile) ? File.ReadAllText(VersionFile).Trim() : string.Empty;
             int needed = JavaHelper.RequiredJavaForMinecraft(mcPinned);
             int have = JavaHelper.GetNewestJavaMajorVersion();
             if (needed > 0 && have > 0 && have < needed)
             {
-                Error = $"Java {needed}+ requis pour Minecraft {mcPinned} (Java {have} détecté). Installe Temurin {needed} : https://adoptium.net/";
+                Error = $"Java {needed}+ required for Minecraft {mcPinned} (Java {have} detected). Install Temurin {needed}: https://adoptium.net/";
                 return null;
             }
 
@@ -231,9 +231,9 @@ namespace WindowsGSM.GameServer
 
         public string GetLocalBuild()
         {
-            // version épinglée stockée à l'install
+            // pinned version stored at install time
             if (File.Exists(VersionFile)) { return File.ReadAllText(VersionFile).Trim(); }
-            Error = "Version locale inconnue (réinstaller).";
+            Error = "Unknown local version (reinstall).";
             return string.Empty;
         }
 
@@ -243,7 +243,7 @@ namespace WindowsGSM.GameServer
             catch { Error = "Fail to get remote build"; return string.Empty; }
         }
 
-        // Mini-dialogue de saisie de version (retourne null si annulé, "" si défaut accepté)
+        // Mini version-input dialog (returns null if cancelled, "" if default accepted)
         private static string PromptVersion(string title, string defaultValue)
         {
             string result = null;
@@ -259,7 +259,7 @@ namespace WindowsGSM.GameServer
                 grid.RowDefinitions.Add(new RowDefinition());
                 grid.RowDefinitions.Add(new RowDefinition());
                 grid.RowDefinitions.Add(new RowDefinition());
-                var lbl = new TextBlock { Text = $"Version Minecraft (vide = {defaultValue}) :", Margin = new Thickness(0, 0, 0, 6) };
+                var lbl = new TextBlock { Text = $"Minecraft version (empty = {defaultValue}):", Margin = new Thickness(0, 0, 0, 6) };
                 var tb = new TextBox { Text = string.Empty };
                 var ok = new Button { Content = "OK", Width = 90, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
                 Grid.SetRow(lbl, 0); Grid.SetRow(tb, 1); Grid.SetRow(ok, 2);
@@ -269,7 +269,7 @@ namespace WindowsGSM.GameServer
                 win.ShowDialog();
             };
             if (dispatcher != null && !dispatcher.CheckAccess()) { dispatcher.Invoke(show); } else { show(); }
-            return result; // null si fermé sans OK
+            return result; // null if closed without OK
         }
     }
 }

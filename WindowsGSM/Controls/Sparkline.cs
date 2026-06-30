@@ -7,8 +7,8 @@ using System.Windows.Media;
 namespace WindowsGSM.Controls
 {
     /// <summary>
-    /// Mini-graphe (sparkline) léger dessiné directement (pas de dépendance externe).
-    /// Affiche une série de valeurs (CPU%, RAM Mo, …) en courbe avec un léger remplissage.
+    /// Lightweight mini-graph (sparkline) drawn directly (no external dependency).
+    /// Displays a series of values (CPU%, RAM MB, ...) as a curve with a light fill.
     /// </summary>
     public class Sparkline : FrameworkElement
     {
@@ -20,7 +20,7 @@ namespace WindowsGSM.Controls
             DependencyProperty.Register(nameof(Stroke), typeof(Brush), typeof(Sparkline),
                 new FrameworkPropertyMetadata(Brushes.RoyalBlue, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        // Plafond fixe optionnel (ex. 100 pour du %). 0 = auto-échelle sur les données.
+        // Optional fixed ceiling (e.g. 100 for %). 0 = auto-scale on the data.
         public static readonly DependencyProperty MaxProperty =
             DependencyProperty.Register(nameof(Max), typeof(double), typeof(Sparkline),
                 new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -71,7 +71,7 @@ namespace WindowsGSM.Controls
                 pts[i] = new Point(i * stepX, y);
             }
 
-            // Courbe
+            // Curve
             var geo = new StreamGeometry();
             using (var ctx = geo.Open())
             {
@@ -83,7 +83,7 @@ namespace WindowsGSM.Controls
             var pen = new Pen(Stroke, 1.5) { LineJoin = PenLineJoin.Round };
             pen.Freeze();
 
-            // Remplissage léger sous la courbe
+            // Light fill below the curve
             var fillGeo = new StreamGeometry();
             using (var ctx = fillGeo.Open())
             {

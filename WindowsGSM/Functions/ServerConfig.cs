@@ -37,11 +37,11 @@ namespace WindowsGSM.Functions
             public const string CPUPriority = "cpupriority";
             public const string CPUAffinity = "cpuaffinity";
             public const string AutoScroll = "autoscroll";
-            public const string MemoryWatchdog = "memorywatchdog"; // #16 (par serveur)
+            public const string MemoryWatchdog = "memorywatchdog"; // #16 (per server)
             public const string MemoryLimitMB = "memorylimitmb";
             public const string BackupBeforeUpdate = "backupbeforeupdate"; // #20
-            public const string Maintenance = "maintenance"; // #69 (suspend auto-start/auto-restart)
-            public const string BackupCrontab = "backupcrontab";           // sauvegarde planifiée
+            public const string Maintenance = "maintenance"; // #69 (suspends auto-start/auto-restart)
+            public const string BackupCrontab = "backupcrontab";           // scheduled backup
             public const string BackupCrontabFormat = "backupcrontabformat";
         }
 
@@ -74,12 +74,12 @@ namespace WindowsGSM.Functions
         public string CPUPriority;
         public string CPUAffinity;
         public bool AutoScroll;
-        public bool MemoryWatchdog;       // #16 : surveillance RAM activée pour ce serveur
-        public string MemoryLimitMB = "8000"; // seuil RAM (Mo) défini par l'utilisateur
-        public bool BackupBeforeUpdate;   // #20 : sauvegarde avant chaque update (off par défaut, coûte du disque)
-        public bool Maintenance;          // #69 : mode maintenance — suspend auto-start et auto-restart
-        public bool BackupCrontab;        // sauvegarde planifiée activée
-        public string BackupCrontabFormat = "0 5 * * *"; // par défaut 05:00 quotidien
+        public bool MemoryWatchdog;       // #16: RAM monitoring enabled for this server
+        public string MemoryLimitMB = "8000"; // RAM threshold (MB) set by the user
+        public bool BackupBeforeUpdate;   // #20: backup before each update (off by default, costs disk space)
+        public bool Maintenance;          // #69: maintenance mode — suspends auto-start and auto-restart
+        public bool BackupCrontab;        // scheduled backup enabled
+        public string BackupCrontabFormat = "0 5 * * *"; // default daily 05:00
 
         public ServerConfig(string serverid)
         {
@@ -163,7 +163,7 @@ namespace WindowsGSM.Functions
                     }
                 }
               }
-              catch { /* .cfg verrouillé/corrompu : on garde les valeurs par défaut au lieu de planter */ }
+              catch { /* .cfg locked/corrupted: we keep the default values instead of crashing */ }
             }
         }
 

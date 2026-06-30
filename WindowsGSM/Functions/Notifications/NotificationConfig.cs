@@ -9,7 +9,7 @@ namespace WindowsGSM.Functions.Notifications
         public bool Enabled { get; set; } = false;
         public string ServerUrl { get; set; } = "https://ntfy.sh";
         public string Topic { get; set; } = "";
-        public string AuthToken { get; set; } = ""; // secret (chiffré sur disque)
+        public string AuthToken { get; set; } = ""; // secret (encrypted on disk)
         public string Priority { get; set; } = "default"; // min|low|default|high|max
     }
 
@@ -36,13 +36,13 @@ namespace WindowsGSM.Functions.Notifications
     {
         public bool Enabled { get; set; } = false;
         public string Url { get; set; } = "";
-        public string AuthBearer { get; set; } = ""; // secret optionnel (en-tête Authorization: Bearer)
+        public string AuthBearer { get; set; } = ""; // optional secret (Authorization: Bearer header)
     }
 
     /// <summary>
-    /// Configuration des canaux de notification globaux. Stockée dans &lt;WGSM&gt;\configs\notifications.json.
-    /// Les secrets (tokens, mots de passe) sont chiffrés au repos via <see cref="Secret"/>.
-    /// Canaux : ntfy, Telegram, e-mail (SMTP), webhook générique.
+    /// Global notification channels configuration. Stored in &lt;WGSM&gt;\configs\notifications.json.
+    /// Secrets (tokens, passwords) are encrypted at rest via <see cref="Secret"/>.
+    /// Channels: ntfy, Telegram, email (SMTP), generic webhook.
     /// </summary>
     public class NotificationConfig
     {
@@ -61,7 +61,7 @@ namespace WindowsGSM.Functions.Notifications
                 if (!File.Exists(path))
                 {
                     var def = new NotificationConfig();
-                    def.Save(); // crée un gabarit désactivé que l'utilisateur peut éditer
+                    def.Save(); // create a disabled template the user can edit
                     return def;
                 }
 
@@ -71,7 +71,7 @@ namespace WindowsGSM.Functions.Notifications
                 if (cfg.Email == null) { cfg.Email = new EmailConfig(); }
                 if (cfg.Webhook == null) { cfg.Webhook = new WebhookConfig(); }
 
-                // Déchiffre les secrets pour usage en mémoire.
+                // Decrypt secrets for in-memory use.
                 cfg.Ntfy.AuthToken = Secret.Unprotect(cfg.Ntfy.AuthToken);
                 cfg.Telegram.BotToken = Secret.Unprotect(cfg.Telegram.BotToken);
                 cfg.Email.Password = Secret.Unprotect(cfg.Email.Password);
@@ -91,7 +91,7 @@ namespace WindowsGSM.Functions.Notifications
             {
                 string Enc(string v) => Secret.IsProtected(v) ? v : Secret.Protect(v);
 
-                // Copie "disque" avec secrets chiffrés, sans altérer l'instance en mémoire.
+                // "Disk" copy with encrypted secrets, without altering the in-memory instance.
                 var onDisk = new NotificationConfig
                 {
                     Ntfy = new NtfyConfig

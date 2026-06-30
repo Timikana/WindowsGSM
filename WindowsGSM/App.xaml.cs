@@ -63,9 +63,9 @@ namespace WindowsGSM
                 }
             }
 
-            // Fix .NET 10 : bug connu MahApps -> NullReferenceException dans
-            // MetroWindow.get_CriticalHandle() lors du deplacement de la fenetre (drag de la
-            // barre de titre). Exception UI benigne : on l'absorbe pour ne pas crasher l'app.
+            // .NET 10 fix: known MahApps bug -> NullReferenceException in
+            // MetroWindow.get_CriticalHandle() when moving the window (title-bar drag).
+            // Benign UI exception: we swallow it so the app doesn't crash.
             this.DispatcherUnhandledException += (s, args) =>
             {
                 var ex = args.Exception;

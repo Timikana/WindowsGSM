@@ -4,35 +4,35 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.PortForward
 {
     /// <summary>
-    /// Orchestration de l'auto port-forwarding : ouvre les ports d'un serveur au démarrage, les ferme
-    /// à l'arrêt, et nettoie tout à la fermeture de l'appli. Respecte l'interrupteur maître global et
-    /// l'activation par serveur, et n'ouvre QUE les ports cochés. Best-effort : un échec réseau est
-    /// journalisé (AppLog) sans bloquer le serveur de jeu.
+    /// Auto port-forwarding orchestration: opens a server's ports at start, closes them
+    /// at stop, and cleans everything up when the app closes. Respects the global master switch and
+    /// the per-server enable flag, and opens ONLY the checked ports. Best-effort: a network failure is
+    /// logged (AppLog) without blocking the game server.
     /// </summary>
     public static class PortForwardManager
     {
-        // Backend UPnP maison (aucune dépendance externe). Remplaçable si besoin (tests, etc.).
+        // Homemade UPnP backend (no external dependency). Replaceable if needed (tests, etc.).
         public static INatBackend Backend { get; set; } = new UpnpNatBackend();
 
         private static readonly object _lock = new object();
-        // serverId -> ports réellement ouverts par nous (pour pouvoir les refermer proprement).
+        // serverId -> ports actually opened by us (so we can close them cleanly).
         private static readonly Dictionary<string, List<PortMapping>> _active = new Dictionary<string, List<PortMapping>>();
 
         public static async Task OpenForServerAsync(string serverId, string gameFullName, string serverPort, string serverQueryPort)
         {
             var cfg = PortForwardConfig.Load();
 
-            // Toujours alimenter la liste suggérée dans portforward.json (rôle "conseiller" : permet de
-            // voir/recopier les ports à ouvrir — ex. forward manuel sur OPNsense — même si l'UPnP est off).
+            // Always populate the suggested list in portforward.json ("advisor" role: lets you
+            // see/copy the ports to open — e.g. manual forward on OPNsense — even if UPnP is off).
             var suggestions = PortResolver.Suggest(gameFullName, serverPort, serverQueryPort);
             var spf = cfg.EnsureServer(serverId, suggestions);
 
-            if (!cfg.Enabled) { return; }  // interrupteur maître : rien ne s'ouvre, mais la liste reste visible
+            if (!cfg.Enabled) { return; }  // master switch: nothing opens, but the list stays visible
             if (!spf.Enabled) { return; }
 
             if (!await Backend.IsAvailableAsync())
             {
-                AppLog.Warn("PortForward", $"#{serverId} : pas de passerelle UPnP disponible. Active l'UPnP sur la box ou forward les ports manuellement.");
+                AppLog.Warn("PortForward", $"#{serverId}: no UPnP gateway available. Enable UPnP on the router or forward the ports manually.");
                 return;
             }
 
@@ -49,14 +49,14 @@ namespace WindowsGSM.Functions.PortForward
                 }
                 catch (System.Exception e)
                 {
-                    AppLog.Warn("PortForward", $"#{serverId} ouverture {pm.Key} : {e.Message}");
+                    AppLog.Warn("PortForward", $"#{serverId} opening {pm.Key}: {e.Message}");
                 }
             }
 
             if (opened.Count > 0)
             {
                 lock (_lock) { _active[serverId] = opened; }
-                AppLog.Warn("PortForward", $"#{serverId} : {opened.Count} port(s) ouvert(s) via UPnP.");
+                AppLog.Warn("PortForward", $"#{serverId}: {opened.Count} port(s) opened via UPnP.");
             }
         }
 
@@ -72,11 +72,11 @@ namespace WindowsGSM.Functions.PortForward
             foreach (var pm in toClose)
             {
                 try { await Backend.UnmapAsync(pm.Port, pm.Protocol); }
-                catch (System.Exception e) { AppLog.Warn("PortForward", $"#{serverId} fermeture {pm.Key} : {e.Message}"); }
+                catch (System.Exception e) { AppLog.Warn("PortForward", $"#{serverId} closing {pm.Key}: {e.Message}"); }
             }
         }
 
-        /// <summary>À appeler à la fermeture de l'appli : referme tous les ports qu'on a ouverts.</summary>
+        /// <summary>Call when the app closes: re-closes all the ports we opened.</summary>
         public static async Task CleanupAllAsync()
         {
             List<string> ids;

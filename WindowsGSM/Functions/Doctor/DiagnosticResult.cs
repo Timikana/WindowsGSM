@@ -2,7 +2,7 @@ namespace WindowsGSM.Functions.Doctor
 {
     public enum DiagStatus { Ok, Warn, Fail, Info, Skip }
 
-    /// <summary>Une ligne du bulletin de santé d'un serveur.</summary>
+    /// <summary>One line of a server's health report.</summary>
     public class DiagnosticResult
     {
         public string Check { get; set; } = "";

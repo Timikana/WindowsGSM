@@ -8,10 +8,10 @@ using Newtonsoft.Json.Linq;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Découverte de serveurs dédiés Steam via le dépôt de données WindowsGSM/SteamAppInfo.
-    /// - apps.json : liste {appid, name} (recherche par nom).
-    /// - AppInfo/&lt;appid&gt;.json : métadonnées Steam, dont config.launch (exécutable + arguments par OS).
-    /// Permet d'ajouter "n'importe quel" serveur Steam à WGSM par son AppID, sans coder un plugin.
+    /// Discovery of Steam dedicated servers via the WindowsGSM/SteamAppInfo data repository.
+    /// - apps.json: list of {appid, name} (search by name).
+    /// - AppInfo/&lt;appid&gt;.json: Steam metadata, including config.launch (executable + arguments per OS).
+    /// Lets you add "any" Steam server to WGSM by its AppID, without coding a plugin.
     /// </summary>
     public static class SteamApps
     {
@@ -24,19 +24,19 @@ namespace WindowsGSM.Functions
             public string Name;
         }
 
-        /// <summary>Profil de lancement résolu depuis AppInfo (exécutable Windows + arguments).</summary>
+        /// <summary>Launch profile resolved from AppInfo (Windows executable + arguments).</summary>
         public struct LaunchProfile
         {
             public string AppId;
             public string Name;
-            public string Executable; // ex. "FactoryServer.exe" ou "startdedicated.bat"
-            public string Arguments;  // ex. "-log -unattended"
+            public string Executable; // e.g. "FactoryServer.exe" or "startdedicated.bat"
+            public string Arguments;  // e.g. "-log -unattended"
             public bool Found;
         }
 
         private static readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
 
-        /// <summary>Charge apps.json (liste complète des serveurs dédiés). Vide si indisponible.</summary>
+        /// <summary>Loads apps.json (full list of dedicated servers). Empty if unavailable.</summary>
         public static async Task<List<AppEntry>> GetAppListAsync()
         {
             var list = new List<AppEntry>();
@@ -58,7 +58,7 @@ namespace WindowsGSM.Functions
             return list;
         }
 
-        /// <summary>Recherche par sous-chaîne (insensible à la casse) dans les noms. Limite le nombre de résultats.</summary>
+        /// <summary>Substring search (case-insensitive) in names. Limits the number of results.</summary>
         public static async Task<List<AppEntry>> SearchAsync(string query, int max = 50)
         {
             var all = await GetAppListAsync().ConfigureAwait(false);
@@ -67,7 +67,7 @@ namespace WindowsGSM.Functions
             return all.Where(a => a.Name.ToLowerInvariant().Contains(q) || a.AppId == q).Take(max).ToList();
         }
 
-        /// <summary>Résout le profil de lancement Windows (exe + args + nom) pour un AppID via AppInfo/&lt;appid&gt;.json.</summary>
+        /// <summary>Resolves the Windows launch profile (exe + args + name) for an AppID via AppInfo/&lt;appid&gt;.json.</summary>
         public static async Task<LaunchProfile> ResolveLaunchAsync(string appId)
         {
             var prof = new LaunchProfile { AppId = appId, Found = false };
@@ -90,12 +90,12 @@ namespace WindowsGSM.Functions
                         string oslist = cfg?.Value<string>("oslist") ?? string.Empty;
                         string osarch = cfg?.Value<string>("osarch") ?? string.Empty;
 
-                        // On ne veut que Windows (oslist vide = tous OS, accepté en dernier recours).
+                        // We only want Windows (empty oslist = all OS, accepted as a last resort).
                         bool isWin = oslist.IndexOf("windows", StringComparison.OrdinalIgnoreCase) >= 0;
                         bool anyOs = string.IsNullOrEmpty(oslist);
                         if (!isWin && !anyOs) { continue; }
 
-                        // Score : windows 64 > windows > tous-OS.
+                        // Score: windows 64 > windows > all-OS.
                         int score = isWin ? (osarch == "64" ? 3 : 2) : 1;
                         if (score > bestScore && !string.IsNullOrEmpty(e.Value<string>("executable")))
                         {

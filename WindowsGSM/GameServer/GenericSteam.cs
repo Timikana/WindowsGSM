@@ -7,9 +7,9 @@ using Newtonsoft.Json.Linq;
 namespace WindowsGSM.GameServer
 {
     /// <summary>
-    /// Serveur dédié Steam GÉNÉRIQUE : n'importe quel AppID, sans plugin dédié. Le profil
-    /// (appid / exécutable / arguments / nom) est résolu depuis WindowsGSM/SteamAppInfo au moment
-    /// de l'ajout (cf. Functions.SteamApps) et stocké dans configs/wgsm-generic.json par serveur.
+    /// GENERIC Steam dedicated server: any AppID, without a dedicated plugin. The profile
+    /// (appid / executable / arguments / name) is resolved from WindowsGSM/SteamAppInfo at the time
+    /// of adding (cf. Functions.SteamApps) and stored in configs/wgsm-generic.json per server.
     /// </summary>
     class GenericSteam
     {
@@ -19,7 +19,7 @@ namespace WindowsGSM.GameServer
         public string Notice;
 
         public const string FullName = "Steam Dedicated Server (Generic)";
-        public string StartPath = string.Empty;            // exe résolu (profil)
+        public string StartPath = string.Empty;            // resolved exe (profile)
         public bool AllowsEmbedConsole = true;
         public int PortIncrements = 1;
         public dynamic QueryMethod = new Query.A2S();
@@ -51,10 +51,10 @@ namespace WindowsGSM.GameServer
                 StartPath = j.Value<string>("exe") ?? string.Empty;
                 _launchArgs = j.Value<string>("args") ?? string.Empty;
             }
-            catch { /* profil absent/illisible -> champs vides */ }
+            catch { /* profile missing/unreadable -> empty fields */ }
         }
 
-        /// <summary>Écrit le profil générique d'un serveur (appelé par le dialogue d'ajout, AVANT l'install).</summary>
+        /// <summary>Writes a server's generic profile (called by the add dialog, BEFORE the install).</summary>
         public static void SaveProfile(string serverId, string appid, string name, string exe, string args)
         {
             var j = new JObject { ["appid"] = appid, ["name"] = name, ["exe"] = exe, ["args"] = args };
@@ -65,7 +65,7 @@ namespace WindowsGSM.GameServer
 
         public async void CreateServerCFG()
         {
-            await Task.CompletedTask; // pas de fichier de config standardisé pour un serveur générique
+            await Task.CompletedTask; // no standardized config file for a generic server
         }
 
         public async Task<Process> Start()
@@ -73,20 +73,20 @@ namespace WindowsGSM.GameServer
             string workingDir = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID);
             if (string.IsNullOrEmpty(StartPath))
             {
-                Error = "Profil générique manquant (exécutable non résolu). Recrée le serveur via l'ajout par AppID.";
+                Error = "Generic profile missing (executable not resolved). Recreate the server via add by AppID.";
                 return null;
             }
 
             string exePath = Path.Combine(workingDir, StartPath);
             if (!File.Exists(exePath))
             {
-                Error = $"{StartPath} introuvable ({exePath})";
+                Error = $"{StartPath} not found ({exePath})";
                 return null;
             }
 
             string param = $"{_launchArgs} {_serverData.ServerParam}".Trim();
 
-            // Script .bat/.cmd -> via cmd.exe ; sinon exécutable direct.
+            // .bat/.cmd script -> via cmd.exe; otherwise direct executable.
             bool isBatch = StartPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
                         || StartPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase);
             string fileName = isBatch ? "cmd.exe" : exePath;
@@ -171,7 +171,7 @@ namespace WindowsGSM.GameServer
 
         public bool IsImportValid(string path)
         {
-            Error = "Import non supporté pour le serveur générique : utilise « Ajouter un serveur Steam (AppID) ».";
+            Error = "Import not supported for the generic server: use \"Add a Steam server (AppID)\".";
             return false;
         }
 

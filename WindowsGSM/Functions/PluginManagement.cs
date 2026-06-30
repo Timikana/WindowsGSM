@@ -32,10 +32,10 @@ namespace WindowsGSM.Functions
         }
 
         /// <summary>
-        /// Copie les plugins embarques par defaut (dossier "default_plugins" livre a cote de l'exe)
-        /// vers plugins\ s'ils n'y sont pas deja. Un marqueur (configs\.default_plugins_seeded) note
-        /// ceux deja semes une fois, afin qu'une suppression volontaire par l'utilisateur soit respectee
-        /// (on ne re-seme pas un plugin deja seme). Idempotent et sans ecrasement.
+        /// Copies the default bundled plugins (the "default_plugins" folder shipped next to the exe)
+        /// into plugins\ if they are not already there. A marker (configs\.default_plugins_seeded) records
+        /// those already seeded once, so that a deliberate deletion by the user is respected
+        /// (we do not re-seed an already-seeded plugin). Idempotent and without overwriting.
         /// </summary>
         public static void SeedDefaultPlugins()
         {
@@ -59,13 +59,13 @@ namespace WindowsGSM.Functions
                 foreach (var srcFolder in Directory.GetDirectories(defaultDir, "*.cs", SearchOption.TopDirectoryOnly))
                 {
                     string name = Path.GetFileName(srcFolder);
-                    if (seeded.Contains(name)) { continue; }            // deja seme une fois -> respecte une suppression
+                    if (seeded.Contains(name)) { continue; }            // already seeded once -> respect a deletion
 
                     string dst = ServerPath.GetPlugins(name);
                     if (!Directory.Exists(dst))
                     {
                         CopyDirectory(srcFolder, dst);
-                        AppLog.Info("Plugins", $"Plugin par defaut seme : {name}");
+                        AppLog.Info("Plugins", $"Default plugin seeded: {name}");
                     }
                     seeded.Add(name);
                     changed = true;
@@ -79,7 +79,7 @@ namespace WindowsGSM.Functions
             }
             catch (Exception e)
             {
-                AppLog.Warn("Plugins", "SeedDefaultPlugins a echoue : " + e.Message);
+                AppLog.Warn("Plugins", "SeedDefaultPlugins failed: " + e.Message);
             }
         }
 
@@ -96,9 +96,9 @@ namespace WindowsGSM.Functions
             }
         }
 
-        // P3-6 : les ~150 MetadataReference (TPA framework .NET 10 + WindowsGSM + Newtonsoft) sont IDENTIQUES
-        // pour tous les plugins. Avant : reconstruites (lecture métadonnées de ~150 DLL) pour CHAQUE plugin
-        // -> ~150×N lectures disque au démarrage. Maintenant : construites UNE fois, partagées (thread-safe).
+        // P3-6: the ~150 MetadataReference (TPA framework .NET 10 + WindowsGSM + Newtonsoft) are IDENTICAL
+        // for all plugins. Before: rebuilt (reading metadata of ~150 DLLs) for EACH plugin
+        // -> ~150×N disk reads at startup. Now: built ONCE, shared (thread-safe).
         private static List<MetadataReference> _sharedReferences;
         private static readonly object _refLock = new object();
         private static List<MetadataReference> GetSharedReferences()
@@ -119,7 +119,7 @@ namespace WindowsGSM.Functions
                 var tpa = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty;
                 foreach (var asmPath in tpa.Split(Path.PathSeparator)) { AddRef(asmPath); }
                 AddRef(Assembly.GetEntryAssembly()?.Location);
-                AddRef(typeof(Newtonsoft.Json.JsonConvert).Assembly.Location); // Newtonsoft.Json réel (NuGet), plus d'extraction bin/
+                AddRef(typeof(Newtonsoft.Json.JsonConvert).Assembly.Location); // real Newtonsoft.Json (NuGet), no more bin/ extraction
                 _sharedReferences = references;
                 return _sharedReferences;
             }
@@ -151,12 +151,12 @@ namespace WindowsGSM.Functions
                 FileName = Path.GetFileName(path)
             };
 
-            // Migration .NET 10 : compilation des plugins via Roslyn (Microsoft.CodeAnalysis)
-            // au lieu de CodeDom (CSharpCodeProvider), inexistant hors .NET Framework.
+            // .NET 10 migration: plugin compilation via Roslyn (Microsoft.CodeAnalysis)
+            // instead of CodeDom (CSharpCodeProvider), which does not exist outside .NET Framework.
             string source = File.ReadAllText(path);
             var syntaxTree = CSharpSyntaxTree.ParseText(source);
 
-            // P3-6 : références identiques pour tous les plugins -> construites 1× et mises en cache (gros gain démarrage)
+            // P3-6: references identical for all plugins -> built once and cached (big startup gain)
             var references = GetSharedReferences();
 
             var compilation = CSharpCompilation.Create(

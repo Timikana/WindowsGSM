@@ -11,10 +11,10 @@ using WindowsGSM.Functions.PortForward;
 namespace WindowsGSM.Functions.Doctor
 {
     /// <summary>
-    /// « Server Doctor » : bulletin de santé d'un serveur en un coup d'œil. Réutilise le modèle de
-    /// ports (incl. quirks type Satisfactory 7777+8888), l'état disque et la détection Java. Tout en
-    /// local, sans sonde externe : indique ce qui écoute réellement sur la machine + rappelle que la
-    /// joignabilité depuis Internet dépend du firewall/port-forward.
+    /// "Server Doctor": a server's health report at a glance. Reuses the port model
+    /// (incl. quirks like Satisfactory 7777+8888), disk state and Java detection. All local,
+    /// no external probe: reports what is actually listening on the machine + reminds that
+    /// reachability from the Internet depends on the firewall/port-forward.
     /// </summary>
     public static class ServerDoctor
     {
@@ -22,26 +22,26 @@ namespace WindowsGSM.Functions.Doctor
         {
             var results = new List<DiagnosticResult>();
 
-            // 1) État du serveur
-            results.Add(new DiagnosticResult("Statut du serveur",
+            // 1) Server state
+            results.Add(new DiagnosticResult("Server status",
                 isRunning ? DiagStatus.Ok : DiagStatus.Info,
-                isRunning ? "En cours d'exécution." : "Arrêté (les contrôles de ports en écoute sont ignorés)."));
+                isRunning ? "Running." : "Stopped (listening-port checks are skipped)."));
 
-            // 2) Ports requis : écoutent-ils localement ?
+            // 2) Required ports: are they listening locally?
             CheckPorts(results, gameFullName, serverPort, serverQueryPort, isRunning);
 
-            // 3) Espace disque du serveur
+            // 3) Server disk space
             CheckDisk(results, serverId);
 
-            // 4) Java (jeux Minecraft)
+            // 4) Java (Minecraft games)
             CheckJava(results, gameFullName);
 
-            // 5) Truck Simulator : server_packages.* requis (sinon le serveur ne démarre pas)
+            // 5) Truck Simulator: server_packages.* required (otherwise the server won't start)
             CheckTruckPackages(results, serverId, gameFullName);
 
-            // Rappel
-            results.Add(new DiagnosticResult("Joignabilité Internet", DiagStatus.Info,
-                "Dépend du firewall + du port-forward sur la box (voir Tools ▸ Ports / UPnP). Ce diagnostic vérifie l'écoute LOCALE, pas l'ouverture côté box."));
+            // Reminder
+            results.Add(new DiagnosticResult("Internet reachability", DiagStatus.Info,
+                "Depends on the firewall + port-forward on the router (see Tools ▸ Ports / UPnP). This diagnostic checks LOCAL listening, not the opening on the router side."));
 
             return results;
         }
@@ -54,7 +54,7 @@ namespace WindowsGSM.Functions.Doctor
 
             if (ports.Count == 0)
             {
-                results.Add(new DiagnosticResult("Ports", DiagStatus.Warn, "Aucun port déduit (config incomplète ?)."));
+                results.Add(new DiagnosticResult("Ports", DiagStatus.Warn, "No port inferred (incomplete config?)."));
                 return;
             }
 
@@ -67,7 +67,7 @@ namespace WindowsGSM.Functions.Doctor
             }
             catch (Exception e)
             {
-                results.Add(new DiagnosticResult("Ports", DiagStatus.Warn, "Impossible de lister les ports en écoute : " + e.Message));
+                results.Add(new DiagnosticResult("Ports", DiagStatus.Warn, "Unable to list listening ports: " + e.Message));
                 return;
             }
 
@@ -81,15 +81,15 @@ namespace WindowsGSM.Functions.Doctor
                 string name = $"Port {pm.Port}/{pm.Protocol} ({pm.Label})";
                 if (!isRunning)
                 {
-                    results.Add(new DiagnosticResult(name, DiagStatus.Skip, "Serveur arrêté."));
+                    results.Add(new DiagnosticResult(name, DiagStatus.Skip, "Server stopped."));
                 }
                 else if (listening)
                 {
-                    results.Add(new DiagnosticResult(name, DiagStatus.Ok, "En écoute localement."));
+                    results.Add(new DiagnosticResult(name, DiagStatus.Ok, "Listening locally."));
                 }
                 else
                 {
-                    results.Add(new DiagnosticResult(name, DiagStatus.Fail, "PAS en écoute alors que le serveur tourne (mauvais port/protocole, ou non encore initialisé ?)."));
+                    results.Add(new DiagnosticResult(name, DiagStatus.Fail, "NOT listening while the server is running (wrong port/protocol, or not yet initialized?)."));
                 }
             }
         }
@@ -103,17 +103,17 @@ namespace WindowsGSM.Functions.Doctor
                 var drive = new DriveInfo(root);
                 if (!drive.IsReady) { return; }
                 double freeGb = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
-                results.Add(new DiagnosticResult("Espace disque",
+                results.Add(new DiagnosticResult("Disk space",
                     freeGb < 5 ? DiagStatus.Warn : DiagStatus.Ok,
-                    $"{freeGb:0.0} Go libres sur {drive.Name}" + (freeGb < 5 ? " (faible)." : ".")));
+                    $"{freeGb:0.0} GB free on {drive.Name}" + (freeGb < 5 ? " (low)." : ".")));
             }
             catch (Exception e)
             {
-                results.Add(new DiagnosticResult("Espace disque", DiagStatus.Warn, e.Message));
+                results.Add(new DiagnosticResult("Disk space", DiagStatus.Warn, e.Message));
             }
         }
 
-        // ===== Vérification de joignabilité EXTERNE (opt-in : envoie l'IP publique à check-host.net) =====
+        // ===== EXTERNAL reachability check (opt-in: sends the public IP to check-host.net) =====
         private static readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
 
         public static async Task<List<DiagnosticResult>> CheckExternalAsync(string gameFullName, string serverPort, string serverQueryPort)
@@ -124,10 +124,10 @@ namespace WindowsGSM.Functions.Doctor
             try { ip = (await _http.GetStringAsync("https://api.ipify.org")).Trim(); }
             catch (Exception e)
             {
-                results.Add(new DiagnosticResult("IP publique", DiagStatus.Warn, "Impossible de l'obtenir : " + e.Message));
+                results.Add(new DiagnosticResult("Public IP", DiagStatus.Warn, "Unable to obtain it: " + e.Message));
                 return results;
             }
-            results.Add(new DiagnosticResult("IP publique", DiagStatus.Info, ip));
+            results.Add(new DiagnosticResult("Public IP", DiagStatus.Info, ip));
 
             List<PortMapping> ports;
             try { ports = PortResolver.Suggest(gameFullName, serverPort, serverQueryPort); }
@@ -138,13 +138,13 @@ namespace WindowsGSM.Functions.Doctor
                 bool tcp = pm.Protocol == PortProtocol.Tcp || pm.Protocol == PortProtocol.Both;
                 if (!tcp)
                 {
-                    results.Add(new DiagnosticResult($"Externe {pm.Port}/UDP ({pm.Label})", DiagStatus.Info,
-                        "UDP : non vérifiable de façon fiable depuis l'extérieur — teste en jeu."));
+                    results.Add(new DiagnosticResult($"External {pm.Port}/UDP ({pm.Label})", DiagStatus.Info,
+                        "UDP: not reliably verifiable from the outside — test in-game."));
                     continue;
                 }
 
                 var r = await CheckHostTcpAsync(ip, pm.Port);
-                r.Check = $"Externe {pm.Port}/TCP ({pm.Label})";
+                r.Check = $"External {pm.Port}/TCP ({pm.Label})";
                 results.Add(r);
             }
 
@@ -160,7 +160,7 @@ namespace WindowsGSM.Functions.Doctor
                 var initResp = await _http.SendAsync(init);
                 var initObj = JObject.Parse(await initResp.Content.ReadAsStringAsync());
                 string reqId = initObj["request_id"]?.ToString();
-                if (string.IsNullOrEmpty(reqId)) { return new DiagnosticResult("", DiagStatus.Warn, "check-host.net : pas de request_id."); }
+                if (string.IsNullOrEmpty(reqId)) { return new DiagnosticResult("", DiagStatus.Warn, "check-host.net: no request_id."); }
 
                 int open = 0, closed = 0;
                 for (int i = 0; i < 7; i++)
@@ -175,23 +175,23 @@ namespace WindowsGSM.Functions.Doctor
                     foreach (var prop in res.Properties())
                     {
                         var val = prop.Value;
-                        if (val == null || val.Type == JTokenType.Null) { continue; } // nœud en attente
+                        if (val == null || val.Type == JTokenType.Null) { continue; } // node still pending
                         var first = val.First;
                         if (first == null) { continue; }
                         if (first["address"] != null) { open++; }
                         else if (first["error"] != null) { closed++; }
                     }
 
-                    if (open > 0) { return new DiagnosticResult("", DiagStatus.Ok, $"Ouvert depuis Internet ({open} nœud(s) ont pu se connecter)."); }
-                    if (closed >= 2) { break; } // assez de nœuds ont échoué -> conclure
+                    if (open > 0) { return new DiagnosticResult("", DiagStatus.Ok, $"Open from the Internet ({open} node(s) were able to connect)."); }
+                    if (closed >= 2) { break; } // enough nodes failed -> conclude
                 }
 
-                if (closed > 0) { return new DiagnosticResult("", DiagStatus.Fail, "NON joignable depuis l'extérieur (connexion refusée/timeout). Vérifie firewall + port-forward."); }
-                return new DiagnosticResult("", DiagStatus.Warn, "Indéterminé (pas de réponse claire des sondes).");
+                if (closed > 0) { return new DiagnosticResult("", DiagStatus.Fail, "NOT reachable from the outside (connection refused/timeout). Check firewall + port-forward."); }
+                return new DiagnosticResult("", DiagStatus.Warn, "Undetermined (no clear response from the probes).");
             }
             catch (Exception e)
             {
-                return new DiagnosticResult("", DiagStatus.Warn, "check-host.net : " + e.Message);
+                return new DiagnosticResult("", DiagStatus.Warn, "check-host.net: " + e.Message);
             }
         }
 
@@ -206,11 +206,11 @@ namespace WindowsGSM.Functions.Doctor
                 int major = JavaHelper.GetNewestJavaMajorVersion();
                 if (major <= 0)
                 {
-                    results.Add(new DiagnosticResult("Java", DiagStatus.Fail, "Aucun Java détecté (requis pour Minecraft). Voir adoptium.net."));
+                    results.Add(new DiagnosticResult("Java", DiagStatus.Fail, "No Java detected (required for Minecraft). See adoptium.net."));
                 }
                 else
                 {
-                    results.Add(new DiagnosticResult("Java", DiagStatus.Ok, $"Java {major} détecté. (MC récent demande 17/21 — adapte si besoin.)"));
+                    results.Add(new DiagnosticResult("Java", DiagStatus.Ok, $"Java {major} detected. (Recent MC requires 17/21 — adjust if needed.)"));
                 }
             }
             catch (Exception e)
@@ -219,10 +219,10 @@ namespace WindowsGSM.Functions.Doctor
             }
         }
 
-        // Euro/American Truck Simulator : le serveur dédié REFUSE de démarrer sans
-        // save\server_packages.sii + .dat (données de map/DLC). Ces fichiers s'exportent
-        // depuis le client (console : export_server_packages) puis le plugin les copie.
-        // On anticipe en alertant si manquants.
+        // Euro/American Truck Simulator: the dedicated server REFUSES to start without
+        // save\server_packages.sii + .dat (map/DLC data). These files are exported
+        // from the client (console: export_server_packages) then the plugin copies them.
+        // We anticipate by alerting if they're missing.
         private static void CheckTruckPackages(List<DiagnosticResult> results, string serverId, string gameFullName)
         {
             string g = (gameFullName ?? "").ToLowerInvariant();
@@ -236,12 +236,12 @@ namespace WindowsGSM.Functions.Doctor
                 if (sii && dat)
                 {
                     results.Add(new DiagnosticResult("server_packages", DiagStatus.Ok,
-                        "server_packages.sii + .dat présents (map/DLC OK)."));
+                        "server_packages.sii + .dat present (map/DLC OK)."));
                 }
                 else
                 {
                     results.Add(new DiagnosticResult("server_packages", DiagStatus.Fail,
-                        "Manquant(s) -> le serveur ne démarrera pas. Dans le client (g_console 1), tape « export_server_packages » avec TOUS tes DLC chargés, puis démarre le serveur : le plugin copie save\\server_packages.sii + .dat automatiquement."));
+                        "Missing -> the server won't start. In the client (g_console 1), type \"export_server_packages\" with ALL your DLC loaded, then start the server: the plugin copies save\\server_packages.sii + .dat automatically."));
                 }
             }
             catch (Exception e)

@@ -5,16 +5,16 @@ using System.Text;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Chiffrement au repos de chaînes sensibles (tokens, mots de passe) via DPAPI, lié au compte
-    /// Windows courant. Réutilisable par toute la base (notifications, etc.). Préfixe "enc:v1:" pour
-    /// distinguer une valeur chiffrée d'une valeur en clair (rétro-compat / migration douce).
+    /// Encryption at rest of sensitive strings (tokens, passwords) via DPAPI, bound to the current
+    /// Windows account. Reusable across the whole codebase (notifications, etc.). Prefix "enc:v1:" to
+    /// distinguish an encrypted value from a plaintext value (backward-compat / soft migration).
     /// </summary>
     public static class Secret
     {
         private const string EncPrefix = "enc:v1:";
         private static readonly byte[] _entropy = Encoding.UTF8.GetBytes("WindowsGSM.Secret");
 
-        /// <summary>Chiffre une valeur (renvoie "enc:v1:..."). Vide -> vide.</summary>
+        /// <summary>Encrypts a value (returns "enc:v1:..."). Empty -> empty.</summary>
         public static string Protect(string plain)
         {
             if (string.IsNullOrEmpty(plain)) { return string.Empty; }
@@ -22,11 +22,11 @@ namespace WindowsGSM.Functions
             return EncPrefix + Convert.ToBase64String(enc);
         }
 
-        /// <summary>Déchiffre une valeur. Si elle n'est pas préfixée -> considérée en clair et renvoyée telle quelle.</summary>
+        /// <summary>Decrypts a value. If it is not prefixed -> considered plaintext and returned as-is.</summary>
         public static string Unprotect(string stored)
         {
             if (string.IsNullOrEmpty(stored)) { return string.Empty; }
-            if (!stored.StartsWith(EncPrefix)) { return stored; } // ancienne valeur en clair
+            if (!stored.StartsWith(EncPrefix)) { return stored; } // old plaintext value
             try
             {
                 byte[] enc = Convert.FromBase64String(stored.Substring(EncPrefix.Length));
@@ -35,7 +35,7 @@ namespace WindowsGSM.Functions
             }
             catch
             {
-                return string.Empty; // chiffré par un autre compte Windows / corrompu
+                return string.Empty; // encrypted by another Windows account / corrupted
             }
         }
 

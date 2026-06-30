@@ -6,22 +6,22 @@ using Microsoft.Win32;
 namespace WindowsGSM.Functions.Donator
 {
     /// <summary>
-    /// Statut « donateur » qui débloque les fonctions premium du fork (ex. Notifications multi-canaux).
-    /// Deux voies :
-    ///  (1) DONATEUR PATREON de l'auteur original — on GARDE le « Donor Connect » existant
-    ///      (validation windowsgsm.com). MainWindow renseigne <see cref="AuthorDonorActive"/> après auth.
-    ///  (2) PROPRIÉTAIRE (toi) — clé perso dérivée d'une PASSPHRASE + sel (PBKDF2-SHA256), définie en local
-    ///      via l'outil `donator setowner` (la passphrase ne quitte jamais la machine ; seuls le hash + le sel
-    ///      sont embarqués). Bonus : la machine de l'auteur est aussi reconnue par empreinte anonyme (auto).
-    /// NB : verrou « honor-system » (app open-source MIT) — dissuasif, pas du DRM.
+    /// "Donor" status that unlocks the fork's premium features (e.g. multi-channel Notifications).
+    /// Two paths:
+    ///  (1) Original author's PATREON DONOR — we KEEP the existing "Donor Connect"
+    ///      (windowsgsm.com validation). MainWindow sets <see cref="AuthorDonorActive"/> after auth.
+    ///  (2) OWNER (you) — personal key derived from a PASSPHRASE + salt (PBKDF2-SHA256), set locally
+    ///      via the `donator setowner` tool (the passphrase never leaves the machine; only the hash + salt
+    ///      are embedded). Bonus: the author's machine is also recognized by anonymous fingerprint (auto).
+    /// NB: "honor-system" lock (open-source MIT app) — a deterrent, not DRM.
     /// </summary>
     public static class DonatorManager
     {
-        // --- Propriétaire : empreinte machine anonyme (auto, aucune saisie) ---
+        // --- Owner: anonymous machine fingerprint (auto, no input) ---
         private const string OwnerHash = "d45a1aa40850aa7d0397ba86270d7e44f179c28159e9cce95288ed902f91108a";
         private const string OwnerSalt = "WGSM-Donator-v1";
 
-        // --- Propriétaire : passphrase + sel (PBKDF2). Défini par `donator setowner` (passphrase locale). ---
+        // --- Owner: passphrase + salt (PBKDF2). Set by `donator setowner` (local passphrase). ---
         private const string OwnerPbkdf2SaltB64 = "v3qBMqLwNXdOT2SnI6d+tw==";
         private const string OwnerPbkdf2Hash = "a1f110d8c8dd469ff827e97c9ec360a1555c19218879de9d4a035cbb1cb78495";
         private const int OwnerPbkdf2Iter = 200000;
@@ -31,13 +31,13 @@ namespace WindowsGSM.Functions.Donator
 
         private static bool? _ownerMachineCache;
 
-        /// <summary>Positionné par MainWindow d'après le « Donor Connect » Patreon de l'auteur (g_DonorType).</summary>
+        /// <summary>Set by MainWindow based on the author's Patreon "Donor Connect" (g_DonorType).</summary>
         public static bool AuthorDonorActive { get; set; }
 
-        /// <summary>Accès aux fonctions donateur : donateur Patreon de l'auteur OU propriétaire.</summary>
+        /// <summary>Access to donor features: author's Patreon donor OR owner.</summary>
         public static bool IsDonator => IsOwner() || AuthorDonorActive;
 
-        /// <summary>Propriétaire = machine de l'auteur (auto) OU passphrase propriétaire déjà déverrouillée.</summary>
+        /// <summary>Owner = author's machine (auto) OR owner passphrase already unlocked.</summary>
         public static bool IsOwner() => IsOwnerMachine() || IsOwnerUnlockedStored();
 
         private static bool IsOwnerMachine()
@@ -61,7 +61,7 @@ namespace WindowsGSM.Functions.Donator
             catch { return false; }
         }
 
-        /// <summary>Déverrouille le mode propriétaire avec la passphrase perso (PBKDF2). Persiste si OK.</summary>
+        /// <summary>Unlocks owner mode with the personal passphrase (PBKDF2). Persists if OK.</summary>
         public static bool UnlockOwner(string passphrase)
         {
             if (string.IsNullOrEmpty(OwnerPbkdf2Hash) || string.IsNullOrEmpty(OwnerPbkdf2SaltB64) || string.IsNullOrEmpty(passphrase)) { return false; }
@@ -78,7 +78,7 @@ namespace WindowsGSM.Functions.Donator
             catch { return false; }
         }
 
-        /// <summary>Retire le déverrouillage propriétaire local.</summary>
+        /// <summary>Removes the local owner unlock.</summary>
         public static void LockOwner()
         {
             try { using var k = Registry.CurrentUser.CreateSubKey(RegPath); k.DeleteValue(RegOwnerUnlocked, false); } catch { }

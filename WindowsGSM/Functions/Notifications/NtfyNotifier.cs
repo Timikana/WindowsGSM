@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.Notifications
 {
     /// <summary>
-    /// Canal ntfy (https://ntfy.sh ou instance auto-hébergée) : POST texte sur un topic.
-    /// Idéal pour des notifications push sur téléphone sans bot. Auth Bearer optionnelle (topic privé).
+    /// ntfy channel (https://ntfy.sh or self-hosted instance): POST text to a topic.
+    /// Ideal for push notifications on a phone without a bot. Optional Bearer auth (private topic).
     /// </summary>
     public class NtfyNotifier : INotifier
     {
@@ -35,7 +35,7 @@ namespace WindowsGSM.Functions.Notifications
                 {
                     req.Content = new StringContent(message ?? string.Empty, Encoding.UTF8);
 
-                    // Les en-têtes HTTP n'acceptent pas les retours-ligne -> on aplatit le titre.
+                    // HTTP headers don't accept line breaks -> flatten the title.
                     if (!string.IsNullOrWhiteSpace(title))
                     {
                         req.Headers.TryAddWithoutValidation("Title", title.Replace("\r", " ").Replace("\n", " "));
@@ -52,7 +52,7 @@ namespace WindowsGSM.Functions.Notifications
                     var resp = await _http.SendAsync(req);
                     if (!resp.IsSuccessStatusCode)
                     {
-                        AppLog.Warn("Notifier/ntfy", $"HTTP {(int)resp.StatusCode} sur {url}");
+                        AppLog.Warn("Notifier/ntfy", $"HTTP {(int)resp.StatusCode} on {url}");
                         return false;
                     }
                     return true;

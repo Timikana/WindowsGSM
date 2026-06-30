@@ -6,19 +6,19 @@ using System.Linq;
 namespace WindowsGSM.Functions.Mods
 {
     /// <summary>
-    /// Gestion des mods-fichiers/dossiers d'un serveur. Activer/désactiver = DÉPLACER l'élément vers un
-    /// dossier voisin « &lt;mods&gt;_disabled » (réversible, et le loader du jeu ne le voit jamais — marche
-    /// pour les .jar (Minecraft), .dll (Valheim), .cs (Rust) comme pour les sous-dossiers (7DtD, SML)).
+    /// Management of a server's file/folder mods. Enable/disable = MOVE the item to a
+    /// sibling folder "&lt;mods&gt;_disabled" (reversible, and the game loader never sees it — works
+    /// for .jar (Minecraft), .dll (Valheim), .cs (Rust) as well as for subfolders (7DtD, SML)).
     /// </summary>
     public static class ModFolder
     {
         public class ModItem
         {
-            public string Name;          // nom de fichier/dossier
-            public string FullPath;      // emplacement actuel
+            public string Name;          // file/folder name
+            public string FullPath;      // current location
             public bool IsDirectory;
             public bool Enabled;
-            public long SizeBytes;       // 0 pour un dossier (non calculé)
+            public long SizeBytes;       // 0 for a folder (not computed)
         }
 
         public static string DisabledDir(string modDir) => modDir.TrimEnd('\\', '/') + "_disabled";
@@ -60,10 +60,10 @@ namespace WindowsGSM.Functions.Mods
                     }
                 }
             }
-            catch { /* dossier illisible → ignore */ }
+            catch { /* unreadable folder -> ignore */ }
         }
 
-        /// <summary>Bascule activé/désactivé en déplaçant l'élément. Retourne le nouveau chemin.</summary>
+        /// <summary>Toggles enabled/disabled by moving the item. Returns the new path.</summary>
         public static string Toggle(string serverFiles, ModProfile profile, ModItem item)
         {
             string modDir = Path.Combine(serverFiles ?? "", profile.ModFolderRelative);
@@ -77,7 +77,7 @@ namespace WindowsGSM.Functions.Mods
             return target;
         }
 
-        /// <summary>Ajoute un mod-fichier (copie dans le dossier des mods).</summary>
+        /// <summary>Adds a file mod (copies into the mods folder).</summary>
         public static void AddFile(string serverFiles, ModProfile profile, string sourceFile)
         {
             string modDir = Path.Combine(serverFiles ?? "", profile.ModFolderRelative);

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.Notifications
 {
     /// <summary>
-    /// Canal e-mail via SMTP (System.Net.Mail). Mot de passe chiffré au repos. Supporte plusieurs
-    /// destinataires séparés par virgule ou point-virgule.
+    /// Email channel via SMTP (System.Net.Mail). Password encrypted at rest. Supports multiple
+    /// recipients separated by comma or semicolon.
     /// </summary>
     public class EmailNotifier : INotifier
     {

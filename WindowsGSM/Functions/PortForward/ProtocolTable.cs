@@ -1,31 +1,31 @@
 namespace WindowsGSM.Functions.PortForward
 {
     /// <summary>
-    /// Heuristiques de protocole par jeu. WGSM ne stocke pas le protocole des ports → on devine
-    /// pour les jeux courants, et on retombe sur "Both" (TCP+UDP) quand on ne sait pas : c'est
-    /// fonctionnellement sûr (au pire on ouvre un protocole inutile, jamais on n'en manque un).
-    /// L'utilisateur peut corriger le protocole par port dans la config / l'UI.
+    /// Per-game protocol heuristics. WGSM does not store the protocol of ports -> we guess
+    /// for common games, and fall back to "Both" (TCP+UDP) when we do not know: this is
+    /// functionally safe (at worst we open a useless protocol, never miss one).
+    /// The user can fix the protocol per port in the config / UI.
     /// </summary>
     public static class ProtocolTable
     {
-        /// <summary>Protocole du port de jeu principal selon le nom du jeu (FullName).</summary>
+        /// <summary>Protocol of the main game port based on the game name (FullName).</summary>
         public static PortProtocol GamePort(string gameFullName)
         {
             string g = (gameFullName ?? "").ToLowerInvariant();
 
-            // Minecraft Java : jeu en TCP (query en UDP)
+            // Minecraft Java: game over TCP (query over UDP)
             if (g.Contains("minecraft") && !g.Contains("bedrock") && !g.Contains("pocket")) { return PortProtocol.Tcp; }
-            // Minecraft Bedrock / Pocket : UDP
+            // Minecraft Bedrock / Pocket: UDP
             if (g.Contains("bedrock") || g.Contains("pocket")) { return PortProtocol.Udp; }
 
-            // Inconnu -> les deux (sûr)
+            // Unknown -> both (safe)
             return PortProtocol.Both;
         }
 
-        /// <summary>Le port de requête (query) est presque toujours en UDP.</summary>
+        /// <summary>The query port is almost always UDP.</summary>
         public static PortProtocol QueryPort(string gameFullName) => PortProtocol.Udp;
 
-        /// <summary>RCON est en TCP.</summary>
+        /// <summary>RCON is over TCP.</summary>
         public static PortProtocol RconPort(string gameFullName) => PortProtocol.Tcp;
     }
 }

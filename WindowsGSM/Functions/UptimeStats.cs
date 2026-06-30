@@ -3,8 +3,8 @@ using System.IO;
 
 namespace WindowsGSM.Functions
 {
-    // Statistiques de disponibilité par serveur, persistées dans servers/<id>/configs/uptime.cfg
-    // (format clé=valeur). Démarrages, crashs, temps en ligne cumulé, date de début de suivi.
+    // Per-server availability statistics, persisted in servers/<id>/configs/uptime.cfg
+    // (key=value format). Starts, crashes, cumulative online time, tracking start date.
     public class UptimeStats
     {
         public int Starts;
@@ -35,7 +35,7 @@ namespace WindowsGSM.Functions
                         }
                     }
                 }
-                else { s.Save(serverId); } // initialise le suivi
+                else { s.Save(serverId); } // initializes tracking
             }
             catch { }
             return s;
@@ -53,7 +53,7 @@ namespace WindowsGSM.Functions
             catch { }
         }
 
-        // % de disponibilité depuis le début du suivi
+        // % availability since the start of tracking
         public double AvailabilityPercent()
         {
             double tracked = (DateTime.Now - TrackedSince).TotalSeconds;
@@ -65,7 +65,7 @@ namespace WindowsGSM.Functions
         public string OnlineTimeString()
         {
             var ts = TimeSpan.FromSeconds(OnlineSeconds);
-            return $"{(int)ts.TotalDays}j {ts.Hours:D2}h{ts.Minutes:D2}";
+            return $"{(int)ts.TotalDays}d {ts.Hours:D2}h{ts.Minutes:D2}";
         }
     }
 }

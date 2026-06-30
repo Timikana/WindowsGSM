@@ -12,7 +12,7 @@ namespace WindowsGSM.GameServer
         public string Notice;
 
         public const string FullName = "Stormworks Dedicated Server";
-        // #101 : préférer server64.exe (64-bit) à server.exe (32-bit) pour de meilleures perfs ; fallback 32-bit.
+        // #101: prefer server64.exe (64-bit) over server.exe (32-bit) for better performance; fallback to 32-bit.
         public string StartPath
         {
             get

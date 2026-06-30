@@ -13,13 +13,13 @@ using Newtonsoft.Json.Linq;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Comptage des joueurs pour les jeux qui n'exposent PAS l'A2S Steam (Palworld, Satisfactory).
-    /// On interroge leur API native. Best-effort : renvoie null en cas d'échec (jamais d'exception).
-    /// Réutilise SteamQuery.Info (Players / MaxPlayers).
+    /// Player counting for games that do NOT expose Steam A2S (Palworld, Satisfactory).
+    /// We query their native API. Best-effort: returns null on failure (never an exception).
+    /// Reuses SteamQuery.Info (Players / MaxPlayers).
     /// </summary>
     internal static class NativePlayerQuery
     {
-        // ===== Palworld : API REST GET /v1/api/metrics (Basic auth admin:<AdminPassword>) =====
+        // ===== Palworld: REST API GET /v1/api/metrics (Basic auth admin:<AdminPassword>) =====
         public static async Task<SteamQuery.Info?> PalworldAsync(string host, int restPort, string adminPassword, int timeoutMs = 1500)
         {
             if (string.IsNullOrWhiteSpace(host) || host == "0.0.0.0") { host = "127.0.0.1"; }
@@ -49,11 +49,11 @@ namespace WindowsGSM.Functions
             }
         }
 
-        // ===== Satisfactory : API HTTPS (certif auto-signé) =====
-        // Si apiToken fourni (server.GenerateAPIToken) on l'utilise directement ; sinon on tente
-        // PasswordlessLogin (ne marche que sur un serveur NON claimé). Puis QueryServerState.
-        // secret = token API (server.GenerateAPIToken) OU mot de passe (Client/Admin). On tente, dans l'ordre :
-        // le secret comme token Bearer ; sinon PasswordLogin (secret = mot de passe) ; sinon PasswordlessLogin.
+        // ===== Satisfactory: HTTPS API (self-signed cert) =====
+        // If apiToken is provided (server.GenerateAPIToken) we use it directly; otherwise we try
+        // PasswordlessLogin (only works on a NON-claimed server). Then QueryServerState.
+        // secret = API token (server.GenerateAPIToken) OR password (Client/Admin). We try, in order:
+        // the secret as a Bearer token; otherwise PasswordLogin (secret = password); otherwise PasswordlessLogin.
         public static async Task<SteamQuery.Info?> SatisfactoryAsync(string host, int apiPort, string secret = null, int timeoutMs = 2500)
         {
             if (string.IsNullOrWhiteSpace(host) || host == "0.0.0.0") { host = "127.0.0.1"; }
@@ -63,7 +63,7 @@ namespace WindowsGSM.Functions
             {
                 var handler = new HttpClientHandler
                 {
-                    // Certificat auto-signé du serveur Satisfactory : on ne valide pas (loopback local).
+                    // Satisfactory server's self-signed certificate: we do not validate (local loopback).
                     ServerCertificateCustomValidationCallback = (m, c, ch, e) => true
                 };
                 using (var http = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(timeoutMs) })
@@ -71,14 +71,14 @@ namespace WindowsGSM.Functions
                     string url = $"https://{host}:{apiPort}/api/v1";
                     secret = string.IsNullOrWhiteSpace(secret) ? null : secret.Trim();
 
-                    // 1) secret comme token Bearer direct.
+                    // 1) secret as a direct Bearer token.
                     if (secret != null)
                     {
                         var direct = await SatisQueryState(http, url, secret).ConfigureAwait(false);
                         if (direct != null) { return direct; }
                     }
 
-                    // 2) secret comme mot de passe (PasswordLogin Administrator) ; sinon PasswordlessLogin.
+                    // 2) secret as a password (PasswordLogin Administrator); otherwise PasswordlessLogin.
                     string token = secret != null
                         ? await SatisLogin(http, url, "PasswordLogin", "Administrator", secret).ConfigureAwait(false)
                         : await SatisLogin(http, url, "PasswordlessLogin", "Client", null).ConfigureAwait(false);
@@ -108,7 +108,7 @@ namespace WindowsGSM.Functions
             catch { return null; }
         }
 
-        // ===== 7 Days to Die : via Telnet (pas d'A2S fiable). Login -> "lp" -> "Total of N in the game". =====
+        // ===== 7 Days to Die: via Telnet (no reliable A2S). Login -> "lp" -> "Total of N in the game". =====
         public static async Task<SteamQuery.Info?> SevenDaysTelnetAsync(string host, int telnetPort, string password, int maxPlayers, int timeoutMs = 3500)
         {
             if (string.IsNullOrWhiteSpace(host) || host == "0.0.0.0") { host = "127.0.0.1"; }
@@ -139,13 +139,13 @@ namespace WindowsGSM.Functions
                                         if (n <= 0) { break; }
                                         sb.Append(enc.GetString(buf, 0, n));
                                     }
-                                    catch (IOException) { break; } // gap (read timeout) -> on s'arrête
+                                    catch (IOException) { break; } // gap (read timeout) -> we stop
                                 }
                                 return sb.ToString();
                             }
                             void Send(string s) { var b = enc.GetBytes(s + "\r\n"); stream.Write(b, 0, b.Length); }
 
-                            ReadFor(1200); // bannière + "Please enter password:"
+                            ReadFor(1200); // banner + "Please enter password:"
                             if (!string.IsNullOrEmpty(password)) { Send(password); ReadFor(1000); }
                             Send("lp");
                             string outp = ReadFor(1500);

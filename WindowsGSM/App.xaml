@@ -12,7 +12,7 @@
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
-            <!-- Boutons standards compacts (panneau réglages à positions fixes hérité Metro) -->
+            <!-- Compact standard buttons (fixed-position settings panel inherited from Metro) -->
             <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                 <Setter Property="Padding" Value="6,2" />
                 <Setter Property="MinWidth" Value="0" />

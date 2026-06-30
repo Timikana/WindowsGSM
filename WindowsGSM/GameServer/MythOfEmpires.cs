@@ -4,14 +4,14 @@ using System.IO;
 
 namespace WindowsGSM.GameServer
 {
-    // Myth of Empires — AppID serveur privé 1794810 (SteamDB). UE (base type ARK), query A2S.
-    // ⚠ Lancer d'abord PrivateServerTool.exe pour générer la config avant le 1er démarrage.
+    // Myth of Empires - private server AppID 1794810 (SteamDB). UE (ARK-type base), A2S query.
+    // Warning: run PrivateServerTool.exe first to generate the config before the first start.
     class MythOfEmpires : Engine.UnrealEngine
     {
         private readonly Functions.ServerConfig _serverData;
 
         public string Error;
-        public string Notice = "Lance d'abord PrivateServerTool.exe (dossier PrivateServerTool) pour générer la config avant de démarrer.";
+        public string Notice = "Run PrivateServerTool.exe first (PrivateServerTool folder) to generate the config before starting.";
 
         public const string FullName = "Myth of Empires Dedicated Server";
         public string StartPath = @"WindowsPrivateServer\MOE\Binaries\Win64\MOEServer.exe";
@@ -37,7 +37,7 @@ namespace WindowsGSM.GameServer
         public async Task<Process> Start()
         {
             string exe = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID, StartPath);
-            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} introuvable ({exe}). Lance PrivateServerTool.exe d'abord."; return null; }
+            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} not found ({exe}). Run PrivateServerTool.exe first."; return null; }
 
             string param = string.Empty;
             param += string.IsNullOrWhiteSpace(_serverData.ServerPort) ? string.Empty : $" -Port={_serverData.ServerPort}";

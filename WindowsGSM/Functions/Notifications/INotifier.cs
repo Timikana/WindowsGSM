@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions.Notifications
 {
     /// <summary>
-    /// Canal de notification générique (ntfy, Telegram, e-mail, webhook…). Permet d'ajouter de
-    /// nouveaux canaux sans toucher au code qui émet les alertes.
+    /// Generic notification channel (ntfy, Telegram, email, webhook...). Lets you add new channels
+    /// without touching the code that emits alerts.
     /// </summary>
     public interface INotifier
     {

@@ -4,7 +4,7 @@ using System.IO;
 
 namespace WindowsGSM.GameServer
 {
-    // Citadel: Forged with Fire — AppID serveur 489650 (SteamDB ; client = 487120). UE, query A2S.
+    // Citadel: Forged with Fire — server AppID 489650 (SteamDB; client = 487120). UE, A2S query.
     class Citadel : Engine.UnrealEngine
     {
         private readonly Functions.ServerConfig _serverData;
@@ -31,12 +31,12 @@ namespace WindowsGSM.GameServer
             _serverData = serverData;
         }
 
-        public async void CreateServerCFG() { /* Config dans Citadel\Saved\Config\WindowsServer\ après 1er lancement */ }
+        public async void CreateServerCFG() { /* Config in Citadel\Saved\Config\WindowsServer\ after first launch */ }
 
         public async Task<Process> Start()
         {
             string exe = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID, StartPath);
-            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} introuvable ({exe})"; return null; }
+            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} not found ({exe})"; return null; }
 
             string param = string.Empty;
             param += string.IsNullOrWhiteSpace(_serverData.ServerPort) ? string.Empty : $" -Port={_serverData.ServerPort}";

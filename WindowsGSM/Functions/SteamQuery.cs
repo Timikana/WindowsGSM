@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// Client A2S minimal (protocole Steam "Source Engine Query") pour récupérer
-    /// le nombre de joueurs en ligne d'un serveur. UDP, gère le challenge 0x41.
-    /// Tout est best-effort : en cas d'échec on renvoie null, jamais d'exception.
+    /// Minimal A2S client (Steam "Source Engine Query" protocol) to retrieve
+    /// the number of online players on a server. UDP, handles the 0x41 challenge.
+    /// Everything is best-effort: on failure we return null, never an exception.
     /// </summary>
     internal static class SteamQuery
     {
@@ -26,7 +26,7 @@ namespace WindowsGSM.Functions
         }
 
         /// <summary>
-        /// Interroge un serveur en A2S_INFO. Renvoie (joueurs, max) ou null si injoignable.
+        /// Queries a server with A2S_INFO. Returns (players, max) or null if unreachable.
         /// </summary>
         public static async Task<Info?> GetInfoAsync(string host, int port, int timeoutMs = 1200)
         {
@@ -44,7 +44,7 @@ namespace WindowsGSM.Functions
                     byte[] response = await QueryAsync(udp, BuildRequest(null), timeoutMs).ConfigureAwait(false);
                     if (response == null) { return null; }
 
-                    // Réponse de challenge : 0x41 suivi d'un challenge 4 octets -> on rejoue.
+                    // Challenge response: 0x41 followed by a 4-byte challenge -> we replay.
                     if (response.Length >= 9 && response[4] == 0x41)
                     {
                         byte[] challenge = new byte[4];
@@ -83,8 +83,8 @@ namespace WindowsGSM.Functions
                 Task done = await Task.WhenAny(recv, Task.Delay(timeoutMs, cts.Token)).ConfigureAwait(false);
                 if (done != recv)
                 {
-                    // Timeout : on observe l'exception du ReceiveAsync abandonné (le socket sera fermé)
-                    // pour éviter une "unobserved task exception".
+                    // Timeout: we observe the exception of the abandoned ReceiveAsync (the socket will be closed)
+                    // to avoid an "unobserved task exception".
                     _ = recv.ContinueWith(t => { _ = t.Exception; }, TaskScheduler.Default);
                     return null;
                 }
@@ -95,7 +95,7 @@ namespace WindowsGSM.Functions
 
         private static Info? Parse(byte[] data)
         {
-            // En-tête 0xFFFFFFFF puis 0x49 (A2S_INFO réponse Source).
+            // Header 0xFFFFFFFF then 0x49 (A2S_INFO Source response).
             if (data == null || data.Length < 6 || data[4] != 0x49) { return null; }
 
             int i = 5;
@@ -122,7 +122,7 @@ namespace WindowsGSM.Functions
         private static void SkipString(byte[] data, ref int i)
         {
             while (i < data.Length && data[i] != 0x00) { i++; }
-            i++; // saute le 0 terminal
+            i++; // skip the terminating 0
         }
     }
 }

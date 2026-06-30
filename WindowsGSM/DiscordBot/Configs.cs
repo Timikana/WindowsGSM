@@ -12,8 +12,8 @@ namespace WindowsGSM.DiscordBot
     {
 		private static readonly string _botPath = ServerPath.Get(ServerPath.FolderName.Configs, "discordbot");
 
-		// Chiffrement au repos du token (DPAPI, lie au compte Windows courant).
-		// Prefixe pour distinguer un token chiffre d'un ancien token en clair (retro-compat).
+		// Encryption at rest of the token (DPAPI, tied to the current Windows account).
+		// Prefix to distinguish an encrypted token from an old plaintext token (backward compatibility).
 		private const string TokenEncPrefix = "enc:v1:";
 		private static readonly byte[] _tokenEntropy = Encoding.UTF8.GetBytes("WindowsGSM.DiscordBot.Token");
 
@@ -69,12 +69,12 @@ namespace WindowsGSM.DiscordBot
 
 				if (raw.StartsWith(TokenEncPrefix))
 				{
-					// Token chiffre : ne se dechiffre que sous le compte Windows qui l'a ecrit.
+					// Encrypted token: only decrypts under the Windows account that wrote it.
 					try { return UnprotectToken(raw); }
-					catch { return string.Empty; } // chiffre par un autre compte / corrompu -> forcer une nouvelle saisie
+					catch { return string.Empty; } // encrypted by another account / corrupted -> force a new entry
 				}
 
-				// Ancien format en clair : on le renvoie ET on migre le fichier vers DPAPI de maniere transparente.
+				// Old plaintext format: we return it AND transparently migrate the file to DPAPI.
 				try { SetBotToken(raw); } catch { }
 				return raw;
 			}
@@ -110,8 +110,8 @@ namespace WindowsGSM.DiscordBot
 			File.WriteAllText(Path.Combine(_botPath, "channel.txt"), channel.Trim());
 		}
 
-		// Plusieurs canaux possibles (un par serveur Discord/guild) : IDs séparés par virgule,
-		// point-virgule, espace ou retour-ligne. Tolère l'ancien format à un seul ID.
+		// Multiple channels possible (one per Discord server/guild): IDs separated by comma,
+		// semicolon, space or newline. Tolerates the old single-ID format.
 		public static List<string> GetDashboardChannels()
 		{
 			try
@@ -126,8 +126,8 @@ namespace WindowsGSM.DiscordBot
 			}
 		}
 
-		// ===== Canal « panneau d'administration » (embed interactif permanent) =====
-		// Fichier séparé du dashboard : un ou plusieurs IDs de canaux dédiés à l'administration.
+		// ===== "Administration panel" channel (permanent interactive embed) =====
+		// File separate from the dashboard: one or more channel IDs dedicated to administration.
 		public static string GetAdminPanelChannel()
 		{
 			try

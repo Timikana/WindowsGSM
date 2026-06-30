@@ -12,7 +12,7 @@ namespace WindowsGSM
         [STAThread]
         public static void Main()
         {
-            // MahApps retiré (migration WPF-UI) : plus d'extraction de MahApps.Metro.dll.
+            // MahApps removed (WPF-UI migration): no more extraction of MahApps.Metro.dll.
 
             string roslynBase = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), ServerPath.FolderName.Bin);
             Directory.CreateDirectory(roslynBase);
@@ -27,8 +27,8 @@ namespace WindowsGSM
                 }
             }
 
-            // Newtonsoft.Json vient désormais du NuGet (PackageReference) : plus d'extraction depuis une ressource embarquée.
-            // Le compilateur Roslyn des plugins référence directement l'assembly chargé (cf. PluginManagement.GetSharedReferences).
+            // Newtonsoft.Json now comes from NuGet (PackageReference): no more extraction from an embedded resource.
+            // The plugins' Roslyn compiler references the loaded assembly directly (see PluginManagement.GetSharedReferences).
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {

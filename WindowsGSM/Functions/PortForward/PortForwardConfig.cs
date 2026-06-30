@@ -8,18 +8,18 @@ namespace WindowsGSM.Functions.PortForward
 {
     public class ServerPortForward
     {
-        public bool Enabled { get; set; } = true;       // ouverture pour ce serveur (sous réserve du master global)
+        public bool Enabled { get; set; } = true;       // opening for this server (subject to the global master)
         public List<PortMapping> Ports { get; set; } = new List<PortMapping>();
     }
 
     /// <summary>
-    /// Configuration de l'auto port-forwarding UPnP. Stockée dans &lt;WGSM&gt;\configs\portforward.json.
-    /// - <see cref="Enabled"/> = interrupteur MAÎTRE : si false, rien n'est ouvert.
-    /// - Par serveur : activation + liste de ports avec case on/off (RCON suggéré mais off).
+    /// UPnP auto port-forwarding configuration. Stored in &lt;WGSM&gt;\configs\portforward.json.
+    /// - <see cref="Enabled"/> = MASTER switch: if false, nothing is opened.
+    /// - Per server: enable flag + list of ports with on/off checkbox (RCON suggested but off).
     /// </summary>
     public class PortForwardConfig
     {
-        public bool Enabled { get; set; } = false;                  // master OFF par défaut (opt-in)
+        public bool Enabled { get; set; } = false;                  // master OFF by default (opt-in)
         public Dictionary<string, ServerPortForward> Servers { get; set; } = new Dictionary<string, ServerPortForward>();
 
         private static string FilePath => ServerPath.Get(ServerPath.FolderName.Configs, "portforward.json");
@@ -56,8 +56,8 @@ namespace WindowsGSM.Functions.PortForward
         }
 
         /// <summary>
-        /// Récupère la conf d'un serveur en la créant/complétant à partir des suggestions : ajoute les
-        /// ports suggérés manquants SANS écraser les choix on/off déjà faits par l'utilisateur.
+        /// Gets a server's config, creating/completing it from the suggestions: adds the
+        /// missing suggested ports WITHOUT overwriting the on/off choices already made by the user.
         /// </summary>
         public ServerPortForward EnsureServer(string serverId, List<PortMapping> suggestions)
         {

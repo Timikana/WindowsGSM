@@ -6,10 +6,10 @@ using System.Windows.Media;
 namespace WindowsGSM.Functions.Donator
 {
     /// <summary>
-    /// Fenêtre « fonction donateur » affichée quand un non-donateur ouvre une fonction premium.
-    /// - Renvoie vers le « Donor Connect » Patreon (Réglages) pour les donateurs de l'auteur.
-    /// - Permet au PROPRIÉTAIRE de déverrouiller avec sa passphrase perso (PBKDF2).
-    /// Renvoie DialogResult=true si l'accès est débloqué.
+    /// "Donor feature" window shown when a non-donor opens a premium feature.
+    /// - Points to the Patreon "Donor Connect" (Settings) for the author's donors.
+    /// - Lets the OWNER unlock with their personal passphrase (PBKDF2).
+    /// Returns DialogResult=true if access is unlocked.
     /// </summary>
     public class DonatorDialog : Window
     {
@@ -20,7 +20,7 @@ namespace WindowsGSM.Functions.Donator
 
         public DonatorDialog(string featureName)
         {
-            Title = "Fonction donateur";
+            Title = "Donor feature";
             Width = 560;
             Height = 330;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -32,13 +32,13 @@ namespace WindowsGSM.Functions.Donator
             root.Children.Add(new TextBlock { Text = "★ " + featureName, Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0, 0, 0, 6) });
             root.Children.Add(new TextBlock
             {
-                Text = "Fonction réservée aux donateurs. Deviens donateur via « Donor Connect » dans les Réglages (Patreon), ou — si tu es le propriétaire — déverrouille avec ta passphrase.",
+                Text = "Donor-only feature. Become a donor via \"Donor Connect\" in Settings (Patreon), or — if you are the owner — unlock with your passphrase.",
                 Foreground = Dim,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 16)
             });
 
-            root.Children.Add(new TextBlock { Text = "Passphrase propriétaire :", Foreground = Fg, Margin = new Thickness(0, 0, 0, 4) });
+            root.Children.Add(new TextBlock { Text = "Owner passphrase:", Foreground = Fg, Margin = new Thickness(0, 0, 0, 4) });
             var passBox = new PasswordBox { MinWidth = 460, Margin = new Thickness(0, 0, 0, 6) };
             root.Children.Add(passBox);
 
@@ -46,21 +46,21 @@ namespace WindowsGSM.Functions.Donator
             root.Children.Add(status);
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var unlock = new Wpf.Ui.Controls.Button { Content = "Déverrouiller", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(0, 0, 6, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Fermer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5) };
+            var unlock = new Wpf.Ui.Controls.Button { Content = "Unlock", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5) };
             unlock.Click += (s, e) =>
             {
                 if (DonatorManager.UnlockOwner(passBox.Password))
                 {
                     status.Foreground = Accent;
-                    status.Text = "✔ Déverrouillé.";
+                    status.Text = "✔ Unlocked.";
                     DialogResult = true;
                     Close();
                 }
                 else
                 {
                     status.Foreground = Warn;
-                    status.Text = "Passphrase incorrecte (ou clé propriétaire non encore configurée).";
+                    status.Text = "Incorrect passphrase (or owner key not yet configured).";
                 }
             };
             close.Click += (s, e) => Close();

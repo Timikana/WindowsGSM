@@ -5,10 +5,10 @@ using System.IO;
 namespace WindowsGSM.Functions.ConfigEditor
 {
     /// <summary>
-    /// Modèle spécifique Palworld : PalWorldSettings.ini empaquette TOUS les réglages dans une
-    /// seule valeur inline « OptionSettings=(Key=Val,Key=Val,…) ». Ce modèle décompose cette valeur
-    /// en entrées clé/valeur individuelles et réécrit EN PLACE (préserve les clés non gérées, l'ordre,
-    /// les guillemets et les sous-listes type CrossplayPlatforms=(Steam,Xbox,…)).
+    /// Palworld-specific model: PalWorldSettings.ini packs ALL settings into a single inline value
+    /// "OptionSettings=(Key=Val,Key=Val,...)". This model breaks that value down into individual
+    /// key/value entries and rewrites IN PLACE (preserves unmanaged keys, order, quotes and
+    /// sub-lists like CrossplayPlatforms=(Steam,Xbox,...)).
     /// </summary>
     public class PalworldConfig : IConfigModel
     {
@@ -18,11 +18,11 @@ namespace WindowsGSM.Functions.ConfigEditor
         private readonly List<ConfigEntry> _entries = new List<ConfigEntry>();
         public IReadOnlyList<ConfigEntry> Entries => _entries;
 
-        private string[] _allLines;     // toutes les lignes du .ini
-        private int _optLineIndex = -1; // index de la ligne « OptionSettings=… »
-        private string _prefix;         // « OptionSettings=( » (avant le contenu)
-        private string _suffix;         // « )<\r?> » (après le contenu)
-        private string _inner;          // contenu entre les parenthèses (mutable)
+        private string[] _allLines;     // all lines of the .ini
+        private int _optLineIndex = -1; // index of the "OptionSettings=..." line
+        private string _prefix;         // "OptionSettings=(" (before the content)
+        private string _suffix;         // ")<\r?>" (after the content)
+        private string _inner;          // content between the parentheses (mutable)
 
         public static PalworldConfig Load(string path)
         {
@@ -49,7 +49,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 _optLineIndex = i;
                 _prefix = raw.Substring(0, open + 1);
                 _inner = raw.Substring(open + 1, close - open - 1);
-                _suffix = raw.Substring(close); // « ) » + éventuel « \r »
+                _suffix = raw.Substring(close); // ")" + optional "\r"
                 break;
             }
             if (_optLineIndex < 0) { return; }
@@ -66,7 +66,7 @@ namespace WindowsGSM.Functions.ConfigEditor
 
         private struct Range { public int Start; public int End; public Range(int s, int e) { Start = s; End = e; } }
 
-        /// <summary>Découpe le contenu inline en tokens top-level (virgules hors guillemets/parenthèses).</summary>
+        /// <summary>Splits the inline content into top-level tokens (commas outside quotes/parentheses).</summary>
         private static IEnumerable<Range> TopLevelTokens(string s)
         {
             int depth = 0; bool inq = false; int start = 0;
@@ -85,7 +85,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             if (start <= s.Length) { yield return new Range(start, s.Length); }
         }
 
-        /// <summary>Retrouve la portée de la valeur d'une clé dans _inner (après le « = »).</summary>
+        /// <summary>Finds the span of a key's value within _inner (after the "=").</summary>
         private bool FindValueSpan(string key, out int valStart, out int valLen)
         {
             valStart = 0; valLen = 0;
@@ -116,7 +116,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         {
             if (_optLineIndex < 0) { return; }
             try { File.Copy(Path, Path + ".wgsmbak", true); }
-            catch { /* backup best-effort */ }
+            catch { /* best-effort backup */ }
 
             _allLines[_optLineIndex] = _prefix + _inner + _suffix;
             File.WriteAllText(Path, string.Join("\n", _allLines));

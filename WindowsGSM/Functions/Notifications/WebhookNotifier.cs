@@ -8,8 +8,8 @@ using Newtonsoft.Json;
 namespace WindowsGSM.Functions.Notifications
 {
     /// <summary>
-    /// Canal webhook générique : POST JSON {"title","message"} vers une URL arbitraire
-    /// (Slack/Teams/Gotify/maison…). En-tête Authorization: Bearer optionnel (chiffré au repos).
+    /// Generic webhook channel: POST JSON {"title","message"} to an arbitrary URL
+    /// (Slack/Teams/Gotify/custom...). Optional Authorization: Bearer header (encrypted at rest).
     /// </summary>
     public class WebhookNotifier : INotifier
     {

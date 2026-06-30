@@ -1,11 +1,11 @@
 namespace WindowsGSM.Functions.PortForward
 {
-    /// <summary>Protocole d'un mapping de port. "Both" ouvre TCP et UDP (défaut sûr si inconnu).</summary>
+    /// <summary>Protocol of a port mapping. "Both" opens TCP and UDP (safe default when unknown).</summary>
     public enum PortProtocol { Tcp, Udp, Both }
 
     /// <summary>
-    /// Un port à (éventuellement) ouvrir via UPnP pour un serveur : numéro, protocole, libellé
-    /// lisible, et activé ou non. Sérialisé tel quel dans portforward.json.
+    /// A port to (possibly) open via UPnP for a server: number, protocol, readable
+    /// label, and enabled or not. Serialized as-is in portforward.json.
     /// </summary>
     public class PortMapping
     {

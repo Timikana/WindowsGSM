@@ -4,8 +4,8 @@ using System.Net;
 namespace WindowsGSM.Functions
 {
     /// <summary>
-    /// WebClient avec timeout : le WebClient standard n'expose pas de timeout, donc une requête
-    /// vers une API/un dépôt injoignable peut pendre indéfiniment (et bloquer install/MAJ).
+    /// WebClient with timeout: the standard WebClient does not expose a timeout, so a request
+    /// to an unreachable API/repository can hang indefinitely (and block install/update).
     /// </summary>
     public class TimeoutWebClient : WebClient
     {

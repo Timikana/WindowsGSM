@@ -2,18 +2,18 @@ using System.Collections.Generic;
 
 namespace WindowsGSM.Functions.PortForward
 {
-    /// <summary>Particularités de ports d'un jeu, non déductibles des champs Port/QueryPort de WGSM.</summary>
+    /// <summary>Port specifics of a game, not derivable from WGSM's Port/QueryPort fields.</summary>
     public class PortQuirk
     {
-        public PortProtocol? GamePortProtocol;            // force le protocole du port de jeu
-        public bool IncludeQueryPort = true;              // false si le jeu n'utilise plus de query port
-        public List<PortMapping> ExtraPorts = new List<PortMapping>(); // ports fixes additionnels (ex. reliable)
+        public PortProtocol? GamePortProtocol;            // forces the protocol of the game port
+        public bool IncludeQueryPort = true;              // false if the game no longer uses a query port
+        public List<PortMapping> ExtraPorts = new List<PortMapping>(); // additional fixed ports (e.g. reliable)
     }
 
     /// <summary>
-    /// Table des cas particuliers par jeu. WGSM ne modélise que Port + QueryPort ; certains jeux
-    /// exigent d'autres ports (ou abandonnent le query). On les encode ici pour que la suggestion
-    /// soit juste. L'utilisateur garde la main (cases on/off + ajout manuel).
+    /// Table of special cases per game. WGSM only models Port + QueryPort; some games
+    /// require other ports (or drop the query). We encode them here so the suggestion
+    /// is correct. The user keeps control (on/off checkboxes + manual add).
     /// </summary>
     public static class GamePortQuirks
     {
@@ -21,14 +21,14 @@ namespace WindowsGSM.Functions.PortForward
         {
             string g = (gameFullName ?? "").ToLowerInvariant();
 
-            // Satisfactory — depuis Update 1.1 : port 7777 (TCP+UDP) + 8888/TCP "Reliable Messaging"
-            // OBLIGATOIRE ; les anciens 15000 (beacon) et 15777 (query) ne sont PLUS utilisés.
+            // Satisfactory — since Update 1.1: port 7777 (TCP+UDP) + 8888/TCP "Reliable Messaging"
+            // MANDATORY; the old 15000 (beacon) and 15777 (query) are NO LONGER used.
             if (g.Contains("satisfactory"))
             {
                 return new PortQuirk
                 {
                     GamePortProtocol = PortProtocol.Both,
-                    IncludeQueryPort = false, // 15777 abandonné en 1.1 -> on ne le suggère pas
+                    IncludeQueryPort = false, // 15777 dropped in 1.1 -> we do not suggest it
                     ExtraPorts = new List<PortMapping>
                     {
                         new PortMapping { Port = 8888, Protocol = PortProtocol.Tcp, Label = "Reliable (1.1)", Enabled = true },
@@ -36,7 +36,7 @@ namespace WindowsGSM.Functions.PortForward
                 };
             }
 
-            return null; // pas de particularité -> comportement standard
+            return null; // no specifics -> standard behavior
         }
     }
 }

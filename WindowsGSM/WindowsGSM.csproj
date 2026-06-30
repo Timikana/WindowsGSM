@@ -12,35 +12,35 @@
     <StartupObject>WindowsGSM.Program</StartupObject>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Images\WindowsGSM.ico</ApplicationIcon>
-    <!-- AssemblyInfo.cs existe deja -> pas de generation auto (sinon attributs en double) -->
+    <!-- AssemblyInfo.cs already exists -> no auto-generation (otherwise duplicate attributes) -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- Tolerer le code qui suppose l'ancien comportement le temps de la migration -->
+    <!-- Tolerate code that assumes the old behavior during the migration -->
     <NoWarn>$(NoWarn);CS0618;MSB3277;NU1701</NoWarn>
   </PropertyGroup>
 
-  <!-- Ressources WPF (le SDK n'inclut PAS automatiquement les <Resource>) -->
+  <!-- WPF resources (the SDK does NOT automatically include <Resource>) -->
   <ItemGroup>
     <Resource Include="Images\**\*.png" />
     <Resource Include="Images\**\*.ico" />
   </ItemGroup>
 
-  <!-- Plugins embarques par defaut (17, audites). Leur .cs NE DOIT PAS etre compile dans l'app
-       (sinon doublons de types WindowsGSM.Plugins.*) : on les exclut de la compilation et on les
-       copie tels quels en sortie. Au demarrage, SeedDefaultPlugins() copie ceux manquants dans
-       plugins\ -> le loader Roslyn existant les compile au runtime, comme un plugin installe. -->
+  <!-- Default bundled plugins (17, audited). Their .cs MUST NOT be compiled into the app
+       (otherwise duplicate WindowsGSM.Plugins.* types): we exclude them from compilation and
+       copy them as-is to the output. At startup, SeedDefaultPlugins() copies any missing ones into
+       plugins\ -> the existing Roslyn loader compiles them at runtime, like an installed plugin. -->
   <ItemGroup>
     <Compile Remove="default_plugins\**\*.cs" />
     <Content Include="default_plugins\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- COM pare-feu : gere en late-bound (dynamic) dans WindowsFirewall.cs, plus de COMReference -->
+  <!-- Firewall COM: handled late-bound (dynamic) in WindowsFirewall.cs, no more COMReference -->
 
-  <!-- Packages : versions modernes compatibles .NET 10. Les dizaines de polyfills
-       System.* 4.3.0 de packages.config sont SUPPRIMES (integres au runtime .NET 10). -->
+  <!-- Packages: modern versions compatible with .NET 10. The dozens of System.* 4.3.0
+       polyfills from packages.config are REMOVED (built into the .NET 10 runtime). -->
   <ItemGroup>
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
@@ -50,7 +50,7 @@
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="System.Management" Version="9.0.0" />
-    <!-- DPAPI (ProtectedData) : chiffrement au repos du token du bot Discord. Pas dans le SDK desktop par defaut. -->
+    <!-- DPAPI (ProtectedData): at-rest encryption of the Discord bot token. Not in the desktop SDK by default. -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
     <!-- Remplace Microsoft.CodeDom.Providers.DotNetCompilerPlatform (inexistant en .NET 10) -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />

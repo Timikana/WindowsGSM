@@ -1,8 +1,8 @@
 namespace WindowsGSM
 {
-    // Types de dialog "maison" qui remplacent MahApps.Metro.Controls.Dialogs
-    // (permet de supprimer toute dépendance MahApps). Mêmes noms/membres que MahApps
-    // pour que les call sites existants compilent sans changement.
+    // In-house dialog types that replace MahApps.Metro.Controls.Dialogs
+    // (allows removing any MahApps dependency). Same names/members as MahApps
+    // so that existing call sites compile without changes.
     public enum MessageDialogResult { Affirmative, Negative, FirstAuxiliary, SecondAuxiliary }
 
     public enum MessageDialogStyle { Affirmative, AffirmativeAndNegative }

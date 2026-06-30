@@ -49,14 +49,14 @@ namespace WindowsGSM.Functions
 
         public async void Input(Process process, string text, IntPtr mainWindow)
         {
-            // async void : TOUTE exception non gérée ici tue le process (impossible à rattraper par
-            // l'appelant). On enveloppe donc tout dans un try/catch (ex. stdin non redirigé, handle invalide).
+            // async void: ANY unhandled exception here kills the process (impossible for the caller
+            // to catch). So we wrap everything in a try/catch (e.g. stdin not redirected, invalid handle).
             try
             {
                 if (process == null || process.HasExited) { return; }
 
-                // Process ré-attaché (Process.GetProcessById après redémarrage de WGSM) : l'accès à
-                // StartInfo lève « Process was not started by this object ». On lit en sûr -> false.
+                // Re-attached process (Process.GetProcessById after a WGSM restart): accessing
+                // StartInfo throws "Process was not started by this object". We read safely -> false.
                 bool redirected;
                 try { redirected = process.StartInfo.RedirectStandardInput; }
                 catch { redirected = false; }
@@ -101,14 +101,14 @@ namespace WindowsGSM.Functions
                         }
                         catch (Exception ex)
                         {
-                            AppLog.Warn("ServerConsole", $"Input (envoi commande) : {ex.Message}");
+                            AppLog.Warn("ServerConsole", $"Input (sending command): {ex.Message}");
                         }
                     });
                 }
             }
             catch (Exception ex)
             {
-                AppLog.Warn("ServerConsole", $"Input : {ex.Message}");
+                AppLog.Warn("ServerConsole", $"Input: {ex.Message}");
             }
         }
 

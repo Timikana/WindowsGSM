@@ -4,14 +4,14 @@ using System.IO;
 
 namespace WindowsGSM.GameServer
 {
-    // Core Keeper — AppID serveur dédié 1963720 (≠ client 1621690). Unity headless. Pas d'A2S
-    // (la "Game ID" de partage + le suivi joueurs se lisent dans le log au 1er lancement).
+    // Core Keeper — dedicated server AppID 1963720 (!= client 1621690). Unity headless. No A2S
+    // (the shared "Game ID" + player tracking are read from the log on first launch).
     class CoreKeeper : Engine.Unity
     {
         private readonly Functions.ServerConfig _serverData;
 
         public string Error;
-        public string Notice = "La Game ID de partage se lit dans le log au 1er démarrage.";
+        public string Notice = "The shared Game ID is read from the log on first start.";
 
         public const string FullName = "Core Keeper Dedicated Server";
         public string StartPath = "CoreKeeperServer.exe";
@@ -32,12 +32,12 @@ namespace WindowsGSM.GameServer
             _serverData = serverData;
         }
 
-        public async void CreateServerCFG() { /* config via args/variables ; Game ID dans le log */ }
+        public async void CreateServerCFG() { /* config via args/variables; Game ID in the log */ }
 
         public async Task<Process> Start()
         {
             string exe = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID, StartPath);
-            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} introuvable ({exe})"; return null; }
+            if (!File.Exists(exe)) { Error = $"{Path.GetFileName(exe)} not found ({exe})"; return null; }
 
             string param = "-batchmode -nographics -logfile";
             param += string.IsNullOrWhiteSpace(_serverData.ServerPort) ? string.Empty : $" -port {_serverData.ServerPort}";

@@ -49,42 +49,42 @@
                 </StackPanel>
             </ui:TitleBar.Header>
         </ui:TitleBar>
-        <!-- Conteneur des 9 overlays de dialogue : ZIndex haut pour couvrir TOUT le corps (sibling Row 1) -->
+        <!-- Container for the 9 dialog overlays: high ZIndex to cover the ENTIRE body (sibling Row 1) -->
         <Grid Grid.Row="1" Panel.ZIndex="100">
-            <!-- Assistant : créer un token de bot Discord -->
+            <!-- Wizard: create a Discord bot token -->
             <Grid x:Name="MahAppFlyout_TokenHelp" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
                 <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="580" CornerRadius="8" Padding="22" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                     <StackPanel>
-                        <TextBlock Text="Créer un token de bot Discord" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,14"/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="1.  Ouvre le portail développeur Discord et connecte-toi."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="2.  « New Application » → donne un nom → Create."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="3.  Onglet « Bot » → « Reset Token » → copie le token (affiché une seule fois)."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="4.  Toujours dans « Bot » → active « MESSAGE CONTENT INTENT » (obligatoire pour lire les commandes)."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="5.  Colle le token dans WindowsGSM (Edit → coller → Save), puis active le bot."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12" Text="6.  Clique « Invite » pour ajouter le bot à ton serveur, puis mets ton ID Discord dans l'Admin List."/>
-                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#E0A030" Margin="0,0,0,16" Text="⚠ Garde ton token secret. S'il fuite, fais « Reset Token » dans le portail."/>
+                        <TextBlock Text="Create a Discord bot token" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="1.  Open the Discord Developer Portal and sign in."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="2.  &quot;New Application&quot; → give it a name → Create."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="3.  &quot;Bot&quot; tab → &quot;Reset Token&quot; → copy the token (shown only once)."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="4.  Still in &quot;Bot&quot; → enable &quot;MESSAGE CONTENT INTENT&quot; (required to read commands)."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="5.  Paste the token into WindowsGSM (Edit → paste → Save), then enable the bot."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12" Text="6.  Click &quot;Invite&quot; to add the bot to your server, then put your Discord ID in the Admin List."/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#E0A030" Margin="0,0,0,16" Text="⚠ Keep your token secret. If it leaks, use &quot;Reset Token&quot; in the portal."/>
                         <DockPanel>
-                            <ui:Button Content="Ouvrir le portail Discord" Icon="{ui:SymbolIcon Globe24}" Appearance="Primary" Click="TokenHelp_OpenPortal_Click"/>
-                            <ui:Button Content="Fermer" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="TokenHelp_Close_Click"/>
+                            <ui:Button Content="Open the Discord Portal" Icon="{ui:SymbolIcon Globe24}" Appearance="Primary" Click="TokenHelp_OpenPortal_Click"/>
+                            <ui:Button Content="Close" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="TokenHelp_Close_Click"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>
             </Grid>
-            <!-- Gestion d'un admin Discord : ID (+ vérif nom) et permissions serveurs par cases à cocher -->
+            <!-- Manage a Discord admin: ID (+ name verification) and per-server permissions via checkboxes -->
             <Grid x:Name="MahAppFlyout_DiscordAdmin" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
                 <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="500" CornerRadius="8" Padding="20" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                     <StackPanel>
-                        <TextBlock x:Name="da_title" Text="Ajouter un admin Discord" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
-                        <TextBlock Text="ID Discord de l'utilisateur" Margin="0,0,0,4"/>
+                        <TextBlock x:Name="da_title" Text="Add a Discord admin" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                        <TextBlock Text="User's Discord ID" Margin="0,0,0,4"/>
                         <DockPanel Margin="0,0,0,4">
-                            <ui:Button Content="Vérifier" DockPanel.Dock="Right" Margin="8,0,0,0" Click="DiscordAdmin_Resolve_Click"/>
+                            <ui:Button Content="Verify" DockPanel.Dock="Right" Margin="8,0,0,0" Click="DiscordAdmin_Resolve_Click"/>
                             <TextBox x:Name="da_id" Padding="8,2" VerticalContentAlignment="Center" FontFamily="Consolas"/>
                         </DockPanel>
                         <TextBlock x:Name="da_resolved" Text="" FontSize="12" Foreground="Gray" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="0,0,0,12"
-                                   Text="Astuce : Discord → Paramètres → Avancé → Mode développeur. Puis clic droit sur l'utilisateur → « Copier l'identifiant »."/>
-                        <CheckBox x:Name="da_all" Content="Tous les serveurs (accès complet)" Margin="0,0,0,8" Click="DiscordAdmin_AllToggled"/>
-                        <TextBlock Text="Sinon, choisis les serveurs autorisés :" FontSize="12" Margin="0,0,0,4"/>
+                                   Text="Tip: Discord → Settings → Advanced → Developer Mode. Then right-click the user → &quot;Copy ID&quot;."/>
+                        <CheckBox x:Name="da_all" Content="All servers (full access)" Margin="0,0,0,8" Click="DiscordAdmin_AllToggled"/>
+                        <TextBlock Text="Otherwise, choose the allowed servers:" FontSize="12" Margin="0,0,0,4"/>
                         <Border BorderBrush="{ui:ThemeResource ControlElevationBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,14">
                             <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
                                 <ItemsControl x:Name="da_serverChecks">
@@ -97,48 +97,48 @@
                             </ScrollViewer>
                         </Border>
                         <DockPanel>
-                            <ui:Button Content="Enregistrer" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Click="DiscordAdmin_Save_Click"/>
-                            <ui:Button Content="Annuler" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="DiscordAdmin_Cancel_Click"/>
+                            <ui:Button Content="Save" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Click="DiscordAdmin_Save_Click"/>
+                            <ui:Button Content="Cancel" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="DiscordAdmin_Cancel_Click"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>
             </Grid>
-            <!-- #21 : assistant de construction de l'horaire cron (restart) -->
+            <!-- #21: wizard to build the cron schedule (restart) -->
             <Grid x:Name="MahAppFlyout_CrontabWizard" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
                 <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430" CornerRadius="8" Padding="18" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                     <StackPanel>
-                        <TextBlock Text="Assistant — horaire de redémarrage" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                        <TextBlock Text="Wizard — restart schedule" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
                         <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="Fréquence" Width="90" VerticalAlignment="Center"/>
+                            <TextBlock Text="Frequency" Width="90" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cw_freq" SelectionChanged="CrontabWizard_Changed">
-                                <ComboBoxItem Content="Tous les jours" IsSelected="True"/>
-                                <ComboBoxItem Content="Chaque semaine"/>
+                                <ComboBoxItem Content="Every day" IsSelected="True"/>
+                                <ComboBoxItem Content="Every week"/>
                             </ComboBox>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="Jour" Width="90" VerticalAlignment="Center"/>
+                            <TextBlock Text="Day" Width="90" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cw_day" SelectionChanged="CrontabWizard_Changed">
-                                <ComboBoxItem Content="Lundi" IsSelected="True"/>
-                                <ComboBoxItem Content="Mardi"/>
-                                <ComboBoxItem Content="Mercredi"/>
-                                <ComboBoxItem Content="Jeudi"/>
-                                <ComboBoxItem Content="Vendredi"/>
-                                <ComboBoxItem Content="Samedi"/>
-                                <ComboBoxItem Content="Dimanche"/>
+                                <ComboBoxItem Content="Monday" IsSelected="True"/>
+                                <ComboBoxItem Content="Tuesday"/>
+                                <ComboBoxItem Content="Wednesday"/>
+                                <ComboBoxItem Content="Thursday"/>
+                                <ComboBoxItem Content="Friday"/>
+                                <ComboBoxItem Content="Saturday"/>
+                                <ComboBoxItem Content="Sunday"/>
                             </ComboBox>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="Heure" Width="90" VerticalAlignment="Center"/>
+                            <TextBlock Text="Time" Width="90" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cw_minute" Width="70" DockPanel.Dock="Right" SelectionChanged="CrontabWizard_Changed"/>
                             <TextBlock Text="h" Width="18" DockPanel.Dock="Right" VerticalAlignment="Center" TextAlignment="Center"/>
                             <ComboBox x:Name="cw_hour" Width="70" HorizontalAlignment="Left" SelectionChanged="CrontabWizard_Changed"/>
                         </DockPanel>
                         <Border CornerRadius="4" Padding="8,6" Margin="0,4,0,12" Background="{ui:ThemeResource ControlFillColorSecondaryBrush}">
-                            <TextBlock x:Name="cw_preview" FontFamily="Consolas" Text="cron : 0 6 * * *"/>
+                            <TextBlock x:Name="cw_preview" FontFamily="Consolas" Text="cron: 0 6 * * *"/>
                         </Border>
                         <DockPanel>
-                            <Button Content="Annuler" Click="CrontabWizard_Cancel" Width="90" DockPanel.Dock="Left"/>
-                            <Button Content="Appliquer" Click="CrontabWizard_Apply" Width="110" HorizontalAlignment="Right"/>
+                            <Button Content="Cancel" Click="CrontabWizard_Cancel" Width="90" DockPanel.Dock="Left"/>
+                            <Button Content="Apply" Click="CrontabWizard_Apply" Width="110" HorizontalAlignment="Right"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>
@@ -441,7 +441,7 @@
                 </DockPanel>
             </Border>
             </Grid>
-        <!-- (flyouts convertis en panneaux overlay ci-dessus) -->
+        <!-- (flyouts converted to overlay panels above) -->
 
     <Grid Grid.Row="1">
         <DockPanel Name="hMenu_Discordbot" Margin="190,0,0,0" Visibility="Visible">
@@ -475,18 +475,18 @@
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <Label Content="Discord Bot Token"/>
                                 <Button x:Name="button_DiscordBotTokenEdit" DockPanel.Dock="Right" Content="Edit" Margin="0,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotTokenEdit_Click"/>
-                                <ui:Button DockPanel.Dock="Right" Content="Comment obtenir un token ?" Icon="{ui:SymbolIcon QuestionCircle24}" Margin="0,0,8,5" Padding="8,2" Height="23" Click="TokenHelp_Open_Click"/>
+                                <ui:Button DockPanel.Dock="Right" Content="How to get a token?" Icon="{ui:SymbolIcon QuestionCircle24}" Margin="0,0,8,5" Padding="8,2" Height="23" Click="TokenHelp_Open_Click"/>
                             </DockPanel>
                             <Grid DockPanel.Dock="Top">
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotToken" Height="24" Text="" IsEnabled="False" FontFamily="Consolas"/>
                                 <Rectangle x:Name="rectangle_DiscordBotTokenSpoiler" Fill="#FF2B2B2B" Height="20" Stroke="Black" VerticalAlignment="Top" Margin="3"/>
                             </Grid>
 
-                            <!-- Message dashboard live : poste/maj un message d'état dans un salon -->
+                            <!-- Live dashboard message: posts/updates a status message in a channel -->
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <DockPanel DockPanel.Dock="Left" Width="280">
                                     <DockPanel DockPanel.Dock="Top">
-                                        <Label Content="Dashboard Channel ID(s)" ToolTip="Un ou plusieurs canaux (un par serveur Discord), séparés par des virgules"/>
+                                        <Label Content="Dashboard Channel ID(s)" ToolTip="One or more channels (one per Discord server), separated by commas"/>
                                         <Button x:Name="button_DiscordBotDashboardEdit" DockPanel.Dock="Right" Content="Edit" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotDashboardEdit_Click"/>
                                     </DockPanel>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotDashboard" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
@@ -497,10 +497,10 @@
                                 </DockPanel>
                             </DockPanel>
 
-                            <!-- Panneau d'administration : embed permanent + menu déroulant + boutons d'action, dans un canal dédié -->
+                            <!-- Admin panel: persistent embed + dropdown menu + action buttons, in a dedicated channel -->
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <DockPanel DockPanel.Dock="Top">
-                                    <Label Content="Admin Panel Channel ID(s)" ToolTip="Canal dédié à l'administration (un par serveur Discord), séparés par des virgules. Le bot y maintient un panneau interactif (menu déroulant + boutons)."/>
+                                    <Label Content="Admin Panel Channel ID(s)" ToolTip="Channel dedicated to administration (one per Discord server), separated by commas. The bot maintains an interactive panel there (dropdown menu + buttons)."/>
                                     <Button x:Name="button_DiscordBotAdminPanelEdit" DockPanel.Dock="Right" Content="Edit" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotAdminPanelEdit_Click"/>
                                 </DockPanel>
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotAdminPanel" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
@@ -539,13 +539,13 @@
                 <DockPanel>
                     <Border DockPanel.Dock="Top" CornerRadius="6" Padding="14,10" Margin="0,0,0,12" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                         <DockPanel>
-                            <TextBlock Text="État des serveurs" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Top" Margin="0,0,0,6"/>
+                            <TextBlock Text="Server status" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Top" Margin="0,0,0,6"/>
                             <TextBlock x:Name="dashboard_health" FontSize="14" TextWrapping="Wrap" Text="—"/>
                         </DockPanel>
                     </Border>
 
-                    <!-- Tuiles par serveur : statut + CPU/RAM live + mini-graphes + joueurs -->
-                    <Label DockPanel.Dock="Top" Content="SERVEURS" FontWeight="SemiBold" Foreground="Gray"/>
+                    <!-- Per-server tiles: status + live CPU/RAM + mini-charts + players -->
+                    <Label DockPanel.Dock="Top" Content="SERVERS" FontWeight="SemiBold" Foreground="Gray"/>
                     <ItemsControl DockPanel.Dock="Top" x:Name="dashboard_tiles" Margin="0,4,0,8">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -599,7 +599,7 @@
                                             </StackPanel>
                                         </Grid>
                                         <DockPanel Margin="0,6,0,0">
-                                            <TextBlock Text="Joueurs" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
+                                            <TextBlock Text="Players" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
                                             <TextBlock Text="{Binding Players}" FontSize="11" HorizontalAlignment="Right"/>
                                         </DockPanel>
                                     </StackPanel>
@@ -717,7 +717,7 @@
                     </DockPanel>
 
                     <DockPanel DockPanel.Dock="Top">
-                        <!-- LiveCharts2 : axes et series definis en code-behind (Refresh_DashBoard_LiveChart) -->
+                        <!-- LiveCharts2: axes and series defined in code-behind (Refresh_DashBoard_LiveChart) -->
                         <lvc:CartesianChart x:Name="livechart_players" Height="240" LegendPosition="Right" Margin="0,10,0,0"/>
                     </DockPanel>
                 </DockPanel>
@@ -736,7 +736,7 @@
                                 <Image Source="/WindowsGSM;component/Images/Install.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Ajouter un serveur Steam (AppID)…" Click="Servers_AddGenericSteam_Click">
+                        <MenuItem Header="Add a Steam server (AppID)…" Click="Servers_AddGenericSteam_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Add24"/>
                             </MenuItem.Icon>
@@ -814,7 +814,7 @@
                             <MenuItem Header="Update" Height="30" Click="Actions_Update_Click"/>
                             <MenuItem Header="Update Validate" Height="30" Click="Actions_UpdateValidate_Click"/>
                         </MenuItem>
-                        <MenuItem Header="Update ALL (serveurs avec MAJ dispo)" Click="Actions_UpdateAllAvailable_Click">
+                        <MenuItem Header="Update ALL (servers with update available)" Click="Actions_UpdateAllAvailable_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="ArrowSync24"/>
                             </MenuItem.Icon>
@@ -825,12 +825,12 @@
                                 <Image Source="/WindowsGSM;component/Images/Backup.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Backup ALL (tous les serveurs)" Click="Actions_BackupAll_Click">
+                        <MenuItem Header="Backup ALL (all servers)" Click="Actions_BackupAll_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Save24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Mode maintenance (bascule, serveur sélectionné)" Click="Actions_ToggleMaintenance_Click">
+                        <MenuItem Header="Maintenance mode (toggle, selected server)" Click="Actions_ToggleMaintenance_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Wrench24"/>
                             </MenuItem.Icon>
@@ -864,12 +864,12 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Historique des actions" Click="Browse_ActionHistory_Click">
+                        <MenuItem Header="Action History" Click="Browse_ActionHistory_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="History24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Statistiques de disponibilité" Click="Browse_Uptime_Click">
+                        <MenuItem Header="Uptime Statistics" Click="Browse_Uptime_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DataHistogram24"/>
                             </MenuItem.Icon>
@@ -881,7 +881,7 @@
                         <ui:DropDownButton.Flyout>
                         <ContextMenu>
                         <MenuItem Header="Global Server List Check" Click="Tools_GlobalServerListCheck_Click"/>
-                        <MenuItem Header="API Token (serveur sélectionné)…" Click="Tools_ApiToken_Click"/>
+                        <MenuItem Header="API Token (selected server)…" Click="Tools_ApiToken_Click"/>
                         <MenuItem Header="Install Addons">
                             <MenuItem Header="AMX Mod X + MetaMod-P" Click="Tool_InstallAMXModXMetamodP_Click">
                                 <MenuItem.Icon>
@@ -954,9 +954,9 @@
                 </DockPanel>
             </Grid>
             <Grid Height="1" Background="Black" DockPanel.Dock="Top"/>
-            <!-- P1-2 : recherche/filtre (nom / jeu / état). Filtre la grille en direct. -->
+            <!-- P1-2: search/filter (name / game / status). Filters the grid live. -->
             <Grid Height="40" DockPanel.Dock="Top" Margin="10,5,10,3">
-                <ui:TextBox x:Name="textBox_Search" PlaceholderText="Rechercher un serveur (nom, jeu, état)…"
+                <ui:TextBox x:Name="textBox_Search" PlaceholderText="Search a server (name, game, status)…"
                             Icon="{ui:SymbolIcon Search24}" HorizontalAlignment="Left" Width="340"
                             TextChanged="TextBox_Search_TextChanged"/>
             </Grid>
@@ -1022,7 +1022,7 @@
                         <DataGridTextColumn Header="Query Port" IsReadOnly="True" Binding="{Binding Path=QueryPort}" Width="4*" MinWidth="93"/>
                         <DataGridTextColumn Header="Map" IsReadOnly="True" Binding="{Binding Path=Defaultmap}" Width="7*" MinWidth="50"/>
                         <DataGridTextColumn Header="Players" IsReadOnly="True" Binding="{Binding Path=Maxplayers}" Width="3*" MinWidth="70"/>
-                        <DataGridTextColumn Header="Joueurs" IsReadOnly="True" Binding="{Binding Path=Players}" Width="3*" MinWidth="70" ToolTipService.ToolTip="Joueurs connectés (requête A2S)"/>
+                        <DataGridTextColumn Header="Online Players" IsReadOnly="True" Binding="{Binding Path=Players}" Width="3*" MinWidth="70" ToolTipService.ToolTip="Connected players (A2S query)"/>
                         <DataGridTextColumn Header="CPU" IsReadOnly="True" Binding="{Binding Path=Cpu}" Width="3*" MinWidth="55"/>
                         <DataGridTextColumn Header="RAM" IsReadOnly="True" Binding="{Binding Path=Ram}" Width="3*" MinWidth="70"/>
                         <DataGridTextColumn Header="Uptime" IsReadOnly="True" Binding="{Binding Path=Uptime}" Width="4*" MinWidth="80"/>
@@ -1082,13 +1082,13 @@
                         <Button x:Name="button_discordset" Cursor="Hand" Content="Set Message" HorizontalAlignment="Left" Margin="192,70,0,0" VerticalAlignment="Top" Width="95" Height="26" Click="Button_DiscordSetMessage_Click"/>
                         <Button x:Name="button_discordtest" Cursor="Hand" Content="Test Alert" HorizontalAlignment="Left" Margin="382,70,0,0" VerticalAlignment="Top" Width="85" Height="26" Click="Button_DiscordWebhookTest_Click" IsEnabled="False"/>
                         <Button x:Name="button_discordsettings" Content="Settings" HorizontalAlignment="Left" Margin="292,70,0,0" VerticalAlignment="Top" Width="85" Height="26" Click="Button_DiscordAlertSettings_Click"/>
-                        <!-- #16 : surveillance RAM par serveur (toggle + seuil Mo défini par l'utilisateur) -->
+                        <!-- #16: per-server RAM monitoring (toggle + user-defined MB threshold) -->
                         <Label Content="RAM Watchdog" HorizontalAlignment="Left" Margin="5,156,0,0" VerticalAlignment="Top" Height="26"/>
                         <ui:ToggleSwitch x:Name="switch_memwatchdog" Margin="118,154,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_MemWatchdog_Click" Width="44" Height="30"/>
-                        <Label Content="Limite" HorizontalAlignment="Left" Margin="168,156,0,0" VerticalAlignment="Top" Height="26"/>
+                        <Label Content="Limit" HorizontalAlignment="Left" Margin="168,156,0,0" VerticalAlignment="Top" Height="26"/>
                         <TextBox x:Name="textBox_memlimit" Padding="8,2" VerticalContentAlignment="Center" Height="24" Margin="218,156,0,0" Width="70" VerticalAlignment="Top" HorizontalAlignment="Left" FontFamily="Consolas" LostFocus="TextBox_MemLimit_LostFocus"/>
-                        <Label Content="Mo" HorizontalAlignment="Left" Margin="292,156,0,0" VerticalAlignment="Top" Height="26"/>
-                        <ui:ToggleSwitch x:Name="switch_backupbeforeupdate" Content="Backup MAJ" ToolTip="Sauvegarder le serveur avant chaque mise à jour (consomme du disque)" Margin="322,154,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_BackupBeforeUpdate_Click"/>
+                        <Label Content="MB" HorizontalAlignment="Left" Margin="292,156,0,0" VerticalAlignment="Top" Height="26"/>
+                        <ui:ToggleSwitch x:Name="switch_backupbeforeupdate" Content="Backup before update" ToolTip="Back up the server before each update (uses disk space)" Margin="322,154,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_BackupBeforeUpdate_Click"/>
 
                         <Label x:Name="label_wgsmlog" Content="Log:" HorizontalAlignment="Left" Margin="10,186,0,0" VerticalAlignment="Top"/>
                         <TextBox x:Name="textBox_wgsmlog" Margin="10,212,10,38" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True"/>
@@ -1101,9 +1101,9 @@
                         </GridSplitter.Background>
                     </GridSplitter>
 
-                    <!-- Console = terminal sombre FIXE (lisible quel que soit le thème clair/sombre).
-                         Style="{x:Null}" -> repasse en TextBox WPF classique qui respecte Background/Foreground
-                         (le TextBox WPF-UI les ignore au profit des brushes de thème). -->
+                    <!-- Console = FIXED dark terminal (readable regardless of light/dark theme).
+                         Style="{x:Null}" -> reverts to a classic WPF TextBox that honors Background/Foreground
+                         (the WPF-UI TextBox ignores them in favor of theme brushes). -->
                     <Grid Grid.Column="2" MinWidth="100" Background="#FF1B1B1B">
                         <Rectangle Height="30" VerticalAlignment="Top" Fill="#FF2A2A2A"/>
                         <Button x:Name="Button_AutoScroll" Style="{x:Null}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120" Content="✔ Auto Scroll" Background="#FF2A2A2A" Foreground="#FFEAEAEA" Height="30" BorderThickness="0" Click="Button_AutoScroll_Click" />
@@ -1116,7 +1116,7 @@
             </Grid>
         </DockPanel>
 
-        <!-- Onglet Sauvegarde (versioning des backups) -->
+        <!-- Backups tab (backup versioning) -->
         <DockPanel Name="hMenu_Backups" Margin="190,0,0,0" Visibility="Hidden">
             <Grid Margin="18">
                 <Grid.RowDefinitions>
@@ -1126,55 +1126,55 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Sauvegardes" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                <TextBlock Grid.Row="0" Text="Backups" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,14"/>
                 <DockPanel Grid.Row="1" Margin="0,0,0,12">
-                    <TextBlock Text="Serveur :" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ui:Button Content="Actualiser" Icon="{ui:SymbolIcon ArrowSync24}" DockPanel.Dock="Right" Click="Backups_Refresh_Click"/>
-                    <ui:Button Content="Tout sauvegarder" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Actions_BackupAll_Click"/>
+                    <TextBlock Text="Server:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ui:Button Content="Refresh" Icon="{ui:SymbolIcon ArrowSync24}" DockPanel.Dock="Right" Click="Backups_Refresh_Click"/>
+                    <ui:Button Content="Back up all" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Actions_BackupAll_Click"/>
                     <ComboBox x:Name="cb_backupServer" Width="280" HorizontalAlignment="Left" DisplayMemberPath="Name" SelectionChanged="Backups_ServerChanged"/>
                 </DockPanel>
-                <!-- Emplacement (path) des sauvegardes du serveur sélectionné : éditable -->
+                <!-- Backup location (path) for the selected server: editable -->
                 <DockPanel Grid.Row="2" Margin="0,0,0,12">
-                    <TextBlock Text="Dossier de sauvegarde :" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ui:Button Content="Modifier…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Click="Backups_ChangeLocation_Click"/>
-                    <ui:Button Content="Dossiers…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Backups_ChangeFolders_Click" ToolTip="Limiter la sauvegarde à certains sous-dossiers de serverfiles (ex. savegame). Vide = tout (#179)."/>
+                    <TextBlock Text="Backup folder:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ui:Button Content="Change…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Click="Backups_ChangeLocation_Click"/>
+                    <ui:Button Content="Folders…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Backups_ChangeFolders_Click" ToolTip="Limit the backup to specific subfolders of serverfiles (e.g. savegame). Empty = everything (#179)."/>
                     <TextBox x:Name="textBox_backupLocation" IsReadOnly="True" Padding="8,2" VerticalContentAlignment="Center" Margin="0,0,8,0"
-                             FontFamily="Consolas" ToolTip="Emplacement où sont stockées les sauvegardes de ce serveur"/>
+                             FontFamily="Consolas" ToolTip="Location where this server's backups are stored"/>
                 </DockPanel>
                 <ListView x:Name="lv_backups" Grid.Row="3" Background="{DynamicResource ApplicationBackgroundBrush}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderBrush="{DynamicResource ControlElevationBorderBrush}">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Sauvegarde" Width="400" DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="Backup" Width="400" DisplayMemberBinding="{Binding Name}"/>
                             <GridViewColumn Header="Date" Width="170" DisplayMemberBinding="{Binding Date}"/>
-                            <GridViewColumn Header="Taille" Width="110" DisplayMemberBinding="{Binding Size}"/>
+                            <GridViewColumn Header="Size" Width="110" DisplayMemberBinding="{Binding Size}"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
                 <DockPanel Grid.Row="4" Margin="0,12,0,0">
-                    <ui:Button Content="Sauvegarder ce serveur" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Left" Click="Backups_BackupNow_Click"/>
-                    <ui:Button Content="Restaurer" Icon="{ui:SymbolIcon ArrowUndo24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Caution" Click="Backups_Restore_Click"/>
-                    <ui:Button Content="Supprimer" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Danger" Click="Backups_Delete_Click"/>
-                    <ui:Button Content="Ouvrir le dossier" Icon="{ui:SymbolIcon FolderOpen24}" Margin="8,0,0,0" DockPanel.Dock="Left" Click="Backups_OpenFolder_Click"/>
-                    <!-- Sauvegarde planifiée (par serveur) -->
+                    <ui:Button Content="Back up this server" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Left" Click="Backups_BackupNow_Click"/>
+                    <ui:Button Content="Restore" Icon="{ui:SymbolIcon ArrowUndo24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Caution" Click="Backups_Restore_Click"/>
+                    <ui:Button Content="Delete" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Danger" Click="Backups_Delete_Click"/>
+                    <ui:Button Content="Open folder" Icon="{ui:SymbolIcon FolderOpen24}" Margin="8,0,0,0" DockPanel.Dock="Left" Click="Backups_OpenFolder_Click"/>
+                    <!-- Scheduled backup (per server) -->
                     <ComboBox x:Name="cb_backupHour" Width="70" DockPanel.Dock="Right" VerticalAlignment="Center" SelectionChanged="BackupSchedule_Changed"/>
-                    <ui:ToggleSwitch x:Name="switch_backupauto" Content="Backup auto à" ToolTip="Sauvegarde automatique quotidienne à l'heure choisie (stop → backup → restart)" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,6,0" Click="BackupSchedule_Changed"/>
+                    <ui:ToggleSwitch x:Name="switch_backupauto" Content="Auto backup at" ToolTip="Daily automatic backup at the chosen time (stop → backup → restart)" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,6,0" Click="BackupSchedule_Changed"/>
                 </DockPanel>
             </Grid>
         </DockPanel>
 
-        <!-- Sidebar Windows 11 (remplace le HamburgerMenu Metro) - rétractable (pin/unpin) -->
+        <!-- Windows 11 sidebar (replaces the Metro HamburgerMenu) - collapsible (pin/unpin) -->
         <Border x:Name="SidebarBorder" HorizontalAlignment="Left" Width="190" Panel.ZIndex="10"
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="8,12,8,8">
-                <ui:Button x:Name="NavToggle" Icon="{ui:SymbolIcon Navigation24}" ToolTip="Réduire / épingler le menu" Appearance="Secondary" Click="NavToggle_Click" HorizontalAlignment="Left" Margin="0,0,0,8" Padding="10,8"/>
-                <ui:Button x:Name="NavHome" Content="Accueil" Icon="{ui:SymbolIcon Home24}" Appearance="Primary" Click="NavHome_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavToggle" Icon="{ui:SymbolIcon Navigation24}" ToolTip="Collapse / pin the menu" Appearance="Secondary" Click="NavToggle_Click" HorizontalAlignment="Left" Margin="0,0,0,8" Padding="10,8"/>
+                <ui:Button x:Name="NavHome" Content="Home" Icon="{ui:SymbolIcon Home24}" Appearance="Primary" Click="NavHome_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <ui:Button x:Name="NavDashboard" Content="Dashboard" Icon="{ui:SymbolIcon DataHistogram24}" Appearance="Secondary" Click="NavDashboard_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <ui:Button x:Name="NavDiscordBot" Content="Discord Bot" Icon="{ui:SymbolIcon Chat24}" Appearance="Secondary" Click="NavDiscordBot_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavBackups" Content="Sauvegarde" Icon="{ui:SymbolIcon Archive24}" Appearance="Secondary" Click="NavBackups_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavBackups" Content="Backups" Icon="{ui:SymbolIcon Archive24}" Appearance="Secondary" Click="NavBackups_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <Separator Margin="4,10"/>
                 <ui:Button x:Name="NavPlugins" Content="Plugins" Icon="{ui:SymbolIcon PuzzlePiece24}" Appearance="Secondary" Click="NavPlugins_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavSettings" Content="Réglages" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Click="NavSettings_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavSettings" Content="Settings" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Click="NavSettings_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <Separator Margin="4,10"/>
                 <ui:Button x:Name="NavPorts" Content="Ports / UPnP" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Tools_PortForward_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <ui:Button x:Name="NavDoctor" Content="Server Doctor" Icon="{ui:SymbolIcon Search24}" Appearance="Secondary" Click="Tools_ServerDoctor_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
