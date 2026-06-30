@@ -10,12 +10,12 @@ using Newtonsoft.Json;
 namespace WindowsGSM.Functions.WebApi
 {
     /// <summary>
-    /// Serveur embarqué (#207/#25) : API token + PORTAIL WEB (login, sessions, rôles).
-    ///   API (token Bearer)  : GET /api/servers, POST /api/servers/{id}/{start|stop|restart|backup}
-    ///   Web (cookie session): GET / (login/dashboard), POST /login, GET /logout
-    /// Droits : Viewer=lecture, Operator=+contrôle/backup, Admin=tout ; allowlist de serveurs par compte.
-    /// Sécu : token chiffré, mots de passe PBKDF2, cookie HttpOnly+SameSite=Strict, en-têtes durcis, throttle anti-brute-force.
-    /// ⚠️ HTTP clair -> reverse-proxy HTTPS pour l'exposition internet.
+    /// Embedded server (#207/#25): token API + WEB PORTAL (login, sessions, roles).
+    ///   API (Bearer token)  : GET /api/servers, POST /api/servers/{id}/{start|stop|restart|backup}
+    ///   Web (session cookie): GET / (login/dashboard), POST /login, GET /logout
+    /// Rights: Viewer=read, Operator=+control/backup, Admin=all; per-account server allowlist.
+    /// Security: encrypted token, PBKDF2 passwords, HttpOnly+SameSite=Strict cookie, hardened headers, brute-force throttle.
+    /// ⚠️ Plain HTTP -> put behind an HTTPS reverse-proxy for internet exposure.
     /// </summary>
     public class WebApiServer
     {
@@ -46,14 +46,14 @@ namespace WindowsGSM.Functions.WebApi
         {
             Stop();
             var cfg = WebApiConfig.Load();
-            if (!cfg.Enabled) { LastError = "API désactivée."; return false; }
-            if (string.IsNullOrWhiteSpace(cfg.Token) && !cfg.WebUiEnabled) { LastError = "Token requis (ou active le portail web avec des comptes)."; return false; }
+            if (!cfg.Enabled) { LastError = "API disabled."; return false; }
+            if (string.IsNullOrWhiteSpace(cfg.Token) && !cfg.WebUiEnabled) { LastError = "Token required (or enable the web portal with accounts)."; return false; }
             _token = cfg.Token;
             _cookieSecure = cfg.CookieSecure;
-            // Le portail web (auth + rôles) est une fonction donateur : ne s'active que pour un donateur/propriétaire.
+            // The web portal (auth + roles) is a donator feature: only enabled for a donator/owner.
             _webUi = cfg.WebUiEnabled && Donator.DonatorManager.IsDonator;
-            if (cfg.WebUiEnabled && !_webUi) { AppLog.Warn("WebApi", "Portail web ignoré : fonction réservée aux donateurs."); }
-            if (string.IsNullOrWhiteSpace(_token) && !_webUi) { LastError = "Token requis (le portail web est réservé aux donateurs)."; _listener = null; return false; }
+            if (cfg.WebUiEnabled && !_webUi) { AppLog.Warn("WebApi", "Web portal skipped: donator-only feature."); }
+            if (string.IsNullOrWhiteSpace(_token) && !_webUi) { LastError = "Token required (the web portal is donator-only)."; _listener = null; return false; }
             _listener = new HttpListener();
             string host = string.IsNullOrWhiteSpace(cfg.BindAddress) ? "127.0.0.1" : cfg.BindAddress.Trim();
             _listener.Prefixes.Add($"http://{host}:{cfg.Port}/");
@@ -61,12 +61,12 @@ namespace WindowsGSM.Functions.WebApi
             catch (Exception e)
             {
                 bool nonLocal = host != "127.0.0.1" && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
-                LastError = e.Message + (nonLocal ? $" — écoute hors localhost : lance WGSM en ADMINISTRATEUR, ou netsh http add urlacl url=http://{host}:{cfg.Port}/ user=Tout_le_monde" : "");
+                LastError = e.Message + (nonLocal ? $" — listening outside localhost: run WGSM as ADMINISTRATOR, or netsh http add urlacl url=http://{host}:{cfg.Port}/ user=Everyone" : "");
                 _listener = null;
                 return false;
             }
             BeginGet();
-            AppLog.Info("WebApi", $"Démarré sur http://{host}:{cfg.Port}/ (web={_webUi}).");
+            AppLog.Info("WebApi", $"Started on http://{host}:{cfg.Port}/ (web={_webUi}).");
             return true;
         }
 
@@ -100,7 +100,7 @@ namespace WindowsGSM.Functions.WebApi
 
             if (IsBlocked(ip)) { WriteJson(res, 429, "{\"error\":\"too many failed attempts\"}"); return; }
 
-            // ---- Portail web (cookie session) ----
+            // ---- Web portal (session cookie) ----
             if (_webUi)
             {
                 if (path == "/" && method == "GET") { ServePage(res, GetSession(req) != null); return; }
@@ -108,7 +108,7 @@ namespace WindowsGSM.Functions.WebApi
                 if (path == "/logout") { HandleLogout(req, res); return; }
             }
 
-            // ---- API (token Bearer OU session) ----
+            // ---- API (Bearer token OR session) ----
             Principal prin = ResolvePrincipal(req);
             if (prin == null) { RecordFail(ip); WriteJson(res, 401, "{\"error\":\"unauthorized\"}"); return; }
             ResetFails(ip);
@@ -124,28 +124,28 @@ namespace WindowsGSM.Functions.WebApi
                 parts[0].Equals("api", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("servers", StringComparison.OrdinalIgnoreCase))
             {
                 string id = parts[2]; string action = parts[3].ToLowerInvariant();
-                // A03 : id = chiffres uniquement, action = liste blanche stricte (rien d'autre n'atteint le backend).
+                // A03: id = digits only, action = strict allowlist (nothing else reaches the backend).
                 if (!IsValidId(id) || Array.IndexOf(AllowedActions, action) < 0)
                 {
                     WriteJson(res, 400, "{\"error\":\"invalid request\"}");
                     return;
                 }
-                // A01/CSRF : pour une action via cookie de session, l'Origin (si fourni) doit correspondre à l'hôte.
+                // A01/CSRF: for a session-cookie action, the Origin (if provided) must match the host.
                 if (!prin.ViaToken && !SameOrigin(req))
                 {
-                    AppLog.Warn("WebApi/Audit", $"CSRF refusé id={id} action={action} ip={ip} origin={req.Headers["Origin"]}");
+                    AppLog.Warn("WebApi/Audit", $"CSRF denied id={id} action={action} ip={ip} origin={req.Headers["Origin"]}");
                     WriteJson(res, 403, "{\"error\":\"bad origin\"}");
                     return;
                 }
-                // Droits : token = plein accès ; sinon Operator+ ET serveur autorisé.
+                // Rights: token = full access; otherwise Operator+ AND allowed server.
                 if (!prin.ViaToken && (!prin.User.CanControl || !prin.User.AllowsServer(id)))
                 {
-                    AppLog.Warn("WebApi/Audit", $"Action refusée (droits) user={prin.User?.Username} id={id} action={action} ip={ip}");
+                    AppLog.Warn("WebApi/Audit", $"Action denied (rights) user={prin.User?.Username} id={id} action={action} ip={ip}");
                     WriteJson(res, 403, "{\"error\":\"forbidden\"}");
                     return;
                 }
                 var (ok, msg) = _doAction(id, action);
-                AppLog.Info("WebApi/Audit", $"Action {action} sur #{id} par {(prin.ViaToken ? "token" : prin.User?.Username)} ip={ip} -> {(ok ? "OK" : "refus")}");
+                AppLog.Info("WebApi/Audit", $"Action {action} on #{id} by {(prin.ViaToken ? "token" : prin.User?.Username)} ip={ip} -> {(ok ? "OK" : "denied")}");
                 WriteJson(res, ok ? 202 : 400, $"{{\"ok\":{(ok ? "true" : "false")},\"message\":{JsonConvert.ToString(msg ?? string.Empty)}}}");
                 return;
             }
@@ -162,7 +162,7 @@ namespace WindowsGSM.Functions.WebApi
                 string t = auth.Substring(7).Trim();
                 if (TokenValid(t)) { return new Principal { ViaToken = true }; }
             }
-            // NB : on n'accepte PAS le token en query-string (?token=) — il fuiterait dans les logs proxy/Referer.
+            // NB: the token is NOT accepted as a query-string (?token=) — it would leak into proxy logs/Referer.
 
             var s = GetSession(req);
             if (s != null)
@@ -186,12 +186,12 @@ namespace WindowsGSM.Functions.WebApi
             return true;
         }
 
-        /// <summary>A01/CSRF : si un en-tête Origin/Referer est présent, son hôte doit correspondre à celui de la requête.</summary>
+        /// <summary>A01/CSRF: if an Origin/Referer header is present, its host must match the request host.</summary>
         private static bool SameOrigin(HttpListenerRequest req)
         {
             string origin = req.Headers["Origin"];
             if (string.IsNullOrEmpty(origin)) { origin = req.Headers["Referer"]; }
-            if (string.IsNullOrEmpty(origin)) { return true; } // absent (navigation same-origin) : SameSite=Strict couvre le cas
+            if (string.IsNullOrEmpty(origin)) { return true; } // absent (same-origin navigation): covered by SameSite=Strict
             return Uri.TryCreate(origin, UriKind.Absolute, out var o) && req.Url != null &&
                    string.Equals(o.Host, req.Url.Host, StringComparison.OrdinalIgnoreCase) && o.Port == req.Url.Port;
         }
@@ -212,7 +212,7 @@ namespace WindowsGSM.Functions.WebApi
             return null;
         }
 
-        private const long MaxLoginBody = 4096; // A04 : un login urlencodé tient largement dans 4 Ko
+        private const long MaxLoginBody = 4096; // A04: a urlencoded login fits well within 4 KB
 
         private void HandleLogin(HttpListenerRequest req, HttpListenerResponse res, string ip)
         {
@@ -226,9 +226,9 @@ namespace WindowsGSM.Functions.WebApi
             if (u == null)
             {
                 RecordFail(ip);
-                AppLog.Warn("WebApi/Audit", $"Login échoué user={user} ip={ip}");
-                System.Threading.Thread.Sleep(400); // ralentit le bruteforce, atténue le timing
-                ServePage(res, false, "Identifiants invalides.");
+                AppLog.Warn("WebApi/Audit", $"Login failed user={user} ip={ip}");
+                System.Threading.Thread.Sleep(400); // slows brute-force, mitigates timing
+                ServePage(res, false, "Invalid credentials.");
                 return;
             }
             ResetFails(ip);
@@ -246,7 +246,7 @@ namespace WindowsGSM.Functions.WebApi
             Redirect(res, "/");
         }
 
-        // ---- Anti-brute-force (par IP) ----
+        // ---- Brute-force throttle (per IP) ----
         private const int MaxFails = 10;
         private static readonly TimeSpan FailWindow = TimeSpan.FromMinutes(5);
         private readonly ConcurrentDictionary<string, (int fails, DateTime since)> _failsByIp = new ConcurrentDictionary<string, (int, DateTime)>();
@@ -263,7 +263,7 @@ namespace WindowsGSM.Functions.WebApi
             _failsByIp.AddOrUpdate(ip, (1, DateTime.UtcNow), (k, v) => (DateTime.UtcNow - v.since > FailWindow) ? (1, DateTime.UtcNow) : (v.fails + 1, v.since));
         private void ResetFails(string ip) { _failsByIp.TryRemove(ip, out _); }
 
-        // ---- Réponses ----
+        // ---- Responses ----
         private static void SecurityHeaders(HttpListenerResponse res, bool html)
         {
             res.AddHeader("X-Content-Type-Options", "nosniff");
@@ -276,7 +276,7 @@ namespace WindowsGSM.Functions.WebApi
             res.AddHeader("Content-Security-Policy", html
                 ? "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
                 : "default-src 'none'; base-uri 'none'; frame-ancestors 'none'");
-            // A05 : ne pas divulguer la stack (HttpListener ajoute « Server: Microsoft-HTTPAPI/2.0 »).
+            // A05: don't disclose the stack (HttpListener adds "Server: Microsoft-HTTPAPI/2.0").
             try { res.Headers.Remove("Server"); res.AddHeader("Server", ""); } catch { }
         }
 
@@ -306,8 +306,8 @@ namespace WindowsGSM.Functions.WebApi
         private static string LoginHtml(string error)
         {
             string err = string.IsNullOrEmpty(error) ? string.Empty : $"<p class='err'>{HttpUtility.HtmlEncode(error)}</p>";
-            return @"<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>WindowsGSM — Connexion</title><style>
+            return @"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>WindowsGSM — Sign in</title><style>
 body{background:#1b1b1b;color:#eaeaea;font-family:Segoe UI,Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
 .card{background:#252525;padding:28px 32px;border-radius:10px;box-shadow:0 8px 30px #0008;width:300px}
 h1{font-size:18px;margin:0 0 16px;color:#4cc2d6}
@@ -315,14 +315,14 @@ input{width:100%;box-sizing:border-box;margin:6px 0;padding:10px;border:1px soli
 button{width:100%;margin-top:12px;padding:10px;border:0;border-radius:6px;background:#4cc2d6;color:#08272d;font-weight:600;cursor:pointer}
 .err{color:#e06c6c;font-size:13px}</style></head><body>
 <form class='card' method='post' action='/login'><h1>WindowsGSM</h1>" + err + @"
-<input name='username' placeholder='Utilisateur' autofocus autocomplete='username'>
-<input name='password' type='password' placeholder='Mot de passe' autocomplete='current-password'>
-<button type='submit'>Se connecter</button></form></body></html>";
+<input name='username' placeholder='Username' autofocus autocomplete='username'>
+<input name='password' type='password' placeholder='Password' autocomplete='current-password'>
+<button type='submit'>Sign in</button></form></body></html>";
         }
 
         private static string DashboardHtml()
         {
-            return @"<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+            return @"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>WindowsGSM</title><style>
 body{background:#1b1b1b;color:#eaeaea;font-family:Segoe UI,Arial,sans-serif;margin:0;padding:20px}
 h1{color:#4cc2d6;font-size:20px;display:inline-block}
@@ -334,8 +334,8 @@ th{color:#9a9a9a;font-weight:600}
 button{margin:0 2px;padding:5px 9px;border:0;border-radius:5px;cursor:pointer;font-size:12px;color:#fff}
 .start{background:#2e9e44}.stop{background:#c97a00}.restart{background:#2b8fd0}.backup{background:#555}
 #msg{margin-top:10px;color:#4cc2d6;min-height:18px;font-size:13px}</style></head><body>
-<h1>WindowsGSM</h1><a class='logout' href='/logout'>Déconnexion</a>
-<div id='msg'></div><table><thead><tr><th>ID</th><th>Nom</th><th>Jeu</th><th>État</th><th>Joueurs</th><th>Actions</th></tr></thead><tbody id='b'></tbody></table>
+<h1>WindowsGSM</h1><a class='logout' href='/logout'>Sign out</a>
+<div id='msg'></div><table><thead><tr><th>ID</th><th>Name</th><th>Game</th><th>Status</th><th>Players</th><th>Actions</th></tr></thead><tbody id='b'></tbody></table>
 <script>
 async function load(){
  try{
@@ -353,16 +353,16 @@ async function load(){
     btn.addEventListener('click',function(){act(s.id,x[0]);});ac.appendChild(btn);});
    tr.appendChild(ac);b.appendChild(tr);
   });
- }catch(e){document.getElementById('msg').textContent='Erreur de chargement.';}
+ }catch(e){document.getElementById('msg').textContent='Load error.';}
 }
 async function act(id,a){
  document.getElementById('msg').textContent='...';
  try{
   var r=await fetch('/api/servers/'+id+'/'+a,{method:'POST',credentials:'same-origin'});
   var j=await r.json();
-  document.getElementById('msg').textContent=(r.status==202?'OK : ':'Refusé : ')+(j.message||j.error||r.status);
+  document.getElementById('msg').textContent=(r.status==202?'OK: ':'Denied: ')+(j.message||j.error||r.status);
   setTimeout(load,1500);
- }catch(e){document.getElementById('msg').textContent='Erreur.';}
+ }catch(e){document.getElementById('msg').textContent='Error.';}
 }
 load();setInterval(load,5000);
 </script></body></html>";

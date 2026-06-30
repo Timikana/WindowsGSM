@@ -8,16 +8,16 @@ using Newtonsoft.Json;
 
 namespace WindowsGSM.Functions.WebApi
 {
-    /// <summary>Rôle web : Viewer (lecture), Operator (lecture + contrôle/backup), Admin (tout).</summary>
+    /// <summary>Web role: Viewer (read), Operator (read + control/backup), Admin (all).</summary>
     public enum WebRole { Viewer = 0, Operator = 1, Admin = 2 }
 
-    /// <summary>Compte web : login, mot de passe hashé (PBKDF2), rôle, et serveurs autorisés ("*" = tous).</summary>
+    /// <summary>Web account: login, hashed password (PBKDF2), role, and allowed servers ("*" = all).</summary>
     public class WebUser
     {
         public string Username = string.Empty;
         public string PasswordHash = string.Empty; // "saltB64:hashHex"
         public WebRole Role = WebRole.Viewer;
-        public string ServerIds = "*"; // "*" = tous, sinon liste séparée par virgules (ex. "1,3,4")
+        public string ServerIds = "*"; // "*" = all, otherwise a comma-separated list (e.g. "1,3,4")
 
         [JsonIgnore]
         public bool CanControl => Role >= WebRole.Operator;
@@ -31,7 +31,7 @@ namespace WindowsGSM.Functions.WebApi
         }
     }
 
-    /// <summary>Store des comptes web (configs/webusers.json). Mots de passe PBKDF2-SHA256 (200k itérations).</summary>
+    /// <summary>Web accounts store (configs/webusers.json). PBKDF2-SHA256 passwords (200k iterations).</summary>
     public class WebUsers
     {
         private const int Iter = 200000;
@@ -63,9 +63,9 @@ namespace WindowsGSM.Functions.WebApi
             return Convert.ToBase64String(salt) + ":" + Convert.ToHexString(hash).ToLowerInvariant();
         }
 
-        /// <summary>Renvoie l'utilisateur si le couple login/mot de passe est valide, sinon null.</summary>
-        // Sel/hash factices : calcul PBKDF2 « à vide » quand le compte n'existe pas, pour égaliser le temps
-        // de réponse et empêcher l'énumération des logins par mesure de timing (OWASP A07).
+        /// <summary>Returns the user if the login/password pair is valid, otherwise null.</summary>
+        // Dummy salt/hash: "no-op" PBKDF2 computation when the account doesn't exist, to equalize response
+        // time and prevent login enumeration via timing measurement (OWASP A07).
         private static readonly byte[] DummySalt = new byte[16];
 
         public WebUser Verify(string username, string password)
@@ -73,7 +73,7 @@ namespace WindowsGSM.Functions.WebApi
             var u = Users.FirstOrDefault(x => string.Equals(x.Username, username, StringComparison.OrdinalIgnoreCase));
             if (u == null || string.IsNullOrEmpty(u.PasswordHash) || !u.PasswordHash.Contains(':'))
             {
-                // dérivation factice (même coût CPU) puis échec, pour ne pas trahir l'existence du compte
+                // dummy derivation (same CPU cost) then fail, so account existence isn't revealed
                 try { Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(password ?? string.Empty), DummySalt, Iter, HashAlgorithmName.SHA256, 32); } catch { }
                 return null;
             }

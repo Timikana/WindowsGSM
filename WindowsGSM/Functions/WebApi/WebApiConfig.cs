@@ -5,21 +5,21 @@ using Newtonsoft.Json;
 namespace WindowsGSM.Functions.WebApi
 {
     /// <summary>
-    /// Config de l'API web de contrôle à distance (#207/#25). OPT-IN (désactivée par défaut), token OBLIGATOIRE.
-    /// Stockée dans configs/webapi.json ; le token est chiffré au repos (DPAPI via Secret).
-    /// ⚠️ HttpListener = HTTP EN CLAIR : pour une exposition internet, placer derrière un reverse-proxy HTTPS.
+    /// Config of the remote-control web API (#207/#25). OPT-IN (disabled by default), token REQUIRED.
+    /// Stored in configs/webapi.json; the token is encrypted at rest (DPAPI via Secret).
+    /// ⚠️ HttpListener = PLAIN HTTP: for internet exposure, put it behind an HTTPS reverse-proxy.
     /// </summary>
     public class WebApiConfig
     {
         public bool Enabled = false;
-        public bool WebUiEnabled = false; // portail web (login + dashboard) en plus de l'API token
+        public bool WebUiEnabled = false; // web portal (login + dashboard) on top of the token API
         public int Port = 8642;
-        // IP/hôte d'écoute (préfixe HttpListener) : "127.0.0.1" = local seulement (recommandé, derrière reverse-proxy),
-        // "+" = toutes interfaces (exige WGSM élevé/urlacl), ou une IP précise de la machine.
+        // Listen IP/host (HttpListener prefix): "127.0.0.1" = local only (recommended, behind a reverse-proxy),
+        // "+" = all interfaces (requires elevated WGSM/urlacl), or a specific machine IP.
         public string BindAddress = "127.0.0.1";
-        // Ajoute l'attribut Secure au cookie de session (à activer quand WGSM est derrière un reverse-proxy HTTPS).
+        // Adds the Secure attribute to the session cookie (enable when WGSM is behind an HTTPS reverse-proxy).
         public bool CookieSecure = false;
-        public string Token = string.Empty; // en clair en mémoire ; chiffré sur disque
+        public string Token = string.Empty; // plaintext in memory; encrypted on disk
 
         private static string Path => Functions.ServerPath.Get("configs", "webapi.json");
 
@@ -34,7 +34,7 @@ namespace WindowsGSM.Functions.WebApi
                     if (disk != null)
                     {
                         cfg = disk;
-                        cfg.Token = Secret.Unprotect(cfg.Token) ?? string.Empty; // déchiffre
+                        cfg.Token = Secret.Unprotect(cfg.Token) ?? string.Empty; // decrypt
                     }
                 }
             }
@@ -54,7 +54,7 @@ namespace WindowsGSM.Functions.WebApi
                     Port = Port,
                     BindAddress = string.IsNullOrWhiteSpace(BindAddress) ? "127.0.0.1" : BindAddress.Trim(),
                     CookieSecure = CookieSecure,
-                    Token = string.IsNullOrEmpty(Token) ? string.Empty : Secret.Protect(Token) // chiffre
+                    Token = string.IsNullOrEmpty(Token) ? string.Empty : Secret.Protect(Token) // encrypt
                 };
                 File.WriteAllText(Path, JsonConvert.SerializeObject(onDisk, Formatting.Indented));
             }
