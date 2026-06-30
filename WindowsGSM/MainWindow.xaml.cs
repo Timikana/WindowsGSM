@@ -1699,6 +1699,62 @@ namespace WindowsGSM
             }
         }
 
+        // Ajout d'un serveur dédié Steam GÉNÉRIQUE par AppID (flow dédié, n'altère pas l'install standard).
+        private async void Servers_AddGenericSteam_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Functions.GenericSteamDialog { Owner = this };
+            if (dlg.ShowDialog() != true || dlg.Result == null) { return; }
+            var prof = dlg.Result.Value;
+
+            var newServerConfig = new ServerConfig(null);
+            string installPath = ServerPath.GetServersServerFiles(newServerConfig.ServerID);
+            try { if (Directory.Exists(installPath)) { Directory.Delete(installPath, true); } } catch { }
+            Directory.CreateDirectory(installPath);
+            newServerConfig.CreateServerDirectory();
+
+            // Profil écrit AVANT instanciation : le ctor GenericSteam lit configs/wgsm-generic.json.
+            GameServer.GenericSteam.SaveProfile(newServerConfig.ServerID, prof.AppId, prof.Name, prof.Executable, prof.Arguments);
+
+            string servergame = GameServer.GenericSteam.FullName;
+            string servername = string.IsNullOrWhiteSpace(prof.Name) ? $"Steam #{prof.AppId}" : prof.Name;
+
+            Log(newServerConfig.ServerID, $"Ajout Steam generique : {servername} (AppID {prof.AppId}) - installation SteamCMD...");
+
+            dynamic gameServer = GameServer.Data.Class.Get(servergame, newServerConfig, PluginsList);
+            Process installer = await gameServer.Install();
+            if (installer != null)
+            {
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        var reader = installer.StandardOutput;
+                        while (!reader.EndOfStream) { reader.ReadLine(); }
+                        installer.WaitForExit();
+                    }
+                    catch { }
+                });
+            }
+
+            if (gameServer.IsInstallValid())
+            {
+                newServerConfig.ServerIP = newServerConfig.GetIPAddress();
+                newServerConfig.ServerPort = newServerConfig.GetAvailablePort(gameServer.Port, gameServer.PortIncrements);
+                newServerConfig.SetData(servergame, servername, gameServer);
+                newServerConfig.CreateWindowsGSMConfig();
+                LoadServerTable();
+                Log(newServerConfig.ServerID, "Ajout Steam generique : succes.");
+                System.Windows.MessageBox.Show($"{servername} (AppID {prof.AppId}) installe.\nExecutable : {prof.Executable} {prof.Arguments}", "Serveur ajoute", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                string err = string.Empty;
+                try { err = gameServer.Error ?? string.Empty; } catch { }
+                Log(newServerConfig.ServerID, "Ajout Steam generique : echec installation. " + err);
+                System.Windows.MessageBox.Show($"Installation echouee (AppID {prof.AppId}).\n{err}", "Echec", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async void Button_Install_Click(object sender, RoutedEventArgs e)
         {
             if (Installer != null)
@@ -3837,6 +3893,7 @@ namespace WindowsGSM
             if (!MahAppSwitch_DonorConnect.IsChecked == true)
             {
                 g_DonorType = string.Empty;
+                Functions.Donator.DonatorManager.AuthorDonorActive = false;
                 comboBox_Themes.SelectedItem = DEFAULT_THEME;
                 comboBox_Themes.IsEnabled = false;
 
@@ -3907,6 +3964,7 @@ namespace WindowsGSM
 
                         g_DonorType = type;
                         g_DiscordBot.SetDonorType(g_DonorType);
+                        Functions.Donator.DonatorManager.AuthorDonorActive = true; // donateur Patreon de l'auteur
                         comboBox_Themes.IsEnabled = true;
 
                         Wpf.Ui.Appearance.ApplicationThemeManager.Apply(MahAppSwitch_DarkTheme.IsChecked == true ? Wpf.Ui.Appearance.ApplicationTheme.Dark : Wpf.Ui.Appearance.ApplicationTheme.Light);
@@ -4112,9 +4170,49 @@ namespace WindowsGSM
             catch (Exception ex) { Functions.AppLog.Warn("PortForward/UI", ex.Message); }
         }
 
+        private void Tools_ConfigEditor_Click(object sender, RoutedEventArgs e)
+        {
+            var row = ServerGrid.SelectedItem as ServerTable;
+            if (row == null)
+            {
+                System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "Éditeur de config", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            try
+            {
+                string serverFiles = Functions.ServerPath.GetServersServerFiles(row.ID);
+                new Functions.ConfigEditor.ConfigEditorDialog(row.ID, row.Name, row.Game, serverFiles) { Owner = this }.ShowDialog();
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("ConfigEditor/UI", ex.Message); }
+        }
+
+        private void Tools_Mods_Click(object sender, RoutedEventArgs e)
+        {
+            var row = ServerGrid.SelectedItem as ServerTable;
+            if (row == null)
+            {
+                System.Windows.MessageBox.Show("Sélectionne d'abord un serveur dans la liste.", "Mods", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            try
+            {
+                string serverFiles = Functions.ServerPath.GetServersServerFiles(row.ID);
+                new Functions.Mods.ModsDialog(row.ID, row.Name, row.Game, serverFiles) { Owner = this }.ShowDialog();
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("Mods/UI", ex.Message); }
+        }
+
         private void Nav_Notifications_Click(object sender, RoutedEventArgs e)
         {
-            try { new Functions.Notifications.NotificationsDialog { Owner = this }.ShowDialog(); }
+            try
+            {
+                if (!Functions.Donator.DonatorManager.IsDonator)
+                {
+                    var d = new Functions.Donator.DonatorDialog("Notifications multi-canaux") { Owner = this };
+                    if (d.ShowDialog() != true) { return; } // pas débloqué
+                }
+                new Functions.Notifications.NotificationsDialog { Owner = this }.ShowDialog();
+            }
             catch (Exception ex) { Functions.AppLog.Warn("Notifications/UI", ex.Message); }
         }
 

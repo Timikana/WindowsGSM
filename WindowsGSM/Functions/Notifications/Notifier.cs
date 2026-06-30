@@ -13,6 +13,9 @@ namespace WindowsGSM.Functions.Notifications
     {
         public static async Task Broadcast(string title, string message)
         {
+            // Fonction réservée aux donateurs (ou au propriétaire). Verrou aussi côté envoi, pas seulement l'UI.
+            if (!Donator.DonatorManager.IsDonator) { return; }
+
             var cfg = NotificationConfig.Load();
 
             var notifiers = new List<INotifier>

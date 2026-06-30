@@ -9,6 +9,7 @@ namespace WindowsGSM.GameServer.Data
         {
             switch (serverGame)
             {
+                case GenericSteam.FullName: return new GenericSteam(serverData);
                 case CSGO.FullName: return new CSGO(serverData);
                 case GMOD.FullName: return new GMOD(serverData);
                 case TF2.FullName: return new TF2(serverData);
