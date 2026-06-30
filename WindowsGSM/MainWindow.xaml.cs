@@ -398,6 +398,9 @@ namespace WindowsGSM
             // Sauvegarde planifiée par serveur
             StartBackupCrontabCheck();
 
+            // #207/#25 : API web de contrôle à distance (opt-in, token obligatoire)
+            StartWebApi();
+
             // Suivi de disponibilité (uptime) par serveur
             StartUptimeTracking();
         }
@@ -1444,6 +1447,55 @@ namespace WindowsGSM
         public int GetActivePlayers()
         {
             return ServerGrid.Items.Cast<ServerTable>().Where(s => s.Maxplayers != null && s.Maxplayers.Contains('/')).Sum(s => int.TryParse(s.Maxplayers.Split('/')[0], out int count) ? count : 0);
+        }
+
+        // ===== #207/#25 : API web de contrôle à distance =====
+        private Functions.WebApi.WebApiServer _webApi;
+
+        /// <summary>(Re)démarre l'API web selon la config (opt-in). Appelée au lancement et après modif de la config.</summary>
+        public void StartWebApi()
+        {
+            try
+            {
+                if (_webApi == null)
+                {
+                    _webApi = new Functions.WebApi.WebApiServer(
+                        () => Dispatcher.Invoke(() => Api_GetServersJson()),
+                        (id, action) => Dispatcher.Invoke(() => Api_DoAction(id, action)));
+                }
+                _webApi.Stop();
+                if (Functions.WebApi.WebApiConfig.Load().Enabled)
+                {
+                    if (!_webApi.Start()) { Functions.AppLog.Warn("WebApi", _webApi.LastError); }
+                }
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("WebApi/Start", ex.Message); }
+        }
+
+        /// <summary>JSON de l'état des serveurs (exécuté sur le thread UI).</summary>
+        public string Api_GetServersJson()
+        {
+            var list = new System.Collections.Generic.List<object>();
+            foreach (ServerTable s in ServerGrid.Items.Cast<ServerTable>().ToList())
+            {
+                list.Add(new { id = s.ID, name = s.Name, game = s.Game, status = GetServerStatus(s.ID).ToString(), players = s.Maxplayers, map = s.Defaultmap, ip = s.IP, port = s.Port });
+            }
+            return Newtonsoft.Json.JsonConvert.SerializeObject(list);
+        }
+
+        /// <summary>Déclenche une action sur un serveur (start/stop/restart/backup) ; fire-and-forget. Thread UI.</summary>
+        public (bool, string) Api_DoAction(string id, string action)
+        {
+            var s = ServerGrid.Items.Cast<ServerTable>().FirstOrDefault(x => x.ID == id);
+            if (s == null) { return (false, $"serveur {id} introuvable"); }
+            switch (action)
+            {
+                case "start": _ = GameServer_Start(s, " | API"); return (true, "démarrage demandé");
+                case "stop": _ = GameServer_Stop(s); return (true, "arrêt demandé");
+                case "restart": _ = GameServer_Restart(s); return (true, "redémarrage demandé");
+                case "backup": _ = GameServer_Backup(s, " | API"); return (true, "sauvegarde demandée");
+                default: return (false, $"action inconnue : {action}");
+            }
         }
 
         // Déplacement maison de la fenêtre (contourne le bug MahApps get_CriticalHandle sur .NET).
@@ -4244,6 +4296,12 @@ namespace WindowsGSM
                 new Functions.Notifications.NotificationsDialog { Owner = this }.ShowDialog();
             }
             catch (Exception ex) { Functions.AppLog.Warn("Notifications/UI", ex.Message); }
+        }
+
+        private void Nav_WebApi_Click(object sender, RoutedEventArgs e)
+        {
+            try { new Functions.WebApi.WebApiDialog(StartWebApi) { Owner = this }.ShowDialog(); }
+            catch (Exception ex) { Functions.AppLog.Warn("WebApi/UI", ex.Message); }
         }
 
         private void Tools_ServerDoctor_Click(object sender, RoutedEventArgs e)

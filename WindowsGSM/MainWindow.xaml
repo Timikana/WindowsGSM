@@ -1179,6 +1179,7 @@
                 <ui:Button x:Name="NavPorts" Content="Ports / UPnP" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Tools_PortForward_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <ui:Button x:Name="NavDoctor" Content="Server Doctor" Icon="{ui:SymbolIcon Search24}" Appearance="Secondary" Click="Tools_ServerDoctor_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <ui:Button x:Name="NavNotifs" Content="Notifications" Icon="{ui:SymbolIcon Alert24}" Appearance="Secondary" Click="Nav_Notifications_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavWebApi" Content="API web" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Nav_WebApi_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
             </StackPanel>
             </ScrollViewer>
         </Border>
