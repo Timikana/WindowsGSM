@@ -101,7 +101,16 @@ namespace WindowsGSM.GameServer
             {
                 if (p.StartInfo.RedirectStandardInput)
                 {
-                    p.Kill();
+                    // #109/#133 : sauvegarder AVANT d'arrêter (avant : kill direct -> perte de progression).
+                    try
+                    {
+                        p.StandardInput.WriteLine("/save");
+                        await Task.Delay(5000);
+                        p.StandardInput.WriteLine("/stop");
+                        await Task.Delay(5000);
+                    }
+                    catch { }
+                    if (!p.HasExited) { try { p.Kill(); } catch { } } // fallback si pas sorti proprement
                 }
                 else
                 {
