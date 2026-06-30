@@ -84,14 +84,16 @@ namespace WindowsGSM.Functions.WebApi
                 var d = new WebUsersDialog { Owner = this }; d.ShowDialog();
             };
             root.Children.Add(usersBtn);
+            var cookieSecure = new Wpf.Ui.Controls.ToggleSwitch { Content = "Cookie de session « Secure » (derrière un proxy HTTPS)", IsChecked = cfg.CookieSecure, Foreground = Fg, Margin = new Thickness(0, 0, 0, 12) };
+            root.Children.Add(cookieSecure);
 
             root.Children.Add(new TextBlock
             {
-                Text = "🔒 Bonnes pratiques sécurité :\n" +
-                       "• L'API est en HTTP clair → pour une exposition internet, place-la DERRIÈRE UN REVERSE-PROXY HTTPS (nginx/Caddy/Traefik) qui gère le TLS ; idéalement garde l'écoute sur 127.0.0.1 et laisse le proxy parler au LAN/internet.\n" +
-                       "• Token long et aléatoire (bouton « Générer ») ; ne le partage jamais et fais-le tourner régulièrement.\n" +
+                Text = "🔒 Bonnes pratiques sécurité (OWASP) :\n" +
+                       "• L'API est en HTTP clair → pour une exposition internet, place-la DERRIÈRE UN REVERSE-PROXY HTTPS (nginx/Caddy/Traefik) qui gère le TLS ; idéalement garde l'écoute sur 127.0.0.1 et laisse le proxy parler au LAN/internet. Active alors « Cookie Secure ».\n" +
+                       "• Token long et aléatoire (bouton « Générer ») ; ne le partage jamais et fais-le tourner régulièrement. (Le token n'est PAS accepté en URL.)\n" +
                        "• Restreins l'accès au pare-feu (n'ouvre le port qu'aux IP de confiance) ; ajoute du rate-limiting/Fail2ban côté proxy.\n" +
-                       "• En-têtes de sécurité déjà envoyés par l'API (nosniff, X-Frame-Options DENY, CSP none, no-store) + throttle anti-brute-force intégré (blocage après 10 échecs/5 min).\n" +
+                       "• Intégré : mots de passe PBKDF2, sessions cookie HttpOnly+SameSite=Strict, anti-CSRF (contrôle d'Origin), en-têtes durcis (CSP, nosniff, X-Frame-Options DENY, Permissions-Policy, header Server masqué), throttle anti-brute-force (10 échecs/5 min), validation stricte des actions, journal d'audit des connexions/actions.\n" +
                        "• Écouter hors 127.0.0.1 exige WGSM en administrateur (ou « netsh http add urlacl »).",
                 Foreground = Warn, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 12)
             });
@@ -119,7 +121,7 @@ namespace WindowsGSM.Functions.WebApi
                     status.Foreground = Warn; status.Text = "Port invalide.";
                     return;
                 }
-                var c = new WebApiConfig { Enabled = enable.IsChecked == true, WebUiEnabled = webUi.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), Token = tokenBox.Text.Trim() };
+                var c = new WebApiConfig { Enabled = enable.IsChecked == true, WebUiEnabled = webUi.IsChecked == true, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), Token = tokenBox.Text.Trim() };
                 c.Save();
                 try { _onSaved?.Invoke(); } catch { }
                 status.Foreground = Accent;

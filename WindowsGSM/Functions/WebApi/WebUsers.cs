@@ -64,10 +64,19 @@ namespace WindowsGSM.Functions.WebApi
         }
 
         /// <summary>Renvoie l'utilisateur si le couple login/mot de passe est valide, sinon null.</summary>
+        // Sel/hash factices : calcul PBKDF2 « à vide » quand le compte n'existe pas, pour égaliser le temps
+        // de réponse et empêcher l'énumération des logins par mesure de timing (OWASP A07).
+        private static readonly byte[] DummySalt = new byte[16];
+
         public WebUser Verify(string username, string password)
         {
             var u = Users.FirstOrDefault(x => string.Equals(x.Username, username, StringComparison.OrdinalIgnoreCase));
-            if (u == null || string.IsNullOrEmpty(u.PasswordHash) || !u.PasswordHash.Contains(':')) { return null; }
+            if (u == null || string.IsNullOrEmpty(u.PasswordHash) || !u.PasswordHash.Contains(':'))
+            {
+                // dérivation factice (même coût CPU) puis échec, pour ne pas trahir l'existence du compte
+                try { Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(password ?? string.Empty), DummySalt, Iter, HashAlgorithmName.SHA256, 32); } catch { }
+                return null;
+            }
             try
             {
                 string[] parts = u.PasswordHash.Split(':');

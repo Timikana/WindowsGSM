@@ -17,6 +17,8 @@ namespace WindowsGSM.Functions.WebApi
         // IP/hôte d'écoute (préfixe HttpListener) : "127.0.0.1" = local seulement (recommandé, derrière reverse-proxy),
         // "+" = toutes interfaces (exige WGSM élevé/urlacl), ou une IP précise de la machine.
         public string BindAddress = "127.0.0.1";
+        // Ajoute l'attribut Secure au cookie de session (à activer quand WGSM est derrière un reverse-proxy HTTPS).
+        public bool CookieSecure = false;
         public string Token = string.Empty; // en clair en mémoire ; chiffré sur disque
 
         private static string Path => Functions.ServerPath.Get("configs", "webapi.json");
@@ -51,6 +53,7 @@ namespace WindowsGSM.Functions.WebApi
                     WebUiEnabled = WebUiEnabled,
                     Port = Port,
                     BindAddress = string.IsNullOrWhiteSpace(BindAddress) ? "127.0.0.1" : BindAddress.Trim(),
+                    CookieSecure = CookieSecure,
                     Token = string.IsNullOrEmpty(Token) ? string.Empty : Secret.Protect(Token) // chiffre
                 };
                 File.WriteAllText(Path, JsonConvert.SerializeObject(onDisk, Formatting.Indented));

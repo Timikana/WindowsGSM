@@ -22,6 +22,8 @@ namespace WindowsGSM.Functions.WebApi
         private HttpListener _listener;
         private string _token;
         private bool _webUi;
+        private bool _cookieSecure;
+        private static readonly string[] AllowedActions = { "start", "stop", "restart", "backup" };
         private readonly Func<string> _getServersJson;
         private readonly Func<string, string, (bool ok, string msg)> _doAction;
 
@@ -47,6 +49,7 @@ namespace WindowsGSM.Functions.WebApi
             if (!cfg.Enabled) { LastError = "API désactivée."; return false; }
             if (string.IsNullOrWhiteSpace(cfg.Token) && !cfg.WebUiEnabled) { LastError = "Token requis (ou active le portail web avec des comptes)."; return false; }
             _token = cfg.Token;
+            _cookieSecure = cfg.CookieSecure;
             // Le portail web (auth + rôles) est une fonction donateur : ne s'active que pour un donateur/propriétaire.
             _webUi = cfg.WebUiEnabled && Donator.DonatorManager.IsDonator;
             if (cfg.WebUiEnabled && !_webUi) { AppLog.Warn("WebApi", "Portail web ignoré : fonction réservée aux donateurs."); }
@@ -121,13 +124,28 @@ namespace WindowsGSM.Functions.WebApi
                 parts[0].Equals("api", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("servers", StringComparison.OrdinalIgnoreCase))
             {
                 string id = parts[2]; string action = parts[3].ToLowerInvariant();
+                // A03 : id = chiffres uniquement, action = liste blanche stricte (rien d'autre n'atteint le backend).
+                if (!IsValidId(id) || Array.IndexOf(AllowedActions, action) < 0)
+                {
+                    WriteJson(res, 400, "{\"error\":\"invalid request\"}");
+                    return;
+                }
+                // A01/CSRF : pour une action via cookie de session, l'Origin (si fourni) doit correspondre à l'hôte.
+                if (!prin.ViaToken && !SameOrigin(req))
+                {
+                    AppLog.Warn("WebApi/Audit", $"CSRF refusé id={id} action={action} ip={ip} origin={req.Headers["Origin"]}");
+                    WriteJson(res, 403, "{\"error\":\"bad origin\"}");
+                    return;
+                }
                 // Droits : token = plein accès ; sinon Operator+ ET serveur autorisé.
                 if (!prin.ViaToken && (!prin.User.CanControl || !prin.User.AllowsServer(id)))
                 {
+                    AppLog.Warn("WebApi/Audit", $"Action refusée (droits) user={prin.User?.Username} id={id} action={action} ip={ip}");
                     WriteJson(res, 403, "{\"error\":\"forbidden\"}");
                     return;
                 }
                 var (ok, msg) = _doAction(id, action);
+                AppLog.Info("WebApi/Audit", $"Action {action} sur #{id} par {(prin.ViaToken ? "token" : prin.User?.Username)} ip={ip} -> {(ok ? "OK" : "refus")}");
                 WriteJson(res, ok ? 202 : 400, $"{{\"ok\":{(ok ? "true" : "false")},\"message\":{JsonConvert.ToString(msg ?? string.Empty)}}}");
                 return;
             }
@@ -144,8 +162,7 @@ namespace WindowsGSM.Functions.WebApi
                 string t = auth.Substring(7).Trim();
                 if (TokenValid(t)) { return new Principal { ViaToken = true }; }
             }
-            string qt = req.QueryString["token"];
-            if (!string.IsNullOrEmpty(qt) && TokenValid(qt)) { return new Principal { ViaToken = true }; }
+            // NB : on n'accepte PAS le token en query-string (?token=) — il fuiterait dans les logs proxy/Referer.
 
             var s = GetSession(req);
             if (s != null)
@@ -160,6 +177,23 @@ namespace WindowsGSM.Functions.WebApi
         {
             if (string.IsNullOrEmpty(t) || string.IsNullOrEmpty(_token)) { return false; }
             return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(t), Encoding.UTF8.GetBytes(_token));
+        }
+
+        private static bool IsValidId(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length > 6) { return false; }
+            foreach (char c in id) { if (c < '0' || c > '9') { return false; } }
+            return true;
+        }
+
+        /// <summary>A01/CSRF : si un en-tête Origin/Referer est présent, son hôte doit correspondre à celui de la requête.</summary>
+        private static bool SameOrigin(HttpListenerRequest req)
+        {
+            string origin = req.Headers["Origin"];
+            if (string.IsNullOrEmpty(origin)) { origin = req.Headers["Referer"]; }
+            if (string.IsNullOrEmpty(origin)) { return true; } // absent (navigation same-origin) : SameSite=Strict couvre le cas
+            return Uri.TryCreate(origin, UriKind.Absolute, out var o) && req.Url != null &&
+                   string.Equals(o.Host, req.Url.Host, StringComparison.OrdinalIgnoreCase) && o.Port == req.Url.Port;
         }
 
         private Session GetSession(HttpListenerRequest req)
@@ -178,30 +212,37 @@ namespace WindowsGSM.Functions.WebApi
             return null;
         }
 
+        private const long MaxLoginBody = 4096; // A04 : un login urlencodé tient largement dans 4 Ko
+
         private void HandleLogin(HttpListenerRequest req, HttpListenerResponse res, string ip)
         {
+            if (req.ContentLength64 > MaxLoginBody) { WriteJson(res, 413, "{\"error\":\"payload too large\"}"); return; }
             string body;
-            using (var sr = new StreamReader(req.InputStream, req.ContentEncoding)) { body = sr.ReadToEnd(); }
+            using (var sr = new StreamReader(req.InputStream, req.ContentEncoding ?? Encoding.UTF8)) { body = sr.ReadToEnd(); }
+            if (body.Length > MaxLoginBody) { WriteJson(res, 413, "{\"error\":\"payload too large\"}"); return; }
             var form = HttpUtility.ParseQueryString(body);
             string user = form["username"]; string pass = form["password"];
             var u = WebUsers.Load().Verify(user, pass);
             if (u == null)
             {
                 RecordFail(ip);
+                AppLog.Warn("WebApi/Audit", $"Login échoué user={user} ip={ip}");
+                System.Threading.Thread.Sleep(400); // ralentit le bruteforce, atténue le timing
                 ServePage(res, false, "Identifiants invalides.");
                 return;
             }
             ResetFails(ip);
+            AppLog.Info("WebApi/Audit", $"Login OK user={u.Username} ({u.Role}) ip={ip}");
             string sid = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
             _sessions[sid] = new Session { User = u.Username, Expiry = DateTime.UtcNow + SessionTtl };
-            res.AddHeader("Set-Cookie", $"wgsm_session={sid}; HttpOnly; SameSite=Strict; Path=/");
+            res.AddHeader("Set-Cookie", $"wgsm_session={sid}; HttpOnly; SameSite=Strict; Path=/{(_cookieSecure ? "; Secure" : string.Empty)}");
             Redirect(res, "/");
         }
 
         private void HandleLogout(HttpListenerRequest req, HttpListenerResponse res)
         {
             try { var c = req.Cookies["wgsm_session"]; if (c != null) { _sessions.TryRemove(c.Value, out _); } } catch { }
-            res.AddHeader("Set-Cookie", "wgsm_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0");
+            res.AddHeader("Set-Cookie", $"wgsm_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0{(_cookieSecure ? "; Secure" : string.Empty)}");
             Redirect(res, "/");
         }
 
@@ -230,9 +271,13 @@ namespace WindowsGSM.Functions.WebApi
             res.AddHeader("Referrer-Policy", "no-referrer");
             res.AddHeader("Cache-Control", "no-store");
             res.AddHeader("X-Robots-Tag", "noindex, nofollow");
+            res.AddHeader("X-Permitted-Cross-Domain-Policies", "none");
+            res.AddHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
             res.AddHeader("Content-Security-Policy", html
-                ? "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
-                : "default-src 'none'; frame-ancestors 'none'");
+                ? "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+                : "default-src 'none'; base-uri 'none'; frame-ancestors 'none'");
+            // A05 : ne pas divulguer la stack (HttpListener ajoute « Server: Microsoft-HTTPAPI/2.0 »).
+            try { res.Headers.Remove("Server"); res.AddHeader("Server", ""); } catch { }
         }
 
         private static void WriteJson(HttpListenerResponse res, int code, string json)
