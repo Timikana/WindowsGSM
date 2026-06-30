@@ -757,18 +757,18 @@ namespace WindowsGSM
             //Add games to ComboBox
             SortedList sortedList = new SortedList();
             List<DictionaryEntry> gameName = GameServer.Data.Icon.ResourceManager.GetResourceSet(System.Globalization.CultureInfo.CurrentUICulture, true, true).Cast<DictionaryEntry>().ToList();
-            gameName.ForEach(delegate (DictionaryEntry entry) { sortedList.Add(entry.Key, $"/WindowsGSM;component/{entry.Value}"); });
-            int pluginLoaded = 0;
+            // #74/#71 : indexeur (et pas .Add) pour ne pas lever sur clé dupliquée (plugin dont le FullName
+            // collisionne avec un jeu natif ou un autre plugin) -> plus de doublon ni de plantage de la liste.
+            gameName.ForEach(delegate (DictionaryEntry entry) { sortedList[entry.Key] = $"/WindowsGSM;component/{entry.Value}"; });
             PluginsList.ForEach(delegate (PluginMetadata plugin)
             {
                 if (plugin.IsLoaded)
                 {
-                    pluginLoaded++;
-                    sortedList.Add(plugin.FullName, plugin.GameImage == PluginManagement.DefaultPluginImage ? plugin.GameImage.Replace("pack://application:,,,", "/WindowsGSM;component") : plugin.GameImage);
+                    sortedList[plugin.FullName] = plugin.GameImage == PluginManagement.DefaultPluginImage ? plugin.GameImage.Replace("pack://application:,,,", "/WindowsGSM;component") : plugin.GameImage;
                 }
             });
 
-            label_GameServerCount.Content = $"{gameName.Count + pluginLoaded} game servers supported";
+            label_GameServerCount.Content = $"{sortedList.Count} game servers supported"; // dédoublonné
 
             for (int i = 0; i < sortedList.Count; i++)
             {
