@@ -108,14 +108,23 @@ namespace WindowsGSM.GameServer
 
         public async Task Stop(Process p)
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 if (p.StartInfo.CreateNoWindow)
                 {
-                    p.Kill();
+                    // #137 : Eco ne sauvegarde PAS sur un kill (ni sur un shutdown RCON/slash). On force d'abord
+                    // une sauvegarde via la commande admin console "/manage save" (stdin redirigé), puis on arrête.
+                    try
+                    {
+                        p.StandardInput.WriteLine("/manage save");
+                        await Task.Delay(8000); // laisse le temps d'écrire les fichiers de sauvegarde
+                    }
+                    catch { }
+                    if (!p.HasExited) { try { p.Kill(); } catch { } }
                 }
                 else
                 {
+                    // Fenêtre console visible : WM_CLOSE. (L'arrêt 100% propre passe par Ctrl+C dans la console.)
                     p.CloseMainWindow();
                 }
             });
