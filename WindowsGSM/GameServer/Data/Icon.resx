@@ -123,6 +123,21 @@
   <data name="ARK: Survival Evolved Dedicated Server" xml:space="preserve">
     <value>Images/Games/arkse.png</value>
   </data>
+  <data name="SCUM Dedicated Server" xml:space="preserve">
+    <value>Images/Games/arkse.png</value>
+  </data>
+  <data name="Core Keeper Dedicated Server" xml:space="preserve">
+    <value>Images/Games/arkse.png</value>
+  </data>
+  <data name="Myth of Empires Dedicated Server" xml:space="preserve">
+    <value>Images/Games/arkse.png</value>
+  </data>
+  <data name="Citadel: Forged with Fire Dedicated Server" xml:space="preserve">
+    <value>Images/Games/arkse.png</value>
+  </data>
+  <data name="Black Mesa Dedicated Server" xml:space="preserve">
+    <value>Images/Games/css.png</value>
+  </data>
   <data name="Avorion Dedicated Server" xml:space="preserve">
     <value>Images/Games/avorion.png</value>
   </data>
