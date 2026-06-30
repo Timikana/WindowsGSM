@@ -22,7 +22,7 @@ namespace WindowsGSM.Functions.WebApi
             var cfg = WebApiConfig.Load();
 
             Title = "API web (contrôle à distance)";
-            Width = 640; Height = 600;
+            Width = 640; Height = 700;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.NoResize;
             Background = new SolidColorBrush(Color.FromRgb(0x1f, 0x1f, 0x1f));
@@ -57,6 +57,16 @@ namespace WindowsGSM.Functions.WebApi
             tokenRow.Children.Add(gen);
             root.Children.Add(tokenRow);
 
+            // ---- Portail web (login + dashboard navigateur) ----
+            root.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)), Margin = new Thickness(0, 4, 0, 10) });
+            root.Children.Add(new TextBlock { Text = "Portail web (interface navigateur)", Foreground = Accent, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) });
+            root.Children.Add(new TextBlock { Text = "Page de connexion + tableau de bord (start/stop/restart/backup) avec comptes et rôles. Auth par cookie de session (HttpOnly, SameSite=Strict).", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
+            var webUi = new Wpf.Ui.Controls.ToggleSwitch { Content = "Activer le portail web", IsChecked = cfg.WebUiEnabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 8) };
+            root.Children.Add(webUi);
+            var usersBtn = new Wpf.Ui.Controls.Button { Content = "Comptes web…", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 0, 12) };
+            usersBtn.Click += (s, e) => { var d = new WebUsersDialog { Owner = this }; d.ShowDialog(); };
+            root.Children.Add(usersBtn);
+
             root.Children.Add(new TextBlock
             {
                 Text = "🔒 Bonnes pratiques sécurité :\n" +
@@ -76,9 +86,14 @@ namespace WindowsGSM.Functions.WebApi
             var close = new Wpf.Ui.Controls.Button { Content = "Fermer", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5) };
             save.Click += (s, e) =>
             {
-                if (enable.IsChecked == true && string.IsNullOrWhiteSpace(tokenBox.Text))
+                if (enable.IsChecked == true && string.IsNullOrWhiteSpace(tokenBox.Text) && webUi.IsChecked != true)
                 {
-                    status.Foreground = Warn; status.Text = "Un token est obligatoire pour activer l'API (clique « Générer »).";
+                    status.Foreground = Warn; status.Text = "Fournis un token (API) ou active le portail web avec des comptes.";
+                    return;
+                }
+                if (webUi.IsChecked == true && WebUsers.Load().Users.Count == 0)
+                {
+                    status.Foreground = Warn; status.Text = "Crée au moins un compte (« Comptes web… ») avant d'activer le portail.";
                     return;
                 }
                 if (!int.TryParse(portBox.Text.Trim(), out int port) || port < 1 || port > 65535)
@@ -86,11 +101,13 @@ namespace WindowsGSM.Functions.WebApi
                     status.Foreground = Warn; status.Text = "Port invalide.";
                     return;
                 }
-                var c = new WebApiConfig { Enabled = enable.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), Token = tokenBox.Text.Trim() };
+                var c = new WebApiConfig { Enabled = enable.IsChecked == true, WebUiEnabled = webUi.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), Token = tokenBox.Text.Trim() };
                 c.Save();
                 try { _onSaved?.Invoke(); } catch { }
                 status.Foreground = Accent;
-                status.Text = c.Enabled ? $"✔ API démarrée. Test : GET http://<ip>:{port}/api/servers (header Authorization: Bearer <token>)." : "✔ API désactivée.";
+                status.Text = !c.Enabled ? "✔ API désactivée."
+                    : c.WebUiEnabled ? $"✔ Démarrée. Portail web : http://<ip>:{port}/ (connexion par compte)."
+                    : $"✔ API démarrée. Test : GET http://<ip>:{port}/api/servers (header Authorization: Bearer <token>).";
             };
             close.Click += (s, e) => Close();
             buttons.Children.Add(save);

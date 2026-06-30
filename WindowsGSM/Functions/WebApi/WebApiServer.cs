@@ -1,27 +1,38 @@
 using System;
+using System.Collections.Concurrent;
+using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Web;
 using Newtonsoft.Json;
 
 namespace WindowsGSM.Functions.WebApi
 {
     /// <summary>
-    /// API web de contrôle à distance (#207/#25). HttpListener + token Bearer obligatoire.
-    ///   GET  /api/servers                       -> liste + statut (JSON)
-    ///   POST /api/servers/{id}/{start|stop|restart|backup}  -> déclenche l'action (202 si accepté)
-    /// Les callbacks (fournis par MainWindow) marshalent vers le thread UI.
-    /// ⚠️ HTTP en clair : pour internet, mettre derrière un reverse-proxy HTTPS.
+    /// Serveur embarqué (#207/#25) : API token + PORTAIL WEB (login, sessions, rôles).
+    ///   API (token Bearer)  : GET /api/servers, POST /api/servers/{id}/{start|stop|restart|backup}
+    ///   Web (cookie session): GET / (login/dashboard), POST /login, GET /logout
+    /// Droits : Viewer=lecture, Operator=+contrôle/backup, Admin=tout ; allowlist de serveurs par compte.
+    /// Sécu : token chiffré, mots de passe PBKDF2, cookie HttpOnly+SameSite=Strict, en-têtes durcis, throttle anti-brute-force.
+    /// ⚠️ HTTP clair -> reverse-proxy HTTPS pour l'exposition internet.
     /// </summary>
     public class WebApiServer
     {
         private HttpListener _listener;
         private string _token;
+        private bool _webUi;
         private readonly Func<string> _getServersJson;
         private readonly Func<string, string, (bool ok, string msg)> _doAction;
 
         public string LastError = string.Empty;
         public bool IsRunning => _listener != null && _listener.IsListening;
+
+        private sealed class Session { public string User; public DateTime Expiry; }
+        private readonly ConcurrentDictionary<string, Session> _sessions = new ConcurrentDictionary<string, Session>();
+        private static readonly TimeSpan SessionTtl = TimeSpan.FromHours(8);
+
+        private sealed class Principal { public bool ViaToken; public WebUser User; }
 
         public WebApiServer(Func<string> getServersJson, Func<string, string, (bool, string)> doAction)
         {
@@ -34,8 +45,9 @@ namespace WindowsGSM.Functions.WebApi
             Stop();
             var cfg = WebApiConfig.Load();
             if (!cfg.Enabled) { LastError = "API désactivée."; return false; }
-            if (string.IsNullOrWhiteSpace(cfg.Token)) { LastError = "Token requis (sécurité) : aucune API exposée sans token."; return false; }
+            if (string.IsNullOrWhiteSpace(cfg.Token) && !cfg.WebUiEnabled) { LastError = "Token requis (ou active le portail web avec des comptes)."; return false; }
             _token = cfg.Token;
+            _webUi = cfg.WebUiEnabled;
             _listener = new HttpListener();
             string host = string.IsNullOrWhiteSpace(cfg.BindAddress) ? "127.0.0.1" : cfg.BindAddress.Trim();
             _listener.Prefixes.Add($"http://{host}:{cfg.Port}/");
@@ -43,12 +55,12 @@ namespace WindowsGSM.Functions.WebApi
             catch (Exception e)
             {
                 bool nonLocal = host != "127.0.0.1" && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
-                LastError = e.Message + (nonLocal ? $" — écoute hors localhost : lance WGSM en ADMINISTRATEUR, ou réserve l'URL : netsh http add urlacl url=http://{host}:{cfg.Port}/ user=Tout_le_monde" : "");
+                LastError = e.Message + (nonLocal ? $" — écoute hors localhost : lance WGSM en ADMINISTRATEUR, ou netsh http add urlacl url=http://{host}:{cfg.Port}/ user=Tout_le_monde" : "");
                 _listener = null;
                 return false;
             }
             BeginGet();
-            AppLog.Info("WebApi", $"API démarrée sur http://{host}:{cfg.Port}/.");
+            AppLog.Info("WebApi", $"Démarré sur http://{host}:{cfg.Port}/ (web={_webUi}).");
             return true;
         }
 
@@ -56,20 +68,17 @@ namespace WindowsGSM.Functions.WebApi
         {
             try { _listener?.Stop(); _listener?.Close(); } catch { }
             _listener = null;
+            _sessions.Clear();
         }
 
-        private void BeginGet()
-        {
-            try { _listener.BeginGetContext(OnContext, null); } catch { }
-        }
+        private void BeginGet() { try { _listener.BeginGetContext(OnContext, null); } catch { } }
 
         private void OnContext(IAsyncResult ar)
         {
             if (_listener == null) { return; }
             HttpListenerContext ctx;
-            try { ctx = _listener.EndGetContext(ar); }
-            catch { return; }
-            BeginGet(); // accepte la requête suivante
+            try { ctx = _listener.EndGetContext(ar); } catch { return; }
+            BeginGet();
             try { Handle(ctx); }
             catch (Exception e) { AppLog.Warn("WebApi/Handle", e.Message); try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { } }
         }
@@ -79,37 +88,69 @@ namespace WindowsGSM.Functions.WebApi
             var req = ctx.Request;
             var res = ctx.Response;
             string ip = req.RemoteEndPoint?.Address?.ToString() ?? "?";
+            string path = (req.Url.AbsolutePath ?? "/").TrimEnd('/');
+            if (path == string.Empty) { path = "/"; }
+            string method = req.HttpMethod.ToUpperInvariant();
 
-            // Anti-brute-force : bloque une IP après trop d'échecs d'authentification.
-            if (IsBlocked(ip)) { Write(res, 429, "{\"error\":\"too many failed attempts\"}"); return; }
+            if (IsBlocked(ip)) { WriteJson(res, 429, "{\"error\":\"too many failed attempts\"}"); return; }
 
-            // --- Auth : Bearer header ou ?token= ---
-            string token = null;
-            string auth = req.Headers["Authorization"];
-            if (auth != null && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) { token = auth.Substring(7).Trim(); }
-            if (string.IsNullOrEmpty(token)) { token = req.QueryString["token"]; }
-            if (!TokenValid(token)) { RecordFail(ip); Write(res, 401, "{\"error\":\"unauthorized\"}"); return; }
+            // ---- Portail web (cookie session) ----
+            if (_webUi)
+            {
+                if (path == "/" && method == "GET") { ServePage(res, GetSession(req) != null); return; }
+                if (path == "/login" && method == "POST") { HandleLogin(req, res, ip); return; }
+                if (path == "/logout") { HandleLogout(req, res); return; }
+            }
+
+            // ---- API (token Bearer OU session) ----
+            Principal prin = ResolvePrincipal(req);
+            if (prin == null) { RecordFail(ip); WriteJson(res, 401, "{\"error\":\"unauthorized\"}"); return; }
             ResetFails(ip);
 
-            string path = (req.Url.AbsolutePath ?? "/").TrimEnd('/');
-
-            if (req.HttpMethod == "GET" && path.Equals("/api/servers", StringComparison.OrdinalIgnoreCase))
+            if (method == "GET" && path.Equals("/api/servers", StringComparison.OrdinalIgnoreCase))
             {
-                Write(res, 200, _getServersJson() ?? "[]");
+                WriteJson(res, 200, _getServersJson() ?? "[]");
                 return;
             }
 
-            // POST /api/servers/{id}/{action}
             var parts = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (req.HttpMethod == "POST" && parts.Length == 4 &&
+            if (method == "POST" && parts.Length == 4 &&
                 parts[0].Equals("api", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("servers", StringComparison.OrdinalIgnoreCase))
             {
-                var (ok, msg) = _doAction(parts[2], parts[3].ToLowerInvariant());
-                Write(res, ok ? 202 : 400, $"{{\"ok\":{(ok ? "true" : "false")},\"message\":{JsonConvert.ToString(msg ?? string.Empty)}}}");
+                string id = parts[2]; string action = parts[3].ToLowerInvariant();
+                // Droits : token = plein accès ; sinon Operator+ ET serveur autorisé.
+                if (!prin.ViaToken && (!prin.User.CanControl || !prin.User.AllowsServer(id)))
+                {
+                    WriteJson(res, 403, "{\"error\":\"forbidden\"}");
+                    return;
+                }
+                var (ok, msg) = _doAction(id, action);
+                WriteJson(res, ok ? 202 : 400, $"{{\"ok\":{(ok ? "true" : "false")},\"message\":{JsonConvert.ToString(msg ?? string.Empty)}}}");
                 return;
             }
 
-            Write(res, 404, "{\"error\":\"not found\"}");
+            WriteJson(res, 404, "{\"error\":\"not found\"}");
+        }
+
+        // ---- Auth ----
+        private Principal ResolvePrincipal(HttpListenerRequest req)
+        {
+            string auth = req.Headers["Authorization"];
+            if (auth != null && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                string t = auth.Substring(7).Trim();
+                if (TokenValid(t)) { return new Principal { ViaToken = true }; }
+            }
+            string qt = req.QueryString["token"];
+            if (!string.IsNullOrEmpty(qt) && TokenValid(qt)) { return new Principal { ViaToken = true }; }
+
+            var s = GetSession(req);
+            if (s != null)
+            {
+                var u = WebUsers.Load().Users.Find(x => string.Equals(x.Username, s.User, StringComparison.OrdinalIgnoreCase));
+                if (u != null) { return new Principal { User = u }; }
+            }
+            return null;
         }
 
         private bool TokenValid(string t)
@@ -118,12 +159,53 @@ namespace WindowsGSM.Functions.WebApi
             return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(t), Encoding.UTF8.GetBytes(_token));
         }
 
-        // --- Anti-brute-force du token (en mémoire, par IP) ---
+        private Session GetSession(HttpListenerRequest req)
+        {
+            try
+            {
+                var c = req.Cookies["wgsm_session"];
+                if (c == null || string.IsNullOrEmpty(c.Value)) { return null; }
+                if (_sessions.TryGetValue(c.Value, out var s))
+                {
+                    if (DateTime.UtcNow > s.Expiry) { _sessions.TryRemove(c.Value, out _); return null; }
+                    return s;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private void HandleLogin(HttpListenerRequest req, HttpListenerResponse res, string ip)
+        {
+            string body;
+            using (var sr = new StreamReader(req.InputStream, req.ContentEncoding)) { body = sr.ReadToEnd(); }
+            var form = HttpUtility.ParseQueryString(body);
+            string user = form["username"]; string pass = form["password"];
+            var u = WebUsers.Load().Verify(user, pass);
+            if (u == null)
+            {
+                RecordFail(ip);
+                ServePage(res, false, "Identifiants invalides.");
+                return;
+            }
+            ResetFails(ip);
+            string sid = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+            _sessions[sid] = new Session { User = u.Username, Expiry = DateTime.UtcNow + SessionTtl };
+            res.AddHeader("Set-Cookie", $"wgsm_session={sid}; HttpOnly; SameSite=Strict; Path=/");
+            Redirect(res, "/");
+        }
+
+        private void HandleLogout(HttpListenerRequest req, HttpListenerResponse res)
+        {
+            try { var c = req.Cookies["wgsm_session"]; if (c != null) { _sessions.TryRemove(c.Value, out _); } } catch { }
+            res.AddHeader("Set-Cookie", "wgsm_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0");
+            Redirect(res, "/");
+        }
+
+        // ---- Anti-brute-force (par IP) ----
         private const int MaxFails = 10;
         private static readonly TimeSpan FailWindow = TimeSpan.FromMinutes(5);
-        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int fails, DateTime since)> _failsByIp
-            = new System.Collections.Concurrent.ConcurrentDictionary<string, (int, DateTime)>();
-
+        private readonly ConcurrentDictionary<string, (int fails, DateTime since)> _failsByIp = new ConcurrentDictionary<string, (int, DateTime)>();
         private bool IsBlocked(string ip)
         {
             if (_failsByIp.TryGetValue(ip, out var v))
@@ -137,25 +219,105 @@ namespace WindowsGSM.Functions.WebApi
             _failsByIp.AddOrUpdate(ip, (1, DateTime.UtcNow), (k, v) => (DateTime.UtcNow - v.since > FailWindow) ? (1, DateTime.UtcNow) : (v.fails + 1, v.since));
         private void ResetFails(string ip) { _failsByIp.TryRemove(ip, out _); }
 
-        private static void Write(HttpListenerResponse res, int code, string json)
+        // ---- Réponses ----
+        private static void SecurityHeaders(HttpListenerResponse res, bool html)
         {
-            try
-            {
-                res.StatusCode = code;
-                res.ContentType = "application/json";
-                // En-têtes HTTP de sécurité (durcissement réponse).
-                res.AddHeader("X-Content-Type-Options", "nosniff");
-                res.AddHeader("X-Frame-Options", "DENY");
-                res.AddHeader("Referrer-Policy", "no-referrer");
-                res.AddHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
-                res.AddHeader("Cache-Control", "no-store");
-                res.AddHeader("X-Robots-Tag", "noindex, nofollow");
-                byte[] b = Encoding.UTF8.GetBytes(json);
-                res.ContentLength64 = b.Length;
-                res.OutputStream.Write(b, 0, b.Length);
-            }
-            catch { }
-            finally { try { res.Close(); } catch { } }
+            res.AddHeader("X-Content-Type-Options", "nosniff");
+            res.AddHeader("X-Frame-Options", "DENY");
+            res.AddHeader("Referrer-Policy", "no-referrer");
+            res.AddHeader("Cache-Control", "no-store");
+            res.AddHeader("X-Robots-Tag", "noindex, nofollow");
+            res.AddHeader("Content-Security-Policy", html
+                ? "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+                : "default-src 'none'; frame-ancestors 'none'");
+        }
+
+        private static void WriteJson(HttpListenerResponse res, int code, string json)
+        {
+            try { res.StatusCode = code; res.ContentType = "application/json"; SecurityHeaders(res, false); var b = Encoding.UTF8.GetBytes(json); res.ContentLength64 = b.Length; res.OutputStream.Write(b, 0, b.Length); }
+            catch { } finally { try { res.Close(); } catch { } }
+        }
+
+        private static void WriteHtml(HttpListenerResponse res, int code, string html)
+        {
+            try { res.StatusCode = code; res.ContentType = "text/html; charset=utf-8"; SecurityHeaders(res, true); var b = Encoding.UTF8.GetBytes(html); res.ContentLength64 = b.Length; res.OutputStream.Write(b, 0, b.Length); }
+            catch { } finally { try { res.Close(); } catch { } }
+        }
+
+        private static void Redirect(HttpListenerResponse res, string location)
+        {
+            try { res.StatusCode = 302; res.AddHeader("Location", location); SecurityHeaders(res, true); }
+            catch { } finally { try { res.Close(); } catch { } }
+        }
+
+        private void ServePage(HttpListenerResponse res, bool loggedIn, string error = null)
+        {
+            WriteHtml(res, 200, loggedIn ? DashboardHtml() : LoginHtml(error));
+        }
+
+        private static string LoginHtml(string error)
+        {
+            string err = string.IsNullOrEmpty(error) ? string.Empty : $"<p class='err'>{HttpUtility.HtmlEncode(error)}</p>";
+            return @"<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>WindowsGSM — Connexion</title><style>
+body{background:#1b1b1b;color:#eaeaea;font-family:Segoe UI,Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
+.card{background:#252525;padding:28px 32px;border-radius:10px;box-shadow:0 8px 30px #0008;width:300px}
+h1{font-size:18px;margin:0 0 16px;color:#4cc2d6}
+input{width:100%;box-sizing:border-box;margin:6px 0;padding:10px;border:1px solid #3a3a3a;border-radius:6px;background:#1b1b1b;color:#eaeaea}
+button{width:100%;margin-top:12px;padding:10px;border:0;border-radius:6px;background:#4cc2d6;color:#08272d;font-weight:600;cursor:pointer}
+.err{color:#e06c6c;font-size:13px}</style></head><body>
+<form class='card' method='post' action='/login'><h1>WindowsGSM</h1>" + err + @"
+<input name='username' placeholder='Utilisateur' autofocus autocomplete='username'>
+<input name='password' type='password' placeholder='Mot de passe' autocomplete='current-password'>
+<button type='submit'>Se connecter</button></form></body></html>";
+        }
+
+        private static string DashboardHtml()
+        {
+            return @"<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>WindowsGSM</title><style>
+body{background:#1b1b1b;color:#eaeaea;font-family:Segoe UI,Arial,sans-serif;margin:0;padding:20px}
+h1{color:#4cc2d6;font-size:20px;display:inline-block}
+a.logout{float:right;color:#9a9a9a;text-decoration:none;margin-top:8px}
+table{width:100%;border-collapse:collapse;margin-top:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #2f2f2f;font-size:14px}
+th{color:#9a9a9a;font-weight:600}
+.on{color:#6ad06a}.off{color:#9a9a9a}
+button{margin:0 2px;padding:5px 9px;border:0;border-radius:5px;cursor:pointer;font-size:12px;color:#fff}
+.start{background:#2e9e44}.stop{background:#c97a00}.restart{background:#2b8fd0}.backup{background:#555}
+#msg{margin-top:10px;color:#4cc2d6;min-height:18px;font-size:13px}</style></head><body>
+<h1>WindowsGSM</h1><a class='logout' href='/logout'>Déconnexion</a>
+<div id='msg'></div><table><thead><tr><th>ID</th><th>Nom</th><th>Jeu</th><th>État</th><th>Joueurs</th><th>Actions</th></tr></thead><tbody id='b'></tbody></table>
+<script>
+async function load(){
+ try{
+  var r=await fetch('/api/servers',{credentials:'same-origin'});
+  var a=await r.json();var b=document.getElementById('b');b.innerHTML='';
+  a.forEach(function(s){
+   var on=(s.status||'').toLowerCase().indexOf('start')>=0;
+   var tr=document.createElement('tr');
+   ['id','name','game'].forEach(function(k){var td=document.createElement('td');td.textContent=s[k]||'';tr.appendChild(td);});
+   var st=document.createElement('td');st.textContent=s.status||'';st.className=on?'on':'off';tr.appendChild(st);
+   var pl=document.createElement('td');pl.textContent=s.players||'';tr.appendChild(pl);
+   var ac=document.createElement('td');
+   [['start','Start'],['stop','Stop'],['restart','Restart'],['backup','Backup']].forEach(function(x){
+    var btn=document.createElement('button');btn.textContent=x[1];btn.className=x[0];
+    btn.addEventListener('click',function(){act(s.id,x[0]);});ac.appendChild(btn);});
+   tr.appendChild(ac);b.appendChild(tr);
+  });
+ }catch(e){document.getElementById('msg').textContent='Erreur de chargement.';}
+}
+async function act(id,a){
+ document.getElementById('msg').textContent='...';
+ try{
+  var r=await fetch('/api/servers/'+id+'/'+a,{method:'POST',credentials:'same-origin'});
+  var j=await r.json();
+  document.getElementById('msg').textContent=(r.status==202?'OK : ':'Refusé : ')+(j.message||j.error||r.status);
+  setTimeout(load,1500);
+ }catch(e){document.getElementById('msg').textContent='Erreur.';}
+}
+load();setInterval(load,5000);
+</script></body></html>";
         }
     }
 }
