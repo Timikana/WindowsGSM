@@ -3030,13 +3030,35 @@ namespace WindowsGSM
 
             string startPath = ServerPath.GetServers(server.ID);
             string zipFile = Path.Combine(ServerPath.GetBackups(server.ID), $"{zipFileName}{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip");
+            string backupFolders = new Functions.BackupConfig(server.ID).BackupFolders; // #179
 
             string error = string.Empty;
             await Task.Run(() =>
             {
                 try
                 {
-                    ZipFile.CreateFromDirectory(startPath, zipFile);
+                    if (string.IsNullOrWhiteSpace(backupFolders))
+                    {
+                        ZipFile.CreateFromDirectory(startPath, zipFile); // tout le serveur (comportement par défaut)
+                    }
+                    else
+                    {
+                        // #179 : ne sauvegarder QUE les sous-dossiers choisis (relatifs à serverfiles), ex. "savegame".
+                        string sf = ServerPath.GetServersServerFiles(server.ID);
+                        using (var zip = ZipFile.Open(zipFile, System.IO.Compression.ZipArchiveMode.Create))
+                        {
+                            foreach (string rel in backupFolders.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                string folder = Path.Combine(sf, rel.Trim());
+                                if (!Directory.Exists(folder)) { continue; }
+                                foreach (string file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
+                                {
+                                    string entry = Path.GetRelativePath(startPath, file).Replace('\\', '/');
+                                    zip.CreateEntryFromFile(file, entry);
+                                }
+                            }
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
@@ -5457,6 +5479,22 @@ namespace WindowsGSM
         }
 
         // Modifier l'emplacement (path) des sauvegardes du serveur sélectionné, via sélecteur de dossier.
+        // #179 : choisir les sous-dossiers à sauvegarder (vide = tout).
+        private async void Backups_ChangeFolders_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(cb_backupServer.SelectedItem is ServerTable server)) { return; }
+            var bc = new BackupConfig(server.ID);
+            string current = string.IsNullOrWhiteSpace(bc.BackupFolders) ? "(tout)" : bc.BackupFolders;
+            string input = await this.ShowInputAsync("Dossiers à sauvegarder",
+                $"Sous-dossiers de serverfiles à inclure, séparés par « ; ». Laisse VIDE pour tout sauvegarder.\n\nActuel : {current}\n\nExemple (Enshrouded) : savegame");
+            if (input == null) { return; } // annulé
+            bc.BackupFolders = input.Trim();
+            bc.Save();
+            Log(server.ID, string.IsNullOrWhiteSpace(bc.BackupFolders)
+                ? "[Backup] sauvegarde complète (tous les dossiers)."
+                : "[Backup] sauvegarde limitée à : " + bc.BackupFolders);
+        }
+
         private void Backups_ChangeLocation_Click(object sender, RoutedEventArgs e)
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server)) { return; }

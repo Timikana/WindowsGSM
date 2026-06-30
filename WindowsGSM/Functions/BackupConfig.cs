@@ -16,11 +16,14 @@ namespace WindowsGSM.Functions
         {
             public const string BackupLocation = "backuplocation";
             public const string MaximumBackups = "maximumbackups";
+            public const string BackupFolders = "backupfolders"; // #179
         }
 
         private readonly string _serverId;
         public string BackupLocation;
         public int MaximumBackups = DefaultMaximumBackups;
+        // #179 : sous-dossiers (relatifs à serverfiles) à inclure, séparés par ';'. Vide = tout serverfiles.
+        public string BackupFolders = string.Empty;
 
         public BackupConfig(string serverId)
         {
@@ -46,7 +49,8 @@ namespace WindowsGSM.Functions
             int max = MaximumBackups <= 0 ? 1 : MaximumBackups;
             File.WriteAllText(configPath,
                 $"{SettingName.BackupLocation}=\"{BackupLocation}\"{Environment.NewLine}" +
-                $"{SettingName.MaximumBackups}=\"{max}\"");
+                $"{SettingName.MaximumBackups}=\"{max}\"{Environment.NewLine}" +
+                $"{SettingName.BackupFolders}=\"{BackupFolders}\"");
         }
 
         private void LoadConfig()
@@ -64,6 +68,7 @@ namespace WindowsGSM.Functions
                         {
                             case SettingName.BackupLocation: BackupLocation = keyvalue[1]; break;
                             case SettingName.MaximumBackups: MaximumBackups = int.TryParse(keyvalue[1], out int max) ? ((max <= 0) ? 1 : max) : DefaultMaximumBackups; break;
+                            case SettingName.BackupFolders: BackupFolders = keyvalue[1]; break; // #179
                         }
                     }
                 }

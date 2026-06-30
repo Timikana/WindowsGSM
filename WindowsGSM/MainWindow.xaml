@@ -1137,6 +1137,7 @@
                 <DockPanel Grid.Row="2" Margin="0,0,0,12">
                     <TextBlock Text="Dossier de sauvegarde :" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <ui:Button Content="Modifier…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Click="Backups_ChangeLocation_Click"/>
+                    <ui:Button Content="Dossiers…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Backups_ChangeFolders_Click" ToolTip="Limiter la sauvegarde à certains sous-dossiers de serverfiles (ex. savegame). Vide = tout (#179)."/>
                     <TextBox x:Name="textBox_backupLocation" IsReadOnly="True" Padding="8,2" VerticalContentAlignment="Center" Margin="0,0,8,0"
                              FontFamily="Consolas" ToolTip="Emplacement où sont stockées les sauvegardes de ce serveur"/>
                 </DockPanel>
