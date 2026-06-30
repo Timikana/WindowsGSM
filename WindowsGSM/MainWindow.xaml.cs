@@ -3512,17 +3512,22 @@ namespace WindowsGSM
                 }
 
                 string players = null;
+                string liveMap = null;
                 try
                 {
                     dynamic query = gameServer.QueryMethod;
                     query.SetAddressPort(server.IP, int.Parse(server.QueryPort));
                     players = await query.GetPlayersAndMaxPlayers();
+                    // #61 : récupère la map COURANTE (best-effort). GetInfo n'existe que sur la query A2S native ;
+                    // pour une query de plugin sans GetInfo, l'appel dynamique lève -> capturé, pas de map (sans dommage).
+                    try { var info = await query.GetInfo(); if (info != null) { liveMap = info["Map"] as string; } } catch { }
                 }
                 catch { players = null; } // code plugin tiers : ne doit jamais tuer la boucle/l'app
 
                 if (players != null)
                 {
                     server.Maxplayers = players;
+                    if (!string.IsNullOrWhiteSpace(liveMap)) { server.Defaultmap = liveMap; } // #61 : map live (TF2/Source)
 
                     for (int i = 0; i < ServerGrid.Items.Count; i++)
                     {
