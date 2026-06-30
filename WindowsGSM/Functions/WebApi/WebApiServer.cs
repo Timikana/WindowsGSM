@@ -37,17 +37,18 @@ namespace WindowsGSM.Functions.WebApi
             if (string.IsNullOrWhiteSpace(cfg.Token)) { LastError = "Token requis (sécurité) : aucune API exposée sans token."; return false; }
             _token = cfg.Token;
             _listener = new HttpListener();
-            string host = cfg.BindAll ? "+" : "localhost";
+            string host = string.IsNullOrWhiteSpace(cfg.BindAddress) ? "127.0.0.1" : cfg.BindAddress.Trim();
             _listener.Prefixes.Add($"http://{host}:{cfg.Port}/");
             try { _listener.Start(); }
             catch (Exception e)
             {
-                LastError = e.Message + (cfg.BindAll ? " — écoute sur toutes interfaces : lance WGSM en ADMINISTRATEUR, ou réserve l'URL (netsh http add urlacl)." : "");
+                bool nonLocal = host != "127.0.0.1" && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
+                LastError = e.Message + (nonLocal ? $" — écoute hors localhost : lance WGSM en ADMINISTRATEUR, ou réserve l'URL : netsh http add urlacl url=http://{host}:{cfg.Port}/ user=Tout_le_monde" : "");
                 _listener = null;
                 return false;
             }
             BeginGet();
-            AppLog.Info("WebApi", $"API démarrée sur http://{host}:{cfg.Port}/ (bindAll={cfg.BindAll}).");
+            AppLog.Info("WebApi", $"API démarrée sur http://{host}:{cfg.Port}/.");
             return true;
         }
 
@@ -77,14 +78,18 @@ namespace WindowsGSM.Functions.WebApi
         {
             var req = ctx.Request;
             var res = ctx.Response;
-            res.AddHeader("Access-Control-Allow-Origin", "*");
+            string ip = req.RemoteEndPoint?.Address?.ToString() ?? "?";
+
+            // Anti-brute-force : bloque une IP après trop d'échecs d'authentification.
+            if (IsBlocked(ip)) { Write(res, 429, "{\"error\":\"too many failed attempts\"}"); return; }
 
             // --- Auth : Bearer header ou ?token= ---
             string token = null;
             string auth = req.Headers["Authorization"];
             if (auth != null && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) { token = auth.Substring(7).Trim(); }
             if (string.IsNullOrEmpty(token)) { token = req.QueryString["token"]; }
-            if (!TokenValid(token)) { Write(res, 401, "{\"error\":\"unauthorized\"}"); return; }
+            if (!TokenValid(token)) { RecordFail(ip); Write(res, 401, "{\"error\":\"unauthorized\"}"); return; }
+            ResetFails(ip);
 
             string path = (req.Url.AbsolutePath ?? "/").TrimEnd('/');
 
@@ -113,12 +118,38 @@ namespace WindowsGSM.Functions.WebApi
             return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(t), Encoding.UTF8.GetBytes(_token));
         }
 
+        // --- Anti-brute-force du token (en mémoire, par IP) ---
+        private const int MaxFails = 10;
+        private static readonly TimeSpan FailWindow = TimeSpan.FromMinutes(5);
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int fails, DateTime since)> _failsByIp
+            = new System.Collections.Concurrent.ConcurrentDictionary<string, (int, DateTime)>();
+
+        private bool IsBlocked(string ip)
+        {
+            if (_failsByIp.TryGetValue(ip, out var v))
+            {
+                if (DateTime.UtcNow - v.since > FailWindow) { _failsByIp.TryRemove(ip, out _); return false; }
+                return v.fails >= MaxFails;
+            }
+            return false;
+        }
+        private void RecordFail(string ip) =>
+            _failsByIp.AddOrUpdate(ip, (1, DateTime.UtcNow), (k, v) => (DateTime.UtcNow - v.since > FailWindow) ? (1, DateTime.UtcNow) : (v.fails + 1, v.since));
+        private void ResetFails(string ip) { _failsByIp.TryRemove(ip, out _); }
+
         private static void Write(HttpListenerResponse res, int code, string json)
         {
             try
             {
                 res.StatusCode = code;
                 res.ContentType = "application/json";
+                // En-têtes HTTP de sécurité (durcissement réponse).
+                res.AddHeader("X-Content-Type-Options", "nosniff");
+                res.AddHeader("X-Frame-Options", "DENY");
+                res.AddHeader("Referrer-Policy", "no-referrer");
+                res.AddHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+                res.AddHeader("Cache-Control", "no-store");
+                res.AddHeader("X-Robots-Tag", "noindex, nofollow");
                 byte[] b = Encoding.UTF8.GetBytes(json);
                 res.ContentLength64 = b.Length;
                 res.OutputStream.Write(b, 0, b.Length);

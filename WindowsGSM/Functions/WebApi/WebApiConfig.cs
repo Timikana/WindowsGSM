@@ -13,7 +13,9 @@ namespace WindowsGSM.Functions.WebApi
     {
         public bool Enabled = false;
         public int Port = 8642;
-        public bool BindAll = false;     // false = localhost seulement ; true = toutes interfaces (internet/LAN)
+        // IP/hôte d'écoute (préfixe HttpListener) : "127.0.0.1" = local seulement (recommandé, derrière reverse-proxy),
+        // "+" = toutes interfaces (exige WGSM élevé/urlacl), ou une IP précise de la machine.
+        public string BindAddress = "127.0.0.1";
         public string Token = string.Empty; // en clair en mémoire ; chiffré sur disque
 
         private static string Path => Functions.ServerPath.Get("configs", "webapi.json");
@@ -46,7 +48,7 @@ namespace WindowsGSM.Functions.WebApi
                 {
                     Enabled = Enabled,
                     Port = Port,
-                    BindAll = BindAll,
+                    BindAddress = string.IsNullOrWhiteSpace(BindAddress) ? "127.0.0.1" : BindAddress.Trim(),
                     Token = string.IsNullOrEmpty(Token) ? string.Empty : Secret.Protect(Token) // chiffre
                 };
                 File.WriteAllText(Path, JsonConvert.SerializeObject(onDisk, Formatting.Indented));

@@ -22,7 +22,7 @@ namespace WindowsGSM.Functions.WebApi
             var cfg = WebApiConfig.Load();
 
             Title = "API web (contrôle à distance)";
-            Width = 620; Height = 470;
+            Width = 640; Height = 600;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.NoResize;
             Background = new SolidColorBrush(Color.FromRgb(0x1f, 0x1f, 0x1f));
@@ -41,8 +41,12 @@ namespace WindowsGSM.Functions.WebApi
             portRow.Children.Add(portBox);
             root.Children.Add(portRow);
 
-            var bindAll = new Wpf.Ui.Controls.ToggleSwitch { Content = "Écouter sur toutes les interfaces (LAN/internet) — sinon localhost seulement", IsChecked = cfg.BindAll, Foreground = Fg, Margin = new Thickness(0, 0, 0, 10) };
-            root.Children.Add(bindAll);
+            var ipRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            ipRow.Children.Add(new TextBlock { Text = "IP d'écoute :", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 140 });
+            var ipBox = new TextBox { Text = cfg.BindAddress, Width = 180, FontFamily = new FontFamily("Consolas"), VerticalAlignment = VerticalAlignment.Center };
+            ipRow.Children.Add(ipBox);
+            ipRow.Children.Add(new TextBlock { Text = "127.0.0.1 = local · « + » = toutes interfaces · ou une IP précise", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), FontSize = 11 });
+            root.Children.Add(ipRow);
 
             root.Children.Add(new TextBlock { Text = "Token (Bearer) :", Foreground = Fg, Margin = new Thickness(0, 0, 0, 4) });
             var tokenRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
@@ -53,7 +57,16 @@ namespace WindowsGSM.Functions.WebApi
             tokenRow.Children.Add(gen);
             root.Children.Add(tokenRow);
 
-            root.Children.Add(new TextBlock { Text = "⚠️ HTTP en clair : pour une exposition internet, place l'API derrière un reverse-proxy HTTPS (sinon le token circule en clair). Sur « toutes interfaces », lance WGSM en administrateur (ou réserve l'URL via netsh http add urlacl).", Foreground = Warn, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 12) });
+            root.Children.Add(new TextBlock
+            {
+                Text = "🔒 Bonnes pratiques sécurité :\n" +
+                       "• L'API est en HTTP clair → pour une exposition internet, place-la DERRIÈRE UN REVERSE-PROXY HTTPS (nginx/Caddy/Traefik) qui gère le TLS ; idéalement garde l'écoute sur 127.0.0.1 et laisse le proxy parler au LAN/internet.\n" +
+                       "• Token long et aléatoire (bouton « Générer ») ; ne le partage jamais et fais-le tourner régulièrement.\n" +
+                       "• Restreins l'accès au pare-feu (n'ouvre le port qu'aux IP de confiance) ; ajoute du rate-limiting/Fail2ban côté proxy.\n" +
+                       "• En-têtes de sécurité déjà envoyés par l'API (nosniff, X-Frame-Options DENY, CSP none, no-store) + throttle anti-brute-force intégré (blocage après 10 échecs/5 min).\n" +
+                       "• Écouter hors 127.0.0.1 exige WGSM en administrateur (ou « netsh http add urlacl »).",
+                Foreground = Warn, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 12)
+            });
 
             var status = new TextBlock { Foreground = Dim, TextWrapping = TextWrapping.Wrap, MinHeight = 18, Margin = new Thickness(0, 0, 0, 10) };
             root.Children.Add(status);
@@ -73,7 +86,7 @@ namespace WindowsGSM.Functions.WebApi
                     status.Foreground = Warn; status.Text = "Port invalide.";
                     return;
                 }
-                var c = new WebApiConfig { Enabled = enable.IsChecked == true, Port = port, BindAll = bindAll.IsChecked == true, Token = tokenBox.Text.Trim() };
+                var c = new WebApiConfig { Enabled = enable.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), Token = tokenBox.Text.Trim() };
                 c.Save();
                 try { _onSaved?.Invoke(); } catch { }
                 status.Foreground = Accent;
