@@ -119,7 +119,7 @@ namespace WindowsGSM.Functions
                 var tpa = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty;
                 foreach (var asmPath in tpa.Split(Path.PathSeparator)) { AddRef(asmPath); }
                 AddRef(Assembly.GetEntryAssembly()?.Location);
-                AddRef(ServerPath.GetBin("Newtonsoft.Json.dll"));
+                AddRef(typeof(Newtonsoft.Json.JsonConvert).Assembly.Location); // Newtonsoft.Json réel (NuGet), plus d'extraction bin/
                 _sharedReferences = references;
                 return _sharedReferences;
             }

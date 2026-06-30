@@ -23,8 +23,29 @@ namespace WindowsGSM.Functions
             _donorType = donorType ?? string.Empty;
         }
 
+        // #163 : si l'IP configurée n'est pas routable (0.0.0.0/localhost/vide), afficher l'IP PUBLIQUE.
+        private static string _cachedPublicIp;
+        private static DateTime _publicIpAt = DateTime.MinValue;
+        private static async Task<string> PublicIpIfNeeded(string ip)
+        {
+            string s = (ip ?? string.Empty).Trim();
+            if (s.Length > 0 && s != "0.0.0.0" && s != "127.0.0.1" && !s.Equals("localhost", StringComparison.OrdinalIgnoreCase)) { return s; }
+            try
+            {
+                if (string.IsNullOrEmpty(_cachedPublicIp) || (DateTime.Now - _publicIpAt).TotalMinutes > 30)
+                {
+                    _cachedPublicIp = (await _httpClient.GetStringAsync("https://api.ipify.org")).Trim();
+                    _publicIpAt = DateTime.Now;
+                }
+                return string.IsNullOrEmpty(_cachedPublicIp) ? s : _cachedPublicIp;
+            }
+            catch { return s; }
+        }
+
         public async Task<bool> Send(string serverid, string servergame, string serverstatus, string servername, string serverip, string serverport)
         {
+            serverip = await PublicIpIfNeeded(serverip); // #163
+
             // Multi-canaux : diffuse aussi vers les canaux globaux configures (ntfy, etc.),
             // independamment de Discord (fonctionne meme si aucun webhook Discord n'est defini).
             try

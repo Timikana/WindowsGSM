@@ -27,11 +27,8 @@ namespace WindowsGSM
                 }
             }
 
-            string ntsJsonPath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), ServerPath.FolderName.Bin, "Newtonsoft.Json.dll");
-            if (!File.Exists(ntsJsonPath) || new FileInfo(ntsJsonPath).Length != 700336) // Latest Newtonsoft.Json.dll byte size is 700336
-            {
-                File.WriteAllBytes(ntsJsonPath, Properties.Resources.Newtonsoft_Json);
-            }
+            // Newtonsoft.Json vient désormais du NuGet (PackageReference) : plus d'extraction depuis une ressource embarquée.
+            // Le compilateur Roslyn des plugins référence directement l'assembly chargé (cf. PluginManagement.GetSharedReferences).
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
