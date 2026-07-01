@@ -11,8 +11,9 @@ namespace WindowsGSM.Functions.WebApi
     /// </summary>
     public class WebApiConfig
     {
-        public bool Enabled = false;
-        public bool WebUiEnabled = false; // web portal (login + dashboard) on top of the token API
+        public bool Enabled = false;      // derived: true when the API and/or the portal is enabled (master start gate)
+        public bool ApiEnabled = false;   // token API (Bearer) on its own switch
+        public bool WebUiEnabled = false; // web portal (login + dashboard) on its own switch
         public int Port = 8642;
         // Listen IP/host (HttpListener prefix): "127.0.0.1" = local only (recommended, behind a reverse-proxy),
         // "+" = all interfaces (requires elevated WGSM/urlacl), or a specific machine IP.
@@ -54,6 +55,7 @@ namespace WindowsGSM.Functions.WebApi
                 var onDisk = new WebApiConfig
                 {
                     Enabled = Enabled,
+                    ApiEnabled = ApiEnabled,
                     WebUiEnabled = WebUiEnabled,
                     Port = Port,
                     BindAddress = string.IsNullOrWhiteSpace(BindAddress) ? "127.0.0.1" : BindAddress.Trim(),

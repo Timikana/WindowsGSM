@@ -34,9 +34,11 @@ namespace WindowsGSM.Functions.WebApi
 
             var root = new StackPanel { Margin = new Thickness(18) };
             root.Children.Add(new TextBlock { Text = "Remote control (web server)", Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            root.Children.Add(new TextBlock { Text = "Two independent parts, each turned on by itself: the token API (set a token below) and the browser portal (toggle further down). The server runs as soon as at least one is configured — no separate master switch.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
+            root.Children.Add(new TextBlock { Text = "Two independent parts you can toggle separately: the token API and the browser portal. The server runs as soon as at least one is enabled — no separate master switch.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
 
-            root.Children.Add(new TextBlock { Text = "Token API — GET /api/servers · POST /api/servers/{id}/{start|stop|restart|backup}. Set a token to enable it; leave it empty to disable the API.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
+            var apiEnable = new Wpf.Ui.Controls.ToggleSwitch { Content = "Enable the token API", IsChecked = cfg.ApiEnabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 6) };
+            root.Children.Add(apiEnable);
+            root.Children.Add(new TextBlock { Text = "GET /api/servers · POST /api/servers/{id}/{start|stop|restart|backup}. Requires a Bearer token (below).", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
 
             var portRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
             portRow.Children.Add(new TextBlock { Text = "Port:", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 140 });
@@ -126,7 +128,12 @@ namespace WindowsGSM.Functions.WebApi
             save.Click += (s, e) =>
             {
                 bool wantPortal = webUi.IsChecked == true;
-                bool wantApi = !string.IsNullOrWhiteSpace(tokenBox.Text);
+                bool wantApi = apiEnable.IsChecked == true;
+                if (wantApi && string.IsNullOrWhiteSpace(tokenBox.Text))
+                {
+                    status.Foreground = Warn; status.Text = "Set a token (or click \"Generate\") to enable the API.";
+                    return;
+                }
                 if (wantPortal && WebUsers.Load().Users.Count == 0)
                 {
                     status.Foreground = Warn; status.Text = "Create at least one account (\"Web accounts…\") before enabling the portal.";
@@ -142,8 +149,8 @@ namespace WindowsGSM.Functions.WebApi
                     status.Foreground = Warn; status.Text = "Invalid portal port.";
                     return;
                 }
-                // No master switch: the server is "enabled" whenever the API and/or the portal is configured.
-                var c = new WebApiConfig { Enabled = wantApi || wantPortal, WebUiEnabled = wantPortal, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), WebUiPort = webPort, WebUiBindAddress = string.IsNullOrWhiteSpace(webIpBox.Text) ? "127.0.0.1" : webIpBox.Text.Trim(), Token = tokenBox.Text.Trim() };
+                // No master switch: the server runs whenever the API and/or the portal is enabled.
+                var c = new WebApiConfig { Enabled = wantApi || wantPortal, ApiEnabled = wantApi, WebUiEnabled = wantPortal, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), WebUiPort = webPort, WebUiBindAddress = string.IsNullOrWhiteSpace(webIpBox.Text) ? "127.0.0.1" : webIpBox.Text.Trim(), Token = tokenBox.Text.Trim() };
                 c.Save();
                 try { _onSaved?.Invoke(); } catch { }
                 status.Foreground = Accent;

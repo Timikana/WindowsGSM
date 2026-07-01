@@ -55,8 +55,9 @@ namespace WindowsGSM.Functions.WebApi
             _webUi = cfg.WebUiEnabled && Donator.DonatorManager.IsDonator;
             if (cfg.WebUiEnabled && !_webUi) { AppLog.Warn("WebApi", "Web portal skipped: donator-only feature."); }
 
-            bool haveApi = !string.IsNullOrWhiteSpace(_token);
-            if (!haveApi && !_webUi) { LastError = "Token required (the web portal is donator-only)."; return false; }
+            bool haveApi = cfg.ApiEnabled && !string.IsNullOrWhiteSpace(_token);
+            if (cfg.ApiEnabled && string.IsNullOrWhiteSpace(_token)) { AppLog.Warn("WebApi", "Token API enabled but no token set — API not started."); }
+            if (!haveApi && !_webUi) { LastError = "Nothing to start (enable the token API with a token, and/or the donator web portal)."; return false; }
 
             string apiHost = Norm(cfg.BindAddress);
             string webHost = Norm(cfg.WebUiBindAddress);
