@@ -999,7 +999,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="{loc:Tr MW.Col.Status}" IsReadOnly="True" Binding="{Binding Path=Status}" Width="80" MinWidth="80" MaxWidth="80"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.Status}" IsReadOnly="True" Binding="{Binding Path=StatusDisplay}" Width="80" MinWidth="80" MaxWidth="80"/>
                         <DataGridTemplateColumn Header="MAJ" IsReadOnly="True" Width="44" MinWidth="44" MaxWidth="44">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

@@ -15,6 +15,17 @@ namespace WindowsGSM.Functions
         public string Game { get; set; }
         public string Icon { get; set; }
         public string Status { get; set; }
+        // Localized status shown in the grid. Status itself stays the canonical English value
+        // (it is compared as a string in the app's logic), so only the DISPLAY is translated.
+        public string StatusDisplay
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Status)) { return string.Empty; }
+                var t = Localization.Loc.T("Status." + Status);
+                return t == "Status." + Status ? Status : t; // fallback to English if no translation
+            }
+        }
         public string Name { get; set; }
         public string IP { get; set; }
         public string Port { get; set; }

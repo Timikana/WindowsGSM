@@ -27,6 +27,21 @@ namespace WindowsGSM.Functions.Localization
             E("Common.Remove", "Remove", "Supprimer", "Eliminar", "Entfernen");
             E("Common.Generate", "Generate", "Générer", "Generar", "Generieren");
 
+            // ==== Server status (grid display only; Status stays English for logic) ====
+            E("Status.Started", "Started", "Démarré", "Iniciado", "Gestartet");
+            E("Status.Stopped", "Stopped", "Arrêté", "Detenido", "Gestoppt");
+            E("Status.Starting", "Starting", "Démarrage…", "Iniciando…", "Startet…");
+            E("Status.Stopping", "Stopping", "Arrêt…", "Deteniendo…", "Stoppt…");
+            E("Status.Restarting", "Restarting", "Redémarrage…", "Reiniciando…", "Neustart…");
+            E("Status.Restarted", "Restarted", "Redémarré", "Reiniciado", "Neu gestartet");
+            E("Status.Updating", "Updating", "Mise à jour…", "Actualizando…", "Aktualisiert…");
+            E("Status.Updated", "Updated", "Mis à jour", "Actualizado", "Aktualisiert");
+            E("Status.Backuping", "Backuping", "Sauvegarde…", "Copia de seguridad…", "Sicherung…");
+            E("Status.Backuped", "Backuped", "Sauvegardé", "Copiado", "Gesichert");
+            E("Status.Restoring", "Restoring", "Restauration…", "Restaurando…", "Wiederherstellung…");
+            E("Status.Restored", "Restored", "Restauré", "Restaurado", "Wiederhergestellt");
+            E("Status.Deleting", "Deleting", "Suppression…", "Eliminando…", "Löscht…");
+
             // ==== Web portal accounts (WebUsersDialog) ====
             E("WebUsers.Title", "Web portal accounts", "Comptes du portail web", "Cuentas del portal web", "Web-Portal-Konten");
             E("WebUsers.RolesHelp",
