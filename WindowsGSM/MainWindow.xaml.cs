@@ -21,6 +21,7 @@ using LiveChartsCore.SkiaSharpView;
 using System.Management;
 using System.Windows.Media.Imaging;
 using WindowsGSM.Functions;
+using WindowsGSM.Functions.Localization;
 using Label = System.Windows.Controls.Label;
 using Orientation = System.Windows.Controls.Orientation;
 using System.Windows.Documents;
@@ -928,7 +929,7 @@ namespace WindowsGSM
             // If a server is installing or import => return
             if (progressbar_InstallProgress.IsIndeterminate || progressbar_ImportProgress.IsIndeterminate)
             {
-                MessageBox.Show("WindowsGSM is currently installing/importing server!", "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Loc.T("Msg.InstallingBusy"), Loc.T("Msg.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -982,7 +983,7 @@ namespace WindowsGSM
             // If a server is installing or import => return
             if (progressbar_InstallProgress.IsIndeterminate || progressbar_ImportProgress.IsIndeterminate)
             {
-                MessageBox.Show("WindowsGSM is currently installing/importing server!", "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Loc.T("Msg.InstallingBusy"), Loc.T("Msg.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -1807,14 +1808,14 @@ namespace WindowsGSM
                 newServerConfig.CreateWindowsGSMConfig();
                 LoadServerTable();
                 Log(newServerConfig.ServerID, "Add generic Steam: success.");
-                System.Windows.MessageBox.Show($"{servername} (AppID {prof.AppId}) installed.\nExecutable: {prof.Executable} {prof.Arguments}", "Server added", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.GenericSteamInstalled", servername, prof.AppId, prof.Executable, prof.Arguments), Loc.T("Msg.ServerAddedTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
                 string err = string.Empty;
                 try { err = gameServer.Error ?? string.Empty; } catch { }
                 Log(newServerConfig.ServerID, "Add generic Steam: installation failed. " + err);
-                System.Windows.MessageBox.Show($"Installation failed (AppID {prof.AppId}).\n{err}", "Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(Loc.T("Msg.GenericSteamInstallFailed", prof.AppId, err), Loc.T("Msg.FailedTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1839,7 +1840,7 @@ namespace WindowsGSM
                 }
                 catch
                 {
-                    System.Windows.Forms.MessageBox.Show(installPath + " is not accessible!", "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    System.Windows.Forms.MessageBox.Show(Loc.T("Msg.PathNotAccessible", installPath), Loc.T("Msg.ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
@@ -2037,7 +2038,7 @@ namespace WindowsGSM
                 }
                 catch
                 {
-                    System.Windows.Forms.MessageBox.Show(importPath + " is not accessible!", "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    System.Windows.Forms.MessageBox.Show(Loc.T("Msg.PathNotAccessible", importPath), Loc.T("Msg.ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
@@ -2079,7 +2080,7 @@ namespace WindowsGSM
                 button_Browse.IsEnabled = true;
                 progressbar_ImportProgress.IsIndeterminate = false;
                 textblock_ImportProgress.Text = "[ERROR] Fail to import";
-                MessageBox.Show($"Fail to copy the directory.\n{textbox_ServerDir.Text}\nto\n{importPath}\n\nYou may install a new server and copy the old servers file to the new server.\n\nException: {importLog}", "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Loc.T("Msg.ImportCopyFailed", textbox_ServerDir.Text, importPath, importLog), Loc.T("Msg.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -2114,7 +2115,7 @@ namespace WindowsGSM
         private void Duplicate_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { System.Windows.MessageBox.Show("Select a server to duplicate first.", "Duplicate", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            if (server == null) { System.Windows.MessageBox.Show(Loc.T("Msg.DuplicateSelectFirst"), Loc.T("Msg.DuplicateTitle"), MessageBoxButton.OK, MessageBoxImage.Information); return; }
 
             // First free ID
             int newId = -1;
@@ -2122,7 +2123,7 @@ namespace WindowsGSM
             {
                 if (!Directory.Exists(ServerPath.GetServers(i.ToString()))) { newId = i; break; }
             }
-            if (newId == -1) { System.Windows.MessageBox.Show($"No free ID (max {MAX_SERVER}).", "Duplicate", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (newId == -1) { System.Windows.MessageBox.Show(Loc.T("Msg.DuplicateNoFreeId", MAX_SERVER), Loc.T("Msg.DuplicateTitle"), MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             string srcCfg = ServerPath.GetServersConfigs(server.ID, "WindowsGSM.cfg");
             if (!File.Exists(srcCfg)) { return; }
@@ -2154,7 +2155,7 @@ namespace WindowsGSM
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Duplication failed: " + ex.Message, "Duplicate", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(Loc.T("Msg.DuplicateFailed", ex.Message), Loc.T("Msg.DuplicateTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -2165,7 +2166,7 @@ namespace WindowsGSM
 
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped) { return; }
 
-            MessageBoxResult result = MessageBox.Show("Do you want to delete this server?\n(There is no comeback)", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = MessageBox.Show(Loc.T("Msg.DeleteServerConfirm"), Loc.T("Msg.ConfirmationTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
 
             await GameServer_Delete(server);
@@ -2180,11 +2181,11 @@ namespace WindowsGSM
 
             var settings = new MetroDialogSettings
             {
-                AffirmativeButtonText = "Save",
+                AffirmativeButtonText = Loc.T("Msg.SaveButton"),
                 DefaultText = webhookUrl
             };
 
-            webhookUrl = await this.ShowInputAsync("Discord Webhook URL", "Please enter the discord webhook url.", settings);
+            webhookUrl = await this.ShowInputAsync(Loc.T("Msg.DiscordWebhookTitle"), Loc.T("Msg.DiscordWebhookPrompt"), settings);
             if (webhookUrl == null) { return; } //If pressed cancel
 
             _serverMetadata[int.Parse(server.ID)].DiscordWebhook = webhookUrl;
@@ -2200,11 +2201,11 @@ namespace WindowsGSM
 
             var settings = new MetroDialogSettings
             {
-                AffirmativeButtonText = "Save",
+                AffirmativeButtonText = Loc.T("Msg.SaveButton"),
                 DefaultText = message
             };
 
-            message = await this.ShowInputAsync("Discord Custom Message", "Please enter the custom message.\n\nExample ping message <@discorduserid>:\n<@348921660361146380>", settings);
+            message = await this.ShowInputAsync(Loc.T("Msg.DiscordMessageTitle"), Loc.T("Msg.DiscordMessagePrompt"), settings);
             if (message == null) { return; } //If pressed cancel
 
             _serverMetadata[int.Parse(server.ID)].DiscordMessage = message;
@@ -2392,7 +2393,7 @@ namespace WindowsGSM
 
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped) { return; }
 
-            MessageBoxResult result = System.Windows.MessageBox.Show("Do you want to update this server?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = System.Windows.MessageBox.Show(Loc.T("Msg.UpdateServerConfirm"), Loc.T("Msg.ConfirmationTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
 
             await GameServer_Update(server);
@@ -2407,12 +2408,12 @@ namespace WindowsGSM
 
             if (targets.Count == 0)
             {
-                System.Windows.MessageBox.Show("No stopped server with an available update.", "Update all", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.UpdateAllNone"), Loc.T("Msg.UpdateAllTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             var names = string.Join("\n", targets.Select(s => $"#{s.ID} {s.Name}"));
-            MessageBoxResult result = System.Windows.MessageBox.Show($"Update these {targets.Count} server(s)?\n\n{names}", "Update all", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = System.Windows.MessageBox.Show(Loc.T("Msg.UpdateAllConfirm", targets.Count, names), Loc.T("Msg.UpdateAllTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
 
             foreach (var server in targets)
@@ -2431,10 +2432,10 @@ namespace WindowsGSM
                 .ToList();
             if (targets.Count == 0)
             {
-                System.Windows.MessageBox.Show("No stopped server to back up.", "Back up all", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.BackupAllNone"), Loc.T("Msg.BackupAllTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            var result = System.Windows.MessageBox.Show($"Back up these {targets.Count} stopped server(s)?", "Back up all", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show(Loc.T("Msg.BackupAllConfirm", targets.Count), Loc.T("Msg.BackupAllTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
             foreach (var server in targets)
             {
@@ -2451,7 +2452,7 @@ namespace WindowsGSM
 
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped) { return; }
 
-            MessageBoxResult result = System.Windows.MessageBox.Show("Do you want to validate this server?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = System.Windows.MessageBox.Show(Loc.T("Msg.ValidateServerConfirm"), Loc.T("Msg.ConfirmationTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
 
             await GameServer_Update(server, notes: " | Validate", validate: true);
@@ -2464,7 +2465,7 @@ namespace WindowsGSM
 
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped) { return; }
 
-            MessageBoxResult result = System.Windows.MessageBox.Show("Do you want to backup on this server?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = System.Windows.MessageBox.Show(Loc.T("Msg.BackupServerConfirm"), Loc.T("Msg.ConfirmationTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) { return; }
 
             await GameServer_Backup(server);
@@ -2612,10 +2613,10 @@ namespace WindowsGSM
                     {
                         var mb = new Wpf.Ui.Controls.MessageBox
                         {
-                            Title = "server_packages missing",
-                            Content = "This Truck Simulator server has no save\\server_packages.sii + .dat: it will probably crash at startup.\n\nFrom the CLIENT (config.cfg: uset g_console \"1\"), launch the game with ALL your DLC loaded, open the console (~) and type:\n    export_server_packages\nThen restart this server: the plugin copies the files automatically.\n\nStart anyway?",
-                            PrimaryButtonText = "Start anyway",
-                            CloseButtonText = "Cancel"
+                            Title = Loc.T("Msg.TruckPackagesTitle"),
+                            Content = Loc.T("Msg.TruckPackagesContent"),
+                            PrimaryButtonText = Loc.T("Msg.StartAnywayButton"),
+                            CloseButtonText = Loc.T("Msg.CancelButton")
                         };
                         var res = await mb.ShowDialogAsync();
                         if (res != Wpf.Ui.Controls.MessageBoxResult.Primary) { return null; }
@@ -3803,7 +3804,7 @@ namespace WindowsGSM
         private async void Browse_ActionHistory_Click(object sender, RoutedEventArgs e)
         {
             var server = (Functions.ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { await this.ShowMessageAsync("Action History", "Select a server first."); return; }
+            if (server == null) { await this.ShowMessageAsync(Loc.T("Msg.ActionHistoryTitle"), Loc.T("Msg.SelectServerFirst")); return; }
 
             var lines = new System.Collections.Generic.List<string>();
             try
@@ -3822,23 +3823,19 @@ namespace WindowsGSM
             catch { }
 
             string text = (lines.Count == 0)
-                ? "No action recorded for this server."
+                ? Loc.T("Msg.NoActionRecorded")
                 : string.Join("\n", lines.Skip(Math.Max(0, lines.Count - 50))); // last 50
-            await this.ShowMessageAsync($"History — #{server.ID} {server.Name}", text);
+            await this.ShowMessageAsync(Loc.T("Msg.HistoryTitle", server.ID, server.Name), text);
         }
 
         // Uptime stats for the selected server
         private async void Browse_Uptime_Click(object sender, RoutedEventArgs e)
         {
             var server = (Functions.ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { await this.ShowMessageAsync("Uptime", "Select a server first."); return; }
+            if (server == null) { await this.ShowMessageAsync(Loc.T("Msg.UptimeTitle"), Loc.T("Msg.SelectServerFirst")); return; }
             var st = GetUptime(server.ID);
-            string msg = $"Tracked since: {st.TrackedSince:dd/MM/yyyy HH:mm}\n\n"
-                       + $"Starts: {st.Starts}\n"
-                       + $"Crashes: {st.Crashes}\n"
-                       + $"Total online time: {st.OnlineTimeString()}\n"
-                       + $"Uptime: {st.AvailabilityPercent():0.0} %";
-            await this.ShowMessageAsync($"Uptime — #{server.ID} {server.Name}", msg);
+            string msg = Loc.T("Msg.UptimeBody", st.TrackedSince.ToString("dd/MM/yyyy HH:mm"), st.Starts, st.Crashes, st.OnlineTimeString(), st.AvailabilityPercent().ToString("0.0"));
+            await this.ShowMessageAsync(Loc.T("Msg.UptimeStatsTitle", server.ID, server.Name), msg);
         }
 
         private void Browse_ServerConfigs_Click(object sender, RoutedEventArgs e)
@@ -4002,11 +3999,11 @@ namespace WindowsGSM
 
             var settings = new MetroDialogSettings
             {
-                AffirmativeButtonText = "Activate",
+                AffirmativeButtonText = Loc.T("Msg.ActivateButton"),
                 DefaultText = authKey
             };
 
-            authKey = await this.ShowInputAsync("Donor Connect (Patreon)", "Please enter the activation key.", settings);
+            authKey = await this.ShowInputAsync(Loc.T("Msg.DonorConnectTitle"), Loc.T("Msg.DonorConnectPrompt"), settings);
 
             //If pressed cancel or key is null or whitespace
             if (string.IsNullOrWhiteSpace(authKey))
@@ -4025,13 +4022,13 @@ namespace WindowsGSM
             {
                 key.SetValue(RegistryKeyName.DonorTheme, "True");
                 key.SetValue(RegistryKeyName.DonorAuthKey, authKey);
-                await this.ShowMessageAsync("Success!", $"Thanks for your donation {name}, your support help us a lot!\nYou can choose any theme you like on the Settings!");
+                await this.ShowMessageAsync(Loc.T("Msg.DonorSuccessTitle"), Loc.T("Msg.DonorSuccessBody", name));
             }
             else
             {
                 key.SetValue(RegistryKeyName.DonorTheme, "False");
                 key.SetValue(RegistryKeyName.DonorAuthKey, "");
-                await this.ShowMessageAsync("Fail to activate.", "Please visit https://windowsgsm.com/patreon/ to get the key.");
+                await this.ShowMessageAsync(Loc.T("Msg.DonorFailTitle"), Loc.T("Msg.DonorFailBody"));
 
                 MahAppSwitch_DonorConnect.IsChecked = false;
             }
@@ -4096,7 +4093,7 @@ namespace WindowsGSM
             if (code == Functions.Localization.Loc.Lang) { return; } // no-op (incl. initial selection)
             Functions.Localization.Loc.SetLang(code);
             // Dialogs read Loc at open time, so newly-opened dialogs are already localized; a restart applies it everywhere.
-            try { new Wpf.Ui.Controls.MessageBox { Title = "WindowsGSM", Content = "Language changed. Restart WindowsGSM to fully apply it everywhere." }.ShowDialogAsync(); } catch { }
+            try { new Wpf.Ui.Controls.MessageBox { Title = "WindowsGSM", Content = Loc.T("Msg.LanguageChanged") }.ShowDialogAsync(); } catch { }
         }
         #endregion
 
@@ -4120,23 +4117,23 @@ namespace WindowsGSM
 
             if (string.IsNullOrEmpty(latestVersion))
             {
-                await this.ShowMessageAsync("Software Updates", "Fail to get latest version, please try again later.");
+                await this.ShowMessageAsync(Loc.T("Msg.SoftwareUpdatesTitle"), Loc.T("Msg.UpdateCheckFailed"));
                 return;
             }
 
             if (latestVersion == WGSM_VERSION)
             {
-                await this.ShowMessageAsync("Software Updates", "WindowsGSM is up to date.");
+                await this.ShowMessageAsync(Loc.T("Msg.SoftwareUpdatesTitle"), Loc.T("Msg.UpToDate"));
                 return;
             }
 
             var settings = new MetroDialogSettings
             {
-                AffirmativeButtonText = "Update",
+                AffirmativeButtonText = Loc.T("Msg.UpdateButton"),
                 DefaultButtonFocus = MessageDialogResult.Affirmative
             };
 
-            var result = await this.ShowMessageAsync("Software Updates", $"Version {latestVersion} is available, would you like to update now?\n\nWarning: All servers will be shutdown!", MessageDialogStyle.AffirmativeAndNegative, settings);
+            var result = await this.ShowMessageAsync(Loc.T("Msg.SoftwareUpdatesTitle"), Loc.T("Msg.UpdateAvailable", latestVersion), MessageDialogStyle.AffirmativeAndNegative, settings);
 
             if (result.ToString().Equals("Affirmative"))
             {
@@ -4186,7 +4183,7 @@ namespace WindowsGSM
                 }
                 else
                 {
-                    await this.ShowMessageAsync("Software Updates", $"Fail to download WindowsGSM-Updater.exe");
+                    await this.ShowMessageAsync(Loc.T("Msg.SoftwareUpdatesTitle"), Loc.T("Msg.UpdaterDownloadFailed"));
                 }
             }
         }
@@ -4232,12 +4229,12 @@ namespace WindowsGSM
         {
             var settings = new MetroDialogSettings
             {
-                AffirmativeButtonText = "Patreon",
-                NegativeButtonText = "Ok",
+                AffirmativeButtonText = Loc.T("Msg.PatreonButton"),
+                NegativeButtonText = Loc.T("Msg.OkButton"),
                 DefaultButtonFocus = MessageDialogResult.Negative
             };
 
-            var result = await this.ShowMessageAsync("About WindowsGSM", $"Product:\t\tWindowsGSM\nVersion:\t\t{WGSM_VERSION.Substring(1)}\nCreator:\t\tTatLead\n\nIf you like WindowsGSM, consider becoming a Patron!", MessageDialogStyle.AffirmativeAndNegative, settings);
+            var result = await this.ShowMessageAsync(Loc.T("Msg.AboutTitle"), Loc.T("Msg.AboutBody", WGSM_VERSION.Substring(1)), MessageDialogStyle.AffirmativeAndNegative, settings);
 
             if (result == MessageDialogResult.Affirmative)
             {
@@ -4274,7 +4271,7 @@ namespace WindowsGSM
             var row = ServerGrid.SelectedItem as ServerTable;
             if (row == null)
             {
-                System.Windows.MessageBox.Show("Select a server from the list first.", "Config Editor", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.SelectServerFromList"), Loc.T("Msg.ConfigEditorTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             try
@@ -4290,7 +4287,7 @@ namespace WindowsGSM
             var row = ServerGrid.SelectedItem as ServerTable;
             if (row == null)
             {
-                System.Windows.MessageBox.Show("Select a server from the list first.", "Mods", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.SelectServerFromList"), Loc.T("Msg.ModsTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             try
@@ -4356,7 +4353,7 @@ namespace WindowsGSM
             var row = (ServerTable)ServerGrid.SelectedItem;
             if (row == null)
             {
-                System.Windows.MessageBox.Show("Select a server from the list first.", "API Token", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.SelectServerFromList"), Loc.T("Msg.ApiTokenTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -4386,11 +4383,11 @@ namespace WindowsGSM
             string messageText = $"Server Name: {row.Name}\nPublic IP: {publicIP}\nQuery Port: {row.QueryPort}";
             if (GlobalServerList.IsServerOnSteamServerList(publicIP, row.QueryPort))
             {
-                MessageBox.Show(messageText + "\n\nResult: Online\n\nYour server is on the global server list!", "Global Server List Check", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("Msg.GlobalListOnline", messageText), Loc.T("Msg.GlobalListTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show(messageText + "\n\nResult: Offline\n\nYour server is not on the global server list.", "Global Server List Check", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Loc.T("Msg.GlobalListOffline", messageText), Loc.T("Msg.GlobalListTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -4402,17 +4399,17 @@ namespace WindowsGSM
             bool? existed = InstallAddons.IsAMXModXAndMetaModPExists(server);
             if (existed == null)
             {
-                await this.ShowMessageAsync("Tools - Install AMX Mod X & MetaMod-P", $"Doesn't support on {server.Game} (ID: {server.ID})");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolAmxTitle"), Loc.T("Msg.AddonNotSupported", server.Game, server.ID));
                 return;
             }
 
             if (existed == true)
             {
-                await this.ShowMessageAsync("Tools - Install AMX Mod X & MetaMod-P", $"Already Installed (ID: {server.ID})");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolAmxTitle"), Loc.T("Msg.AddonAlreadyInstalled", server.ID));
                 return;
             }
 
-            var result = await this.ShowMessageAsync("Tools - Install AMX Mod X & MetaMod-P", $"Are you sure to install? (ID: {server.ID})", MessageDialogStyle.AffirmativeAndNegative);
+            var result = await this.ShowMessageAsync(Loc.T("Msg.ToolAmxTitle"), Loc.T("Msg.AddonConfirmInstall", server.ID), MessageDialogStyle.AffirmativeAndNegative);
             if (result == MessageDialogResult.Affirmative)
             {
                 var controller = await this.ShowProgressAsync("Installing...", "Please wait...");
@@ -4420,8 +4417,8 @@ namespace WindowsGSM
                 bool installed = await InstallAddons.AMXModXAndMetaModP(server);
                 await controller.CloseAsync();
 
-                string message = installed ? $"Installed successfully" : $"Fail to install";
-                await this.ShowMessageAsync("Tools - Install AMX Mod X & MetaMod-P", $"{message} (ID: {server.ID})");
+                string message = installed ? Loc.T("Msg.AddonInstalledOk") : Loc.T("Msg.AddonInstallFail");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolAmxTitle"), Loc.T("Msg.AddonResult", message, server.ID));
             }
         }
 
@@ -4433,17 +4430,17 @@ namespace WindowsGSM
             bool? existed = InstallAddons.IsSourceModAndMetaModExists(server);
             if (existed == null)
             {
-                await this.ShowMessageAsync("Tools - Install SourceMod & MetaMod", $"Doesn't support on {server.Game} (ID: {server.ID})");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolSourceModTitle"), Loc.T("Msg.AddonNotSupported", server.Game, server.ID));
                 return;
             }
 
             if (existed == true)
             {
-                await this.ShowMessageAsync("Tools - Install SourceMod & MetaMod", $"Already Installed (ID: {server.ID})");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolSourceModTitle"), Loc.T("Msg.AddonAlreadyInstalled", server.ID));
                 return;
             }
 
-            var result = await this.ShowMessageAsync("Tools - Install SourceMod & MetaMod", $"Are you sure to install? (ID: {server.ID})", MessageDialogStyle.AffirmativeAndNegative);
+            var result = await this.ShowMessageAsync(Loc.T("Msg.ToolSourceModTitle"), Loc.T("Msg.AddonConfirmInstall", server.ID), MessageDialogStyle.AffirmativeAndNegative);
             if (result == MessageDialogResult.Affirmative)
             {
                 var controller = await this.ShowProgressAsync("Installing...", "Please wait...");
@@ -4451,8 +4448,8 @@ namespace WindowsGSM
                 bool installed = await InstallAddons.SourceModAndMetaMod(server);
                 await controller.CloseAsync();
 
-                var message = installed ? $"Installed successfully" : $"Fail to install";
-                await this.ShowMessageAsync("Tools - Install SourceMod & MetaMod", $"{message} (ID: {server.ID})");
+                var message = installed ? Loc.T("Msg.AddonInstalledOk") : Loc.T("Msg.AddonInstallFail");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolSourceModTitle"), Loc.T("Msg.AddonResult", message, server.ID));
             }
         }
 
@@ -4464,17 +4461,17 @@ namespace WindowsGSM
             bool? existed = InstallAddons.IsDayZSALModServerExists(server);
             if (existed == null)
             {
-                await this.ShowMessageAsync("Tools - Install DayZSAL Mod Server", $"Doesn't support on {server.Game} (ID: {server.ID})");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolDayZSALTitle"), Loc.T("Msg.AddonNotSupported", server.Game, server.ID));
                 return;
             }
 
             if (existed == true)
             {
-                await this.ShowMessageAsync("Tools - Install DayZSAL Mod Server", $"Already Installed (ID: {server.ID})");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolDayZSALTitle"), Loc.T("Msg.AddonAlreadyInstalled", server.ID));
                 return;
             }
 
-            var result = await this.ShowMessageAsync("Tools - Install DayZSAL Mod Server", $"Are you sure to install? (ID: {server.ID})", MessageDialogStyle.AffirmativeAndNegative);
+            var result = await this.ShowMessageAsync(Loc.T("Msg.ToolDayZSALTitle"), Loc.T("Msg.AddonConfirmInstall", server.ID), MessageDialogStyle.AffirmativeAndNegative);
             if (result == MessageDialogResult.Affirmative)
             {
                 var controller = await this.ShowProgressAsync("Installing...", "Please wait...");
@@ -4482,8 +4479,8 @@ namespace WindowsGSM
                 bool installed = await InstallAddons.DayZSALModServer(server);
                 await controller.CloseAsync();
 
-                string message = installed ? $"Installed successfully" : $"Fail to install";
-                await this.ShowMessageAsync("Tools - Install DayZSAL Mod Server", $"{message} (ID: {server.ID})");
+                string message = installed ? Loc.T("Msg.AddonInstalledOk") : Loc.T("Msg.AddonInstallFail");
+                await this.ShowMessageAsync(Loc.T("Msg.ToolDayZSALTitle"), Loc.T("Msg.AddonResult", message, server.ID));
             }
         }
 
@@ -4492,16 +4489,16 @@ namespace WindowsGSM
             var server = (ServerTable)ServerGrid.SelectedItem;
             if (server == null) { return; }
 
-            string messageTitle = "Tools - Install OxideMod";
+            string messageTitle = Loc.T("Msg.ToolOxideTitle");
 
             bool? existed = InstallAddons.IsOxideModExists(server);
             if (existed == null)
             {
-                await this.ShowMessageAsync(messageTitle, $"Doesn't support on {server.Game} (ID: {server.ID})");
+                await this.ShowMessageAsync(messageTitle, Loc.T("Msg.AddonNotSupported", server.Game, server.ID));
                 return;
             }
 
-            var result = await this.ShowMessageAsync(messageTitle, $"Are you sure to install/Update? (ID: {server.ID})", MessageDialogStyle.AffirmativeAndNegative);
+            var result = await this.ShowMessageAsync(messageTitle, Loc.T("Msg.AddonConfirmInstallUpdate", server.ID), MessageDialogStyle.AffirmativeAndNegative);
             if (result == MessageDialogResult.Affirmative)
             {
                 var controller = await this.ShowProgressAsync("Installing...", "Please wait...");
@@ -4509,8 +4506,8 @@ namespace WindowsGSM
                 bool installed = await InstallAddons.OxideMod(server);
                 await controller.CloseAsync();
 
-                string message = installed ? $"Installed successfully" : $"Fail to install";
-                await this.ShowMessageAsync(messageTitle, $"{message} (ID: {server.ID})");
+                string message = installed ? Loc.T("Msg.AddonInstalledOk") : Loc.T("Msg.AddonInstallFail");
+                await this.ShowMessageAsync(messageTitle, Loc.T("Msg.AddonResult", message, server.ID));
             }
         }
         #endregion
@@ -4670,7 +4667,7 @@ namespace WindowsGSM
         private void Actions_ToggleMaintenance_Click(object sender, RoutedEventArgs e)
         {
             var server = (ServerTable)ServerGrid.SelectedItem;
-            if (server == null) { System.Windows.MessageBox.Show("Select a server from the list first.", "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            if (server == null) { System.Windows.MessageBox.Show(Loc.T("Msg.SelectServerFromList"), Loc.T("Msg.MaintenanceTitle"), MessageBoxButton.OK, MessageBoxImage.Information); return; }
             bool on = !GetServerMetadata(server.ID).Maintenance;
             _serverMetadata[int.Parse(server.ID)].Maintenance = on;
             ServerConfig.SetSetting(server.ID, ServerConfig.SettingName.Maintenance, on ? "1" : "0");
@@ -4678,9 +4675,9 @@ namespace WindowsGSM
                 ? "[Maintenance] ENABLED — auto-start and auto-restart suspended for this server."
                 : "[Maintenance] disabled — auto-start/restart re-enabled.");
             System.Windows.MessageBox.Show(on
-                ? $"Maintenance mode ENABLED for #{server.ID} {server.Name}.\nAuto-start and auto-restart are suspended: the server will not be restarted automatically (ideal for intervening without WGSM restarting it)."
-                : $"Maintenance mode disabled for #{server.ID} {server.Name}.",
-                "Maintenance", MessageBoxButton.OK, MessageBoxImage.Information);
+                ? Loc.T("Msg.MaintenanceEnabled", server.ID, server.Name)
+                : Loc.T("Msg.MaintenanceDisabled", server.ID, server.Name),
+                Loc.T("Msg.MaintenanceTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // #20: toggle "backup before update" (per server, off by default)
@@ -4990,7 +4987,7 @@ namespace WindowsGSM
             var adminListItem = (DiscordBot.AdminListItem)listBox_DiscordBotAdminList.SelectedItem;
             if (adminListItem == null)
             {
-                System.Windows.MessageBox.Show("Select an admin from the list first.", "Discord Admin", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show(Loc.T("Msg.SelectAdminFirst"), Loc.T("Msg.DiscordAdminTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             OpenDiscordAdminOverlay(adminListItem.AdminId, adminListItem.ServerIds, adminListItem.Username);
@@ -5063,7 +5060,7 @@ namespace WindowsGSM
             string id = da_id.Text.Trim();
             if (!IsValidDiscordId(id))
             {
-                System.Windows.MessageBox.Show("Invalid Discord ID: it must contain 17 to 20 digits.", "Discord Admin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(Loc.T("Msg.InvalidDiscordId"), Loc.T("Msg.DiscordAdminTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -5077,7 +5074,7 @@ namespace WindowsGSM
                 var checked_ = (da_serverChecks.ItemsSource as IEnumerable<ServerCheckItem>)?.Where(x => x.IsChecked).Select(x => x.Id).ToList() ?? new List<string>();
                 if (checked_.Count == 0)
                 {
-                    System.Windows.MessageBox.Show("Check at least one server, or \"All servers\".", "Discord Admin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show(Loc.T("Msg.CheckAtLeastOneServer"), Loc.T("Msg.DiscordAdminTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
                 serverIds = string.Join(",", checked_);
@@ -5526,7 +5523,7 @@ namespace WindowsGSM
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server)) { return; }
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped)
-            { System.Windows.MessageBox.Show("The server must be stopped to back it up.", "Backup", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            { System.Windows.MessageBox.Show(Loc.T("Msg.MustBeStoppedBackup"), Loc.T("Msg.BackupTitle"), MessageBoxButton.OK, MessageBoxImage.Information); return; }
             await GameServer_Backup(server, " | Manual backup");
             Backups_RefreshList();
         }
@@ -5535,8 +5532,8 @@ namespace WindowsGSM
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server) || !(lv_backups.SelectedItem is BackupItem item)) { return; }
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped)
-            { System.Windows.MessageBox.Show("The server must be stopped to restore.", "Restore", MessageBoxButton.OK, MessageBoxImage.Information); return; }
-            var r = System.Windows.MessageBox.Show($"Restore \"{item.Name}\" onto #{server.ID} {server.Name}?\nThe current files will be replaced.", "Restore", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            { System.Windows.MessageBox.Show(Loc.T("Msg.MustBeStoppedRestore"), Loc.T("Msg.RestoreTitle"), MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            var r = System.Windows.MessageBox.Show(Loc.T("Msg.RestoreConfirm", item.Name, server.ID, server.Name), Loc.T("Msg.RestoreTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) { return; }
             await GameServer_RestoreBackup(server, item.Name);
         }
@@ -5544,7 +5541,7 @@ namespace WindowsGSM
         private void Backups_Delete_Click(object sender, RoutedEventArgs e)
         {
             if (!(lv_backups.SelectedItem is BackupItem item)) { return; }
-            var r = System.Windows.MessageBox.Show($"Permanently delete \"{item.Name}\"?", "Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var r = System.Windows.MessageBox.Show(Loc.T("Msg.DeleteBackupConfirm", item.Name), Loc.T("Msg.DeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) { return; }
             try { File.Delete(item.FullPath); } catch (Exception ex) { System.Windows.MessageBox.Show(ex.Message); }
             Backups_RefreshList();
@@ -5563,9 +5560,9 @@ namespace WindowsGSM
         {
             if (!(cb_backupServer.SelectedItem is ServerTable server)) { return; }
             var bc = new BackupConfig(server.ID);
-            string current = string.IsNullOrWhiteSpace(bc.BackupFolders) ? "(everything)" : bc.BackupFolders;
-            string input = await this.ShowInputAsync("Folders to back up",
-                $"Subfolders of serverfiles to include, separated by \"; \". Leave EMPTY to back up everything.\n\nCurrent: {current}\n\nExample (Enshrouded): savegame");
+            string current = string.IsNullOrWhiteSpace(bc.BackupFolders) ? Loc.T("Msg.BackupFoldersEverything") : bc.BackupFolders;
+            string input = await this.ShowInputAsync(Loc.T("Msg.BackupFoldersTitle"),
+                Loc.T("Msg.BackupFoldersPrompt", current));
             if (input == null) { return; } // cancelled
             bc.BackupFolders = input.Trim();
             bc.Save();
@@ -5594,8 +5591,8 @@ namespace WindowsGSM
             try { Directory.CreateDirectory(newPath); }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Unable to create/access the folder:\n" + ex.Message,
-                    "Backup folder", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(Loc.T("Msg.FolderCreateFailed", ex.Message),
+                    Loc.T("Msg.BackupFolderTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -5609,8 +5606,8 @@ namespace WindowsGSM
                     if (zips.Count > 0)
                     {
                         var move = System.Windows.MessageBox.Show(
-                            $"Move the {zips.Count} existing backup(s) to the new folder?",
-                            "Backup folder", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                            Loc.T("Msg.MoveBackupsConfirm", zips.Count),
+                            Loc.T("Msg.BackupFolderTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                         if (move == MessageBoxResult.Yes)
                         {
                             foreach (var z in zips)
