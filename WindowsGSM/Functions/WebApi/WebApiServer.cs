@@ -90,7 +90,14 @@ namespace WindowsGSM.Functions.WebApi
             return true;
         }
 
-        private static string Norm(string host) => string.IsNullOrWhiteSpace(host) ? "127.0.0.1" : host.Trim();
+        private static string Norm(string host)
+        {
+            host = string.IsNullOrWhiteSpace(host) ? "127.0.0.1" : host.Trim();
+            // HttpListener has no notion of "0.0.0.0"/"::" (it treats them as a literal host that never
+            // matches). The all-interfaces wildcard is "+". Map the usual "listen everywhere" spellings to it.
+            if (host == "0.0.0.0" || host == "::" || host == "[::]" || host == "*") { return "+"; }
+            return host;
+        }
 
         private static HttpListener Listen(string host, int port)
         {

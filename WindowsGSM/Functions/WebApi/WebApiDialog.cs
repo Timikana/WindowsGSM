@@ -41,12 +41,18 @@ namespace WindowsGSM.Functions.WebApi
             portRow.Children.Add(portBox);
             root.Children.Add(portRow);
 
-            var ipRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            var ipRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2) };
             ipRow.Children.Add(new TextBlock { Text = "Listen IP:", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 140 });
             var ipBox = new TextBox { Text = cfg.BindAddress, Width = 180, FontFamily = new FontFamily("Consolas"), VerticalAlignment = VerticalAlignment.Center };
             ipRow.Children.Add(ipBox);
-            ipRow.Children.Add(new TextBlock { Text = "127.0.0.1 = local · \"+\" = all interfaces · or a specific IP", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), FontSize = 11 });
             root.Children.Add(ipRow);
+            root.Children.Add(new TextBlock
+            {
+                Text = "127.0.0.1 = this machine only (no admin/firewall needed) — use this if the client is local.\n" +
+                       "0.0.0.0 / + = all interfaces (LAN/internet): requires running WGSM as administrator (or a netsh urlacl) and an open inbound firewall port.\n" +
+                       "You can also set a specific machine IP. NB: browsers cannot connect TO 0.0.0.0 — reach the server at 127.0.0.1 or the machine's real IP.",
+                Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 10)
+            });
 
             root.Children.Add(new TextBlock { Text = "Token (Bearer):", Foreground = Fg, Margin = new Thickness(0, 0, 0, 4) });
             var tokenRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
@@ -73,7 +79,7 @@ namespace WindowsGSM.Functions.WebApi
             var webIpBox = new TextBox { Text = cfg.WebUiBindAddress, Width = 150, FontFamily = new FontFamily("Consolas"), VerticalAlignment = VerticalAlignment.Center };
             webPortRow.Children.Add(webIpBox);
             root.Children.Add(webPortRow);
-            root.Children.Add(new TextBlock { Text = "Independent of the API above. Same IP:port as the API = single shared listener.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) });
+            root.Children.Add(new TextBlock { Text = "Independent of the API above. Same IP:port as the API = single shared listener. Use \"0.0.0.0\" or \"+\" for all interfaces (LAN/internet) — that requires running WGSM as administrator (or a netsh urlacl) and an open firewall port.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) });
             // The web portal (auth + roles) is donator-only (like multi-channel notifications).
             webUi.Checked += (s, e) =>
             {
