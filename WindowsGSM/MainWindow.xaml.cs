@@ -1002,6 +1002,17 @@ namespace WindowsGSM
             ProgressRing_LoadPlugins.Visibility = Visibility.Collapsed;
         }
 
+        // Plugin creation assistant: generates a Steam plugin .cs, then reloads so it compiles + shows up.
+        private void CreatePlugin_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new Functions.PluginGeneratorDialog(() => { LoadPlugins(); LoadServerTable(); }) { Owner = this };
+                dlg.ShowDialog();
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("PluginGen/UI", ex.Message); }
+        }
+
         // Dedicated source for the dashboard tiles: same ServerTable instances as the grid
         // (so Sample()/Players notifications propagate to the tiles).
         private readonly System.Collections.ObjectModel.ObservableCollection<ServerTable> _dashboardTiles

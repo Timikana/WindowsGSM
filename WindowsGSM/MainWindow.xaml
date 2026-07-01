@@ -158,6 +158,7 @@
                         </StackPanel>
                         <Button x:Name="Button_ImportPlugin" Content="{loc:Tr MW.Plugins.Import}" Height="29" Width="130" HorizontalAlignment="Right" Click="ImportPlugin_Click" Margin="-20,-50,150,0"></Button>
                         <Button x:Name="Button_RefreshPlugins" Content="{loc:Tr MW.Plugins.Reload}" Height="29" Width="130" HorizontalAlignment="Right" Margin="-20,-50,12,0" Click="RefreshPlugins_Click"></Button>
+                        <Button x:Name="Button_CreatePlugin" Content="{loc:Tr MW.Plugins.Create}" Height="29" MinWidth="130" HorizontalAlignment="Right" Margin="-20,-50,288,0" Click="CreatePlugin_Click"></Button>
                     </StackPanel>
 
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">

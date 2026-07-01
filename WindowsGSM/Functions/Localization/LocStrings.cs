@@ -583,6 +583,32 @@ namespace WindowsGSM.Functions.Localization
             E("Msg.FolderCreateFailed", "Unable to create/access the folder:\n{0}", "Impossible de créer/d'accéder au dossier :\n{0}", "No se puede crear/acceder a la carpeta:\n{0}", "Ordner kann nicht erstellt werden / kein Zugriff:\n{0}");
             E("Msg.MoveBackupsConfirm", "Move the {0} existing backup(s) to the new folder?", "Déplacer les {0} sauvegarde(s) existante(s) vers le nouveau dossier ?", "¿Mover las {0} copia(s) existente(s) a la nueva carpeta?", "Die {0} vorhandenen Sicherungen in den neuen Ordner verschieben?");
 
+            // ==== Plugin generator (PluginGen.*) ====
+            E("MW.Plugins.Create", "Create plugin…", "Créer un plugin…", "Crear plugin…", "Plugin erstellen…");
+            E("PluginGen.Title", "Create a plugin", "Créer un plugin", "Crear un plugin", "Plugin erstellen");
+            E("PluginGen.Intro", "Generate a WindowsGSM plugin for a Steam dedicated server: search the game (or enter its AppID), auto-resolve the executable/arguments, adjust, then generate. The plugin is compiled on reload and appears in the install list.", "Génère un plugin WindowsGSM pour un serveur dédié Steam : cherche le jeu (ou saisis son AppID), résous automatiquement l'exécutable/les arguments, ajuste, puis génère. Le plugin est compilé au rechargement et apparaît dans la liste d'installation.", "Genera un plugin de WindowsGSM para un servidor dedicado de Steam: busca el juego (o introduce su AppID), resuelve automáticamente el ejecutable/los argumentos, ajusta y genera. El plugin se compila al recargar y aparece en la lista de instalación.", "Erzeuge ein WindowsGSM-Plugin für einen dedizierten Steam-Server: Spiel suchen (oder AppID eingeben), ausführbare Datei/Argumente automatisch auflösen, anpassen, dann generieren. Das Plugin wird beim Neuladen kompiliert und erscheint in der Installationsliste.");
+            E("PluginGen.Search", "Search", "Rechercher", "Buscar", "Suchen");
+            E("PluginGen.ColGame", "Game", "Jeu", "Juego", "Spiel");
+            E("PluginGen.AppId", "AppID:", "AppID :", "AppID:", "AppID:");
+            E("PluginGen.Resolve", "Resolve", "Résoudre", "Resolver", "Auflösen");
+            E("PluginGen.GameName", "Game name", "Nom du jeu", "Nombre del juego", "Spielname");
+            E("PluginGen.Author", "Author", "Auteur", "Autor", "Autor");
+            E("PluginGen.Executable", "Executable", "Exécutable", "Ejecutable", "Ausführbare Datei");
+            E("PluginGen.Arguments", "Arguments", "Arguments", "Argumentos", "Argumente");
+            E("PluginGen.Port", "Port:", "Port :", "Puerto:", "Port:");
+            E("PluginGen.QueryPort", "Query port:", "Port de requête :", "Puerto de consulta:", "Query-Port:");
+            E("PluginGen.MaxPlayers", "Max players:", "Joueurs max :", "Jugadores máx.:", "Max. Spieler:");
+            E("PluginGen.Overwrite", "Overwrite if the plugin already exists", "Écraser si le plugin existe déjà", "Sobrescribir si el plugin ya existe", "Überschreiben, falls das Plugin bereits existiert");
+            E("PluginGen.Generate", "Generate plugin", "Générer le plugin", "Generar plugin", "Plugin generieren");
+            E("PluginGen.Searching", "Searching…", "Recherche…", "Buscando…", "Suche…");
+            E("PluginGen.NoResults", "No results.", "Aucun résultat.", "Sin resultados.", "Keine Ergebnisse.");
+            E("PluginGen.ResultCount", "{0} result(s).", "{0} résultat(s).", "{0} resultado(s).", "{0} Ergebnis(se).");
+            E("PluginGen.NeedAppId", "Enter a numeric AppID.", "Saisis un AppID numérique.", "Introduce un AppID numérico.", "Gib eine numerische AppID ein.");
+            E("PluginGen.Resolving", "Resolving…", "Résolution…", "Resolviendo…", "Wird aufgelöst…");
+            E("PluginGen.ResolveFailed", "Could not resolve a Windows executable for AppID {0} — fill Executable/Arguments manually.", "Impossible de résoudre un exécutable Windows pour l'AppID {0} — remplis Exécutable/Arguments à la main.", "No se pudo resolver un ejecutable de Windows para el AppID {0} — rellena Ejecutable/Argumentos manualmente.", "Konnte keine Windows-Datei für AppID {0} auflösen — Ausführbare Datei/Argumente manuell ausfüllen.");
+            E("PluginGen.Resolved", "✔ Resolved — review the fields and generate.", "✔ Résolu — vérifie les champs et génère.", "✔ Resuelto — revisa los campos y genera.", "✔ Aufgelöst — Felder prüfen und generieren.");
+            E("PluginGen.Done", "✔ Plugin generated: {0}. Reloading plugins…", "✔ Plugin généré : {0}. Rechargement des plugins…", "✔ Plugin generado: {0}. Recargando plugins…", "✔ Plugin generiert: {0}. Plugins werden neu geladen…");
+
             return all;
         }
     }
