@@ -214,11 +214,11 @@
                         <ui:ToggleSwitch x:Name="MahAppSwitch_DonorConnect" Content="Donor Connect (Patreon)" Margin="20,0,0,15" Click="DonorConnect_IsCheckedChanged"/>
                         <DockPanel Margin="20,0,20,20">
                             <Label Content="WindowsGSM Theme (Donor Only)" FontSize="13.5" Padding="0" DockPanel.Dock="Top"></Label>
-                            <ComboBox x:Name="comboBox_Themes" Margin="0,5,0,0" Height="25" DockPanel.Dock="Top" SelectionChanged="ComboBox_Themes_SelectionChanged" IsEnabled="False"></ComboBox>
+                            <ComboBox x:Name="comboBox_Themes" Margin="0,5,0,0" MinHeight="32" Padding="10,4" DockPanel.Dock="Top" SelectionChanged="ComboBox_Themes_SelectionChanged" IsEnabled="False"></ComboBox>
                         </DockPanel>
                         <DockPanel Margin="20,0,20,20">
                             <Label Content="Language / Langue" FontSize="13.5" Padding="0" DockPanel.Dock="Top"></Label>
-                            <ComboBox x:Name="comboBox_Language" Margin="0,5,0,0" Height="25" DockPanel.Dock="Top" SelectionChanged="ComboBox_Language_SelectionChanged"></ComboBox>
+                            <ComboBox x:Name="comboBox_Language" Margin="0,5,0,0" MinHeight="32" Padding="10,4" DockPanel.Dock="Top" SelectionChanged="ComboBox_Language_SelectionChanged"></ComboBox>
                         </DockPanel>
                     </StackPanel>
                 </ScrollViewer>
