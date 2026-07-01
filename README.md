@@ -20,11 +20,18 @@ This fork modernizes the UI (WPF-UI Fluent, dark native title bars) and adds:
 - **Server Doctor** — one-click diagnostics: status, locally-listening ports, free disk, Java, plus opt-in external reachability.
 - **Discord bot** — a dedicated **admin panel** (persistent embed with a server dropdown + start/stop/restart/backup/update buttons), interactive buttons, slash commands, and a live status dashboard across multiple guilds. Stale panel/dashboard messages are auto-cleaned on bot restart.
 - **Live player counts** — per-game online players shown in the grid & dashboard, queried by the right protocol for each game: A2S (Steam), Palworld REST API, Satisfactory HTTPS API, and 7 Days to Die Telnet. Per-server API tokens/passwords are encrypted at rest (DPAPI).
+- **Remote-control web API + browser portal** — optional embedded HTTP server with two independent, separately-toggled parts: a **Bearer-token API** (`/api/servers`, start/stop/restart/backup) and a **browser portal** (login page + dashboard) with **user accounts, roles (Viewer / Operator / Admin) and a per-server allowlist**. Each part has its own IP/port, session cookies (HttpOnly, SameSite=Strict), and **OWASP hardening**: anti-CSRF Origin check, strict input validation, hardened headers (CSP, X-Frame-Options, Permissions-Policy, hidden `Server`), per-IP brute-force throttle, and an audit log. *(The browser portal is a donator feature.)*
+- **Per-game config editor** — a universal INI / property-XML / properties engine plus curated schemas (Palworld, 7 Days to Die, Minecraft, ARK…) that turn raw config files into a friendly Fluent form, with multi-file support.
+- **Unified mods / Workshop manager** — enable/disable folder mods and manage Steam Workshop items per game (ARK, Project Zomboid, GMod, Palworld…), wiring the right config keys automatically.
 - **Hardening** — SteamCMD AppID/argument sanitisation, crash-safe console input (re-attached processes), file-based application log usable in Release builds.
 
 | Notifications | Ports / UPnP | Server Doctor |
 | --- | --- | --- |
 | ![Notifications](docs/screenshots/notifications.png) | ![Ports / UPnP](docs/screenshots/portforward.png) | ![Server Doctor](docs/screenshots/doctor.png) |
+
+| Web API & portal | Web accounts & roles |
+| --- | --- |
+| ![Web API](docs/screenshots/webapi.png) | ![Web accounts](docs/screenshots/webaccounts.png) |
 
 |               | 🎮 Game Server  | Supported | Query |
 | ------------- | --------------- | --------- | ----- |

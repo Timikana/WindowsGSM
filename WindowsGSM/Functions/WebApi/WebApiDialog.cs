@@ -26,7 +26,7 @@ namespace WindowsGSM.Functions.WebApi
             var cfg = WebApiConfig.Load();
 
             Title = "Web API (remote control)";
-            Width = 640; Height = 700;
+            Width = 640; Height = 820;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.NoResize;
             Background = new SolidColorBrush(Color.FromRgb(0x1f, 0x1f, 0x1f));
