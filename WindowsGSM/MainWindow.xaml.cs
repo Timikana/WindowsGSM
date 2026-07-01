@@ -4300,7 +4300,11 @@ namespace WindowsGSM
 
         private void Nav_WebApi_Click(object sender, RoutedEventArgs e)
         {
-            try { new Functions.WebApi.WebApiDialog(StartWebApi) { Owner = this }.ShowDialog(); }
+            try
+            {
+                var servers = ServerGrid.Items.Cast<ServerTable>().Select(s => (s.ID, s.Name)).ToList();
+                new Functions.WebApi.WebApiDialog(StartWebApi, servers) { Owner = this }.ShowDialog();
+            }
             catch (Exception ex) { Functions.AppLog.Warn("WebApi/UI", ex.Message); }
         }
 

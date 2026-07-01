@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,10 +17,12 @@ namespace WindowsGSM.Functions.WebApi
         private static readonly Brush Warn = new SolidColorBrush(Color.FromRgb(0xe0, 0xb0, 0x4c));
 
         private readonly Action _onSaved;
+        private readonly List<(string Id, string Name)> _servers;
 
-        public WebApiDialog(Action onSaved)
+        public WebApiDialog(Action onSaved, IEnumerable<(string Id, string Name)> servers = null)
         {
             _onSaved = onSaved;
+            _servers = (servers ?? Enumerable.Empty<(string, string)>()).ToList();
             var cfg = WebApiConfig.Load();
 
             Title = "Web API (remote control)";
@@ -30,12 +34,9 @@ namespace WindowsGSM.Functions.WebApi
 
             var root = new StackPanel { Margin = new Thickness(18) };
             root.Children.Add(new TextBlock { Text = "Remote control (web server)", Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            root.Children.Add(new TextBlock { Text = "Master switch for two independent parts: the token API (below) and the browser portal (further down). You can enable either one alone, or both. The token belongs to the API only — leave it empty to run the portal without the API.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
+            root.Children.Add(new TextBlock { Text = "Two independent parts, each turned on by itself: the token API (set a token below) and the browser portal (toggle further down). The server runs as soon as at least one is configured — no separate master switch.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
 
-            var enable = new Wpf.Ui.Controls.ToggleSwitch { Content = "Enable the web server (master switch)", IsChecked = cfg.Enabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 10) };
-            root.Children.Add(enable);
-
-            root.Children.Add(new TextBlock { Text = "Token API — GET /api/servers · POST /api/servers/{id}/{start|stop|restart|backup}. Optional: leave the token empty to disable the API entirely.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
+            root.Children.Add(new TextBlock { Text = "Token API — GET /api/servers · POST /api/servers/{id}/{start|stop|restart|backup}. Set a token to enable it; leave it empty to disable the API.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
 
             var portRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
             portRow.Children.Add(new TextBlock { Text = "Port:", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 140 });
@@ -99,7 +100,7 @@ namespace WindowsGSM.Functions.WebApi
                     var dd = new Donator.DonatorDialog("Web portal (authentication + roles)") { Owner = this };
                     if (dd.ShowDialog() != true) { return; }
                 }
-                var d = new WebUsersDialog { Owner = this }; d.ShowDialog();
+                var d = new WebUsersDialog(_servers) { Owner = this }; d.ShowDialog();
             };
             root.Children.Add(usersBtn);
             var cookieSecure = new Wpf.Ui.Controls.ToggleSwitch { Content = "\"Secure\" session cookie (behind an HTTPS proxy)", IsChecked = cfg.CookieSecure, Foreground = Fg, Margin = new Thickness(0, 0, 0, 12) };
@@ -124,12 +125,9 @@ namespace WindowsGSM.Functions.WebApi
             var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5) };
             save.Click += (s, e) =>
             {
-                if (enable.IsChecked == true && string.IsNullOrWhiteSpace(tokenBox.Text) && webUi.IsChecked != true)
-                {
-                    status.Foreground = Warn; status.Text = "Provide a token (API) or enable the web portal with accounts.";
-                    return;
-                }
-                if (webUi.IsChecked == true && WebUsers.Load().Users.Count == 0)
+                bool wantPortal = webUi.IsChecked == true;
+                bool wantApi = !string.IsNullOrWhiteSpace(tokenBox.Text);
+                if (wantPortal && WebUsers.Load().Users.Count == 0)
                 {
                     status.Foreground = Warn; status.Text = "Create at least one account (\"Web accounts…\") before enabling the portal.";
                     return;
@@ -144,11 +142,12 @@ namespace WindowsGSM.Functions.WebApi
                     status.Foreground = Warn; status.Text = "Invalid portal port.";
                     return;
                 }
-                var c = new WebApiConfig { Enabled = enable.IsChecked == true, WebUiEnabled = webUi.IsChecked == true, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), WebUiPort = webPort, WebUiBindAddress = string.IsNullOrWhiteSpace(webIpBox.Text) ? "127.0.0.1" : webIpBox.Text.Trim(), Token = tokenBox.Text.Trim() };
+                // No master switch: the server is "enabled" whenever the API and/or the portal is configured.
+                var c = new WebApiConfig { Enabled = wantApi || wantPortal, WebUiEnabled = wantPortal, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), WebUiPort = webPort, WebUiBindAddress = string.IsNullOrWhiteSpace(webIpBox.Text) ? "127.0.0.1" : webIpBox.Text.Trim(), Token = tokenBox.Text.Trim() };
                 c.Save();
                 try { _onSaved?.Invoke(); } catch { }
                 status.Foreground = Accent;
-                status.Text = !c.Enabled ? "✔ API disabled."
+                status.Text = !c.Enabled ? "✔ Nothing enabled (set a token and/or enable the portal)."
                     : c.WebUiEnabled ? $"✔ Started. Web portal: http://{c.WebUiBindAddress}:{webPort}/ (sign in with an account)."
                     : $"✔ API started. Test: GET http://{c.BindAddress}:{port}/api/servers (header Authorization: Bearer <token>).";
             };

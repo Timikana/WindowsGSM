@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,19 +15,23 @@ namespace WindowsGSM.Functions.WebApi
         private static readonly Brush Accent = new SolidColorBrush(Color.FromRgb(0x4c, 0xc2, 0xd6));
 
         private readonly WebUsers _store;
+        private readonly List<(string Id, string Name)> _servers;
         private readonly ListBox _list;
         private readonly TextBox _user;
         private readonly PasswordBox _pass;
         private readonly ComboBox _role;
-        private readonly TextBox _servers;
+        private readonly CheckBox _allServers;
+        private readonly StackPanel _serverPanel;
+        private readonly List<CheckBox> _serverChecks = new List<CheckBox>();
         private readonly TextBlock _status;
 
-        public WebUsersDialog()
+        public WebUsersDialog(IEnumerable<(string Id, string Name)> servers)
         {
             _store = WebUsers.Load();
+            _servers = (servers ?? Enumerable.Empty<(string, string)>()).ToList();
 
             Title = "Web portal accounts";
-            Width = 560; Height = 540;
+            Width = 560; Height = 620;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.NoResize;
             Background = new SolidColorBrush(Color.FromRgb(0x1f, 0x1f, 0x1f));
@@ -34,10 +39,17 @@ namespace WindowsGSM.Functions.WebApi
 
             var root = new StackPanel { Margin = new Thickness(16) };
             root.Children.Add(new TextBlock { Text = "Web portal accounts", Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            root.Children.Add(new TextBlock { Text = "Roles: Viewer (read) · Operator (+ start/stop/restart/backup) · Admin (all). Servers: \"*\" = all, or \"1,3,4\".", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 10) });
+            root.Children.Add(new TextBlock { Text = "Roles: Viewer (read) · Operator (+ start/stop/restart/backup) · Admin (all). Tick the servers each account may access.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 10) });
 
-            _list = new ListBox { Height = 180, Background = new SolidColorBrush(Color.FromRgb(0x1b, 0x1b, 0x1b)), Foreground = Fg, BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)) };
-            _list.SelectionChanged += (s, e) => { if (_list.SelectedItem is string line) { var u = _store.Users.FirstOrDefault(x => line.StartsWith(x.Username + "  ")); if (u != null) { _user.Text = u.Username; _role.SelectedIndex = (int)u.Role; _servers.Text = u.ServerIds; _pass.Password = string.Empty; } } };
+            _list = new ListBox { Height = 150, Background = new SolidColorBrush(Color.FromRgb(0x1b, 0x1b, 0x1b)), Foreground = Fg, BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)) };
+            _list.SelectionChanged += (s, e) =>
+            {
+                if (_list.SelectedItem is string line)
+                {
+                    var u = _store.Users.FirstOrDefault(x => line.StartsWith(x.Username + "  "));
+                    if (u != null) { _user.Text = u.Username; _role.SelectedIndex = (int)u.Role; _pass.Password = string.Empty; ApplySelection(u.ServerIds); }
+                }
+            };
             root.Children.Add(_list);
 
             var f1 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 6) };
@@ -49,15 +61,34 @@ namespace WindowsGSM.Functions.WebApi
             f1.Children.Add(_pass);
             root.Children.Add(f1);
 
-            var f2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            var f2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
             f2.Children.Add(new TextBlock { Text = "Role", Foreground = Fg, Width = 90, VerticalAlignment = VerticalAlignment.Center });
             _role = new ComboBox { Width = 160 };
             _role.Items.Add("Viewer"); _role.Items.Add("Operator"); _role.Items.Add("Admin"); _role.SelectedIndex = 0;
             f2.Children.Add(_role);
-            f2.Children.Add(new TextBlock { Text = "Servers", Foreground = Fg, Width = 100, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
-            _servers = new TextBox { Width = 150, Text = "*" };
-            f2.Children.Add(_servers);
             root.Children.Add(f2);
+
+            // ---- Server allowlist (checkboxes) ----
+            root.Children.Add(new TextBlock { Text = "Allowed servers", Foreground = Fg, Margin = new Thickness(0, 4, 0, 2) });
+            _allServers = new CheckBox { Content = "All servers", Foreground = Fg, IsChecked = true, Margin = new Thickness(0, 0, 0, 4) };
+            _allServers.Checked += (s, e) => SetServerPanelEnabled(false);
+            _allServers.Unchecked += (s, e) => SetServerPanelEnabled(true);
+            root.Children.Add(_allServers);
+
+            _serverPanel = new StackPanel();
+            foreach (var srv in _servers)
+            {
+                var cb = new CheckBox { Content = $"#{srv.Id} — {srv.Name}", Foreground = Fg, Tag = srv.Id, Margin = new Thickness(2, 1, 0, 1) };
+                _serverChecks.Add(cb);
+                _serverPanel.Children.Add(cb);
+            }
+            if (_servers.Count == 0)
+            {
+                _serverPanel.Children.Add(new TextBlock { Text = "(no servers found)", Foreground = Dim, FontSize = 11 });
+            }
+            var scroll = new ScrollViewer { Content = _serverPanel, Height = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Background = new SolidColorBrush(Color.FromRgb(0x1b, 0x1b, 0x1b)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)), BorderThickness = new Thickness(1), Padding = new Thickness(6), Margin = new Thickness(0, 0, 0, 8) };
+            root.Children.Add(scroll);
+            SetServerPanelEnabled(false); // "All servers" is checked by default
 
             _status = new TextBlock { Foreground = Dim, MinHeight = 18, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) };
             root.Children.Add(_status);
@@ -76,14 +107,42 @@ namespace WindowsGSM.Functions.WebApi
             Refresh();
         }
 
+        private void SetServerPanelEnabled(bool enabled)
+        {
+            _serverPanel.IsEnabled = enabled;
+            _serverPanel.Opacity = enabled ? 1.0 : 0.4;
+        }
+
+        /// <summary>Reflect a stored ServerIds value ("*", "" or "1,3,4") onto the checkboxes.</summary>
+        private void ApplySelection(string serverIds)
+        {
+            bool all = string.IsNullOrWhiteSpace(serverIds) || serverIds.Trim() == "*";
+            _allServers.IsChecked = all;
+            var ids = all ? new HashSet<string>() : new HashSet<string>(serverIds.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+            foreach (var cb in _serverChecks) { cb.IsChecked = ids.Contains((string)cb.Tag); }
+        }
+
+        private string ComputeServerIds()
+        {
+            if (_allServers.IsChecked == true) { return "*"; }
+            return string.Join(",", _serverChecks.Where(c => c.IsChecked == true).Select(c => (string)c.Tag));
+        }
+
         private void AddOrUpdate()
         {
             string user = _user.Text.Trim();
             if (string.IsNullOrWhiteSpace(user)) { _status.Foreground = Brushes.OrangeRed; _status.Text = "Username required."; return; }
             bool exists = _store.Users.Any(x => string.Equals(x.Username, user, StringComparison.OrdinalIgnoreCase));
             if (!exists && string.IsNullOrEmpty(_pass.Password)) { _status.Foreground = Brushes.OrangeRed; _status.Text = "Password required for a new account."; return; }
+            string serverIds = ComputeServerIds();
+            // Guard: not "all" but nothing ticked would (via AllowsServer) mean "all" — force an explicit choice.
+            if (_allServers.IsChecked != true && serverIds.Length == 0)
+            {
+                _status.Foreground = Brushes.OrangeRed; _status.Text = "Tick at least one server, or choose \"All servers\".";
+                return;
+            }
             var role = (WebRole)Math.Max(0, _role.SelectedIndex);
-            _store.Set(user, _pass.Password, role, string.IsNullOrWhiteSpace(_servers.Text) ? "*" : _servers.Text.Trim());
+            _store.Set(user, _pass.Password, role, serverIds);
             _store.Save();
             _pass.Password = string.Empty;
             Refresh();
@@ -96,7 +155,8 @@ namespace WindowsGSM.Functions.WebApi
             _list.Items.Clear();
             foreach (var u in _store.Users.OrderBy(x => x.Username))
             {
-                _list.Items.Add($"{u.Username}  —  {u.Role}  —  servers: {u.ServerIds}");
+                string scope = string.IsNullOrWhiteSpace(u.ServerIds) || u.ServerIds == "*" ? "all servers" : "servers " + u.ServerIds;
+                _list.Items.Add($"{u.Username}  —  {u.Role}  —  {scope}");
             }
         }
     }
