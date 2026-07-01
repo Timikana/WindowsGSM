@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WindowsGSM.Functions.Localization;
 
 namespace WindowsGSM.Functions.ConfigEditor
 {
@@ -41,7 +42,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             _gameFullName = gameFullName;
             _schemas = GameSchemas.All(gameFullName);
 
-            Title = $"Configuration — #{serverId} {serverName}";
+            Title = Loc.T("Config.Title", serverId, serverName);
             Width = 720;
             Height = 760;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -52,7 +53,7 @@ namespace WindowsGSM.Functions.ConfigEditor
 
             // --- Header: file selector ---
             var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-            header.Children.Add(new TextBlock { Text = "File:", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            header.Children.Add(new TextBlock { Text = Loc.T("Config.FileLabel"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
             _fileSelector = new ComboBox { MinWidth = 420, VerticalAlignment = VerticalAlignment.Center };
             _fileSelector.SelectionChanged += (s, e) => { if (_fileSelector.SelectedItem is FileItem fi) { LoadFile(fi); } };
             header.Children.Add(_fileSelector);
@@ -65,8 +66,8 @@ namespace WindowsGSM.Functions.ConfigEditor
             DockPanel.SetDock(_status, Dock.Left);
             buttons.Children.Add(_status);
             var btnRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var save = new Wpf.Ui.Controls.Button { Content = "Save", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var save = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Save"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Close"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
             save.Click += (s, e) => SaveCurrent();
             close.Click += (s, e) => Close();
             btnRow.Children.Add(save);
@@ -108,7 +109,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 }
                 if (primary == null || taken.Contains(primary)) { continue; }
                 taken.Add(primary);
-                string label = string.IsNullOrEmpty(schema.Label) ? $"{schema.GameMatch} settings" : schema.Label;
+                string label = string.IsNullOrEmpty(schema.Label) ? Loc.T("Config.GameSettings", schema.GameMatch) : schema.Label;
                 items.Add(new FileItem { FullPath = primary, Display = $"★ {Path.GetFileName(primary)} — {label}", Schema = schema });
             }
 
@@ -123,7 +124,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             if (items.Count == 0)
             {
                 _fileSelector.IsEnabled = false;
-                _body.Children.Add(new TextBlock { Text = "No configuration file found in serverfiles.\n(The server may not be installed yet.)", Foreground = Dim, TextWrapping = TextWrapping.Wrap });
+                _body.Children.Add(new TextBlock { Text = Loc.T("Config.NoFile"), Foreground = Dim, TextWrapping = TextWrapping.Wrap });
                 return;
             }
 
@@ -144,7 +145,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             }
             catch (Exception ex)
             {
-                _body.Children.Add(new TextBlock { Text = "Cannot read: " + ex.Message, Foreground = Dim, TextWrapping = TextWrapping.Wrap });
+                _body.Children.Add(new TextBlock { Text = Loc.T("Config.CannotRead", ex.Message), Foreground = Dim, TextWrapping = TextWrapping.Wrap });
                 return;
             }
 
@@ -172,7 +173,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             var rest = _model.Entries.Where(e => !handled.Contains(e.Key)).ToList();
             if (rest.Count > 0)
             {
-                var exp = new Expander { Header = $"Other settings ({rest.Count}) — raw editing", Foreground = Dim, Margin = new Thickness(0, 12, 0, 0) };
+                var exp = new Expander { Header = Loc.T("Config.OtherSettings", rest.Count), Foreground = Dim, Margin = new Thickness(0, 12, 0, 0) };
                 var inner = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
                 foreach (var e in rest) { inner.Children.Add(BuildRawRow(e)); }
                 exp.Content = inner;
@@ -185,13 +186,13 @@ namespace WindowsGSM.Functions.ConfigEditor
         {
             if (_model.Entries.Count == 0)
             {
-                _body.Children.Add(new TextBlock { Text = "No recognized key/value entry in this file.", Foreground = Dim });
+                _body.Children.Add(new TextBlock { Text = Loc.T("Config.NoEntries"), Foreground = Dim });
                 return;
             }
             string lastSection = null;
             foreach (var e in _model.Entries)
             {
-                if (e.Section != lastSection) { AddGroupHeader(string.IsNullOrEmpty(e.Section) ? "(global)" : e.Section); lastSection = e.Section; }
+                if (e.Section != lastSection) { AddGroupHeader(string.IsNullOrEmpty(e.Section) ? Loc.T("Config.GlobalSection") : e.Section); lastSection = e.Section; }
                 _body.Children.Add(BuildRawRow(e));
             }
         }
@@ -341,12 +342,12 @@ namespace WindowsGSM.Functions.ConfigEditor
                 foreach (var a in _applies) { a(); }
                 _model.Save();
                 _status.Foreground = Accent;
-                _status.Text = "✔ Saved (.wgsmbak backup created). Restart the server to apply.";
+                _status.Text = Loc.T("Config.Saved");
             }
             catch (Exception ex)
             {
                 _status.Foreground = new SolidColorBrush(Color.FromRgb(0xe0, 0x6c, 0x6c));
-                _status.Text = "Failed: " + ex.Message;
+                _status.Text = Loc.T("Config.SaveFailed", ex.Message);
                 Functions.AppLog.Warn("ConfigEditor/Save", ex.Message);
             }
         }

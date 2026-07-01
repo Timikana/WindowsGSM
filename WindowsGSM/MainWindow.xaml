@@ -216,6 +216,10 @@
                             <Label Content="WindowsGSM Theme (Donor Only)" FontSize="13.5" Padding="0" DockPanel.Dock="Top"></Label>
                             <ComboBox x:Name="comboBox_Themes" Margin="0,5,0,0" Height="25" DockPanel.Dock="Top" SelectionChanged="ComboBox_Themes_SelectionChanged" IsEnabled="False"></ComboBox>
                         </DockPanel>
+                        <DockPanel Margin="20,0,20,20">
+                            <Label Content="Language / Langue" FontSize="13.5" Padding="0" DockPanel.Dock="Top"></Label>
+                            <ComboBox x:Name="comboBox_Language" Margin="0,5,0,0" Height="25" DockPanel.Dock="Top" SelectionChanged="ComboBox_Language_SelectionChanged"></ComboBox>
+                        </DockPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

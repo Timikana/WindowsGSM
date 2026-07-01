@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WindowsGSM.Functions.Localization;
 
 namespace WindowsGSM.Functions.Donator
 {
@@ -20,9 +21,9 @@ namespace WindowsGSM.Functions.Donator
 
         public DonatorDialog(string featureName)
         {
-            Title = "Donor feature";
+            Title = Loc.T("Donator.Title");
             Width = 560;
-            Height = 330;
+            Height = 360;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.NoResize;
             Background = new SolidColorBrush(Color.FromRgb(0x1f, 0x1f, 0x1f));
@@ -32,13 +33,13 @@ namespace WindowsGSM.Functions.Donator
             root.Children.Add(new TextBlock { Text = "★ " + featureName, Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0, 0, 0, 6) });
             root.Children.Add(new TextBlock
             {
-                Text = "Donor-only feature. Become a donor via \"Donor Connect\" in Settings (Patreon), or — if you are the owner — unlock with your passphrase.",
+                Text = Loc.T("Donator.Explain"),
                 Foreground = Dim,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 16)
             });
 
-            root.Children.Add(new TextBlock { Text = "Owner passphrase:", Foreground = Fg, Margin = new Thickness(0, 0, 0, 4) });
+            root.Children.Add(new TextBlock { Text = Loc.T("Donator.OwnerPassphrase"), Foreground = Fg, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 4) });
             var passBox = new PasswordBox { MinWidth = 460, Margin = new Thickness(0, 0, 0, 6) };
             root.Children.Add(passBox);
 
@@ -46,21 +47,21 @@ namespace WindowsGSM.Functions.Donator
             root.Children.Add(status);
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var unlock = new Wpf.Ui.Controls.Button { Content = "Unlock", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(0, 0, 6, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5) };
+            var unlock = new Wpf.Ui.Controls.Button { Content = Loc.T("Donator.Unlock"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Close"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5) };
             unlock.Click += (s, e) =>
             {
                 if (DonatorManager.UnlockOwner(passBox.Password))
                 {
                     status.Foreground = Accent;
-                    status.Text = "✔ Unlocked.";
+                    status.Text = Loc.T("Donator.Unlocked");
                     DialogResult = true;
                     Close();
                 }
                 else
                 {
                     status.Foreground = Warn;
-                    status.Text = "Incorrect passphrase (or owner key not yet configured).";
+                    status.Text = Loc.T("Donator.BadPassphrase");
                 }
             };
             close.Click += (s, e) => Close();

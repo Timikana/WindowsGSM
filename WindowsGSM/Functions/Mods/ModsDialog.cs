@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WindowsGSM.Functions.Localization;
 
 namespace WindowsGSM.Functions.Mods
 {
@@ -34,7 +35,7 @@ namespace WindowsGSM.Functions.Mods
             _game = game;
             _profile = ModProfiles.For(game);
 
-            Title = $"Mods — #{serverId} {serverName}";
+            Title = Loc.T("Mods.Title", serverId, serverName);
             Width = 720;
             Height = 720;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -58,7 +59,7 @@ namespace WindowsGSM.Functions.Mods
             _status = new TextBlock { Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
             DockPanel.SetDock(_status, Dock.Left);
             bottom.Children.Add(_status);
-            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), HorizontalAlignment = HorizontalAlignment.Right };
+            var close = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Close"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), HorizontalAlignment = HorizontalAlignment.Right };
             close.Click += (s, e) => Close();
             DockPanel.SetDock(close, Dock.Right);
             bottom.Children.Add(close);
@@ -75,12 +76,12 @@ namespace WindowsGSM.Functions.Mods
 
         private string MechanismLabel()
         {
-            if (_profile == null) { return "Mods — unrecognized game"; }
+            if (_profile == null) { return Loc.T("Mods.UnrecognizedGame"); }
             switch (_profile.Mechanism)
             {
-                case ModMechanism.Folder: return $"File mods — {_game}";
-                case ModMechanism.Workshop: return $"Steam Workshop — {_game}";
-                default: return $"Mods — {_game}";
+                case ModMechanism.Folder: return Loc.T("Mods.HeaderFileMods", _game);
+                case ModMechanism.Workshop: return Loc.T("Mods.HeaderWorkshop", _game);
+                default: return Loc.T("Mods.HeaderGeneric", _game);
             }
         }
 
@@ -90,15 +91,15 @@ namespace WindowsGSM.Functions.Mods
 
             if (_profile == null)
             {
-                _body.Children.Add(Info("This game has no known mod profile. You can open the server folder and manage the files manually."));
-                _body.Children.Add(OpenButton("Open the server folder", _serverFiles));
+                _body.Children.Add(Info(Loc.T("Mods.NoProfile")));
+                _body.Children.Add(OpenButton(Loc.T("Mods.OpenServerFolder"), _serverFiles));
                 return;
             }
 
             switch (_profile.Mechanism)
             {
                 case ModMechanism.None:
-                    _body.Children.Add(Info("No server mod system for this game."));
+                    _body.Children.Add(Info(Loc.T("Mods.NoModSystem")));
                     break;
                 case ModMechanism.Workshop:
                     BuildWorkshopView();
@@ -116,11 +117,11 @@ namespace WindowsGSM.Functions.Mods
 
             // Action bar
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            var addBtn = new Wpf.Ui.Controls.Button { Content = "Add a mod…", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var addBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.AddMod"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
             addBtn.Click += (s, e) => AddMod();
-            var openBtn = new Wpf.Ui.Controls.Button { Content = "Open the folder", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var openBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.OpenFolder"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
             openBtn.Click += (s, e) => { try { Directory.CreateDirectory(modDir); WindowsGSM.Shell.Open(modDir); } catch (Exception ex) { Fail(ex.Message); } };
-            var refreshBtn = new Wpf.Ui.Controls.Button { Content = "Refresh", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5) };
+            var refreshBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.Refresh"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5) };
             refreshBtn.Click += (s, e) => BuildBody();
             actions.Children.Add(addBtn);
             actions.Children.Add(openBtn);
@@ -132,7 +133,7 @@ namespace WindowsGSM.Functions.Mods
             var mods = ModFolder.List(_serverFiles, _profile);
             if (mods.Count == 0)
             {
-                _body.Children.Add(Info("No mods yet. Click \"Add a mod…\" or drop files into the folder."));
+                _body.Children.Add(Info(Loc.T("Mods.NoModsYet")));
                 return;
             }
 
@@ -157,7 +158,7 @@ namespace WindowsGSM.Functions.Mods
 
                 var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
                 meta.Children.Add(new TextBlock { Text = m.Name, Foreground = m.Enabled ? Fg : Dim, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-                string sub = (m.IsDirectory ? "folder" : SizeStr(m.SizeBytes)) + (m.Enabled ? "" : " · disabled");
+                string sub = (m.IsDirectory ? Loc.T("Mods.TypeFolder") : SizeStr(m.SizeBytes)) + (m.Enabled ? "" : " · " + Loc.T("Mods.Disabled"));
                 meta.Children.Add(new TextBlock { Text = sub, Foreground = Dim, FontSize = 11 });
                 dp.Children.Add(meta);
 
@@ -172,7 +173,7 @@ namespace WindowsGSM.Functions.Mods
             {
                 ModFolder.Toggle(_serverFiles, _profile, item);
                 _status.Foreground = Accent;
-                _status.Text = $"\"{item.Name}\" {(item.Enabled ? "enabled" : "disabled")}. Restart the server to apply.";
+                _status.Text = item.Enabled ? Loc.T("Mods.EnabledMsg", item.Name) : Loc.T("Mods.DisabledMsg", item.Name);
                 BuildBody();
             }
             catch (Exception ex) { Fail(ex.Message); }
@@ -183,14 +184,14 @@ namespace WindowsGSM.Functions.Mods
             try
             {
                 string filter = _profile.Extensions != null && _profile.Extensions.Length > 0
-                    ? "Mods|" + string.Join(";", Array.ConvertAll(_profile.Extensions, x => "*" + x)) + "|All files|*.*"
-                    : "All files|*.*";
-                var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Choose one or more mods", Multiselect = true, Filter = filter };
+                    ? Loc.T("Mods.FilterMods") + "|" + string.Join(";", Array.ConvertAll(_profile.Extensions, x => "*" + x)) + "|" + Loc.T("Mods.FilterAllFiles") + "|*.*"
+                    : Loc.T("Mods.FilterAllFiles") + "|*.*";
+                var dlg = new Microsoft.Win32.OpenFileDialog { Title = Loc.T("Mods.ChooseMods"), Multiselect = true, Filter = filter };
                 if (dlg.ShowDialog(this) == true)
                 {
                     foreach (string f in dlg.FileNames) { ModFolder.AddFile(_serverFiles, _profile, f); }
                     _status.Foreground = Accent;
-                    _status.Text = $"{dlg.FileNames.Length} mod(s) added.";
+                    _status.Text = Loc.T("Mods.ModsAdded", dlg.FileNames.Length);
                     BuildBody();
                 }
             }
@@ -204,16 +205,16 @@ namespace WindowsGSM.Functions.Mods
 
             // Add row
             var add = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            add.Children.Add(new TextBlock { Text = "Add:", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
-            var idBox = new TextBox { Width = 150, VerticalAlignment = VerticalAlignment.Center };
-            ApplyPlaceholder(idBox, "Workshop ID");
-            var nameBox = new TextBox { Width = 220, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
-            ApplyPlaceholder(nameBox, "Name (optional)");
+            add.Children.Add(new TextBlock { Text = Loc.T("Mods.AddLabel"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+            var idBox = new TextBox { MinWidth = 150, VerticalAlignment = VerticalAlignment.Center };
+            ApplyPlaceholder(idBox, Loc.T("Mods.WorkshopId"));
+            var nameBox = new TextBox { MinWidth = 220, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
+            ApplyPlaceholder(nameBox, Loc.T("Mods.NameOptional"));
             var addBtn = new Wpf.Ui.Controls.Button { Content = "+", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(12, 2, 12, 2) };
             addBtn.Click += (s, e) =>
             {
                 string id = new string((idBox.Text ?? "").Trim().Where(char.IsDigit).ToArray());
-                if (id.Length == 0) { Fail("Invalid Workshop ID (digits only)."); return; }
+                if (id.Length == 0) { Fail(Loc.T("Mods.InvalidWorkshopId")); return; }
                 _ws.Items.Add(new WorkshopEntry { Id = id, Name = (nameBox.Text ?? "").Trim(), Enabled = true });
                 _ws.Save();
                 BuildBody();
@@ -227,13 +228,13 @@ namespace WindowsGSM.Functions.Mods
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
             if (!_profile.ServerAutoDownloads)
             {
-                var dl = new Wpf.Ui.Controls.Button { Content = "Download (SteamCMD)", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+                var dl = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.DownloadSteamCmd"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
                 dl.Click += async (s, e) => await DownloadAll(dl);
                 actions.Children.Add(dl);
             }
             if (!string.IsNullOrEmpty(_profile.ConfigKey) && !string.IsNullOrEmpty(_profile.ConfigFileRelative))
             {
-                var apply = new Wpf.Ui.Controls.Button { Content = $"Write {_profile.ConfigKey} to the config", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5) };
+                var apply = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.WriteConfigKey", _profile.ConfigKey), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5) };
                 apply.Click += (s, e) =>
                 {
                     try { _status.Foreground = Accent; _status.Text = WorkshopManager.ApplyToConfig(_serverFiles, _profile, _ws.Items); }
@@ -245,7 +246,7 @@ namespace WindowsGSM.Functions.Mods
 
             if (_ws.Items.Count == 0)
             {
-                _body.Children.Add(Info("No Workshop mods. Paste an ID (the number in the Steam Workshop URL) and click +."));
+                _body.Children.Add(Info(Loc.T("Mods.NoWorkshopMods")));
                 return;
             }
 
@@ -268,14 +269,14 @@ namespace WindowsGSM.Functions.Mods
                 DockPanel.SetDock(toggle, Dock.Left);
                 dp.Children.Add(toggle);
 
-                var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Remove from the list" };
+                var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc.T("Mods.RemoveFromList") };
                 del.Click += (s, e) => { _ws.Items.Remove(captured); _ws.Save(); BuildBody(); };
                 DockPanel.SetDock(del, Dock.Right);
                 dp.Children.Add(del);
 
                 var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
                 meta.Children.Add(new TextBlock { Text = string.IsNullOrEmpty(entry.Name) ? entry.Id : $"{entry.Name}", Foreground = Fg, FontWeight = FontWeights.SemiBold });
-                meta.Children.Add(new TextBlock { Text = "ID " + entry.Id + (entry.Enabled ? "" : " · disabled"), Foreground = Dim, FontSize = 11 });
+                meta.Children.Add(new TextBlock { Text = "ID " + entry.Id + (entry.Enabled ? "" : " · " + Loc.T("Mods.Disabled")), Foreground = Dim, FontSize = 11 });
                 dp.Children.Add(meta);
 
                 card.Child = dp;
@@ -292,12 +293,12 @@ namespace WindowsGSM.Functions.Mods
                 foreach (var e in _ws.Items.Where(x => x.Enabled).ToList())
                 {
                     _status.Foreground = Dim;
-                    _status.Text = $"Downloading {e.Id}…";
+                    _status.Text = Loc.T("Mods.Downloading", e.Id);
                     var (success, msg) = await WorkshopManager.DownloadAsync(_profile.WorkshopAppId, e.Id);
                     if (success) { ok++; } else { fail++; }
                 }
                 _status.Foreground = fail == 0 ? Accent : Warn;
-                _status.Text = $"Download finished: {ok} OK, {fail} failure(s). Then \"Write {_profile.ConfigKey}\" if applicable.";
+                _status.Text = Loc.T("Mods.DownloadFinished", ok, fail, _profile.ConfigKey);
             }
             catch (Exception ex) { Fail(ex.Message); }
             finally { btn.IsEnabled = true; }
@@ -313,7 +314,7 @@ namespace WindowsGSM.Functions.Mods
         private void Fail(string msg)
         {
             _status.Foreground = Warn;
-            _status.Text = "Error: " + msg;
+            _status.Text = Loc.T("Mods.ErrorPrefix", msg);
             Functions.AppLog.Warn("Mods/UI", msg);
         }
 

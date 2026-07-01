@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WindowsGSM.Functions.Localization;
 
 namespace WindowsGSM.Functions.WebApi
 {
@@ -30,7 +31,7 @@ namespace WindowsGSM.Functions.WebApi
             _store = WebUsers.Load();
             _servers = (servers ?? Enumerable.Empty<(string, string)>()).ToList();
 
-            Title = "Web portal accounts";
+            Title = Loc.T("WebUsers.Title");
             Width = 560; Height = 620;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.NoResize;
@@ -38,8 +39,8 @@ namespace WindowsGSM.Functions.WebApi
             NativeTheme.EnableDarkTitleBar(this);
 
             var root = new StackPanel { Margin = new Thickness(16) };
-            root.Children.Add(new TextBlock { Text = "Web portal accounts", Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            root.Children.Add(new TextBlock { Text = "Roles: Viewer (read) · Operator (+ start/stop/restart/backup) · Admin (all). Tick the servers each account may access.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 10) });
+            root.Children.Add(new TextBlock { Text = Loc.T("WebUsers.Title"), Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
+            root.Children.Add(new TextBlock { Text = Loc.T("WebUsers.RolesHelp"), Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 10) });
 
             _list = new ListBox { Height = 150, Background = new SolidColorBrush(Color.FromRgb(0x1b, 0x1b, 0x1b)), Foreground = Fg, BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)) };
             _list.SelectionChanged += (s, e) =>
@@ -53,24 +54,24 @@ namespace WindowsGSM.Functions.WebApi
             root.Children.Add(_list);
 
             var f1 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 6) };
-            f1.Children.Add(new TextBlock { Text = "Username", Foreground = Fg, Width = 90, VerticalAlignment = VerticalAlignment.Center });
+            f1.Children.Add(new TextBlock { Text = Loc.T("WebUsers.Username"), Foreground = Fg, MinWidth = 90, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
             _user = new TextBox { Width = 160 };
             f1.Children.Add(_user);
-            f1.Children.Add(new TextBlock { Text = "Password", Foreground = Fg, Width = 100, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+            f1.Children.Add(new TextBlock { Text = Loc.T("WebUsers.Password"), Foreground = Fg, MinWidth = 80, Margin = new Thickness(12, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
             _pass = new PasswordBox { Width = 150 };
             f1.Children.Add(_pass);
             root.Children.Add(f1);
 
             var f2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-            f2.Children.Add(new TextBlock { Text = "Role", Foreground = Fg, Width = 90, VerticalAlignment = VerticalAlignment.Center });
+            f2.Children.Add(new TextBlock { Text = Loc.T("WebUsers.Role"), Foreground = Fg, MinWidth = 90, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
             _role = new ComboBox { Width = 160 };
             _role.Items.Add("Viewer"); _role.Items.Add("Operator"); _role.Items.Add("Admin"); _role.SelectedIndex = 0;
             f2.Children.Add(_role);
             root.Children.Add(f2);
 
             // ---- Server allowlist (checkboxes) ----
-            root.Children.Add(new TextBlock { Text = "Allowed servers", Foreground = Fg, Margin = new Thickness(0, 4, 0, 2) });
-            _allServers = new CheckBox { Content = "All servers", Foreground = Fg, IsChecked = true, Margin = new Thickness(0, 0, 0, 4) };
+            root.Children.Add(new TextBlock { Text = Loc.T("WebUsers.AllowedServers"), Foreground = Fg, Margin = new Thickness(0, 4, 0, 2) });
+            _allServers = new CheckBox { Content = Loc.T("WebUsers.AllServers"), Foreground = Fg, IsChecked = true, Margin = new Thickness(0, 0, 0, 4) };
             _allServers.Checked += (s, e) => SetServerPanelEnabled(false);
             _allServers.Unchecked += (s, e) => SetServerPanelEnabled(true);
             root.Children.Add(_allServers);
@@ -84,7 +85,7 @@ namespace WindowsGSM.Functions.WebApi
             }
             if (_servers.Count == 0)
             {
-                _serverPanel.Children.Add(new TextBlock { Text = "(no servers found)", Foreground = Dim, FontSize = 11 });
+                _serverPanel.Children.Add(new TextBlock { Text = Loc.T("WebUsers.NoServers"), Foreground = Dim, FontSize = 11 });
             }
             var scroll = new ScrollViewer { Content = _serverPanel, Height = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Background = new SolidColorBrush(Color.FromRgb(0x1b, 0x1b, 0x1b)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)), BorderThickness = new Thickness(1), Padding = new Thickness(6), Margin = new Thickness(0, 0, 0, 8) };
             root.Children.Add(scroll);
@@ -94,11 +95,11 @@ namespace WindowsGSM.Functions.WebApi
             root.Children.Add(_status);
 
             var btns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var addBtn = new Wpf.Ui.Controls.Button { Content = "Add / Update", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
-            var delBtn = new Wpf.Ui.Controls.Button { Content = "Remove", Appearance = Wpf.Ui.Controls.ControlAppearance.Danger, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
-            var closeBtn = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(14, 5, 14, 5) };
+            var addBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("WebUsers.AddUpdate"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var delBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Remove"), Appearance = Wpf.Ui.Controls.ControlAppearance.Danger, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            var closeBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Close"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(14, 5, 14, 5) };
             addBtn.Click += (s, e) => AddOrUpdate();
-            delBtn.Click += (s, e) => { if (!string.IsNullOrWhiteSpace(_user.Text)) { _store.Remove(_user.Text.Trim()); _store.Save(); Refresh(); _status.Text = "Account removed."; } };
+            delBtn.Click += (s, e) => { if (!string.IsNullOrWhiteSpace(_user.Text)) { _store.Remove(_user.Text.Trim()); _store.Save(); Refresh(); _status.Text = Loc.T("WebUsers.Removed"); } };
             closeBtn.Click += (s, e) => Close();
             btns.Children.Add(addBtn); btns.Children.Add(delBtn); btns.Children.Add(closeBtn);
             root.Children.Add(btns);
@@ -131,14 +132,14 @@ namespace WindowsGSM.Functions.WebApi
         private void AddOrUpdate()
         {
             string user = _user.Text.Trim();
-            if (string.IsNullOrWhiteSpace(user)) { _status.Foreground = Brushes.OrangeRed; _status.Text = "Username required."; return; }
+            if (string.IsNullOrWhiteSpace(user)) { _status.Foreground = Brushes.OrangeRed; _status.Text = Loc.T("WebUsers.UserRequired"); return; }
             bool exists = _store.Users.Any(x => string.Equals(x.Username, user, StringComparison.OrdinalIgnoreCase));
-            if (!exists && string.IsNullOrEmpty(_pass.Password)) { _status.Foreground = Brushes.OrangeRed; _status.Text = "Password required for a new account."; return; }
+            if (!exists && string.IsNullOrEmpty(_pass.Password)) { _status.Foreground = Brushes.OrangeRed; _status.Text = Loc.T("WebUsers.PwRequired"); return; }
             string serverIds = ComputeServerIds();
             // Guard: not "all" but nothing ticked would (via AllowsServer) mean "all" — force an explicit choice.
             if (_allServers.IsChecked != true && serverIds.Length == 0)
             {
-                _status.Foreground = Brushes.OrangeRed; _status.Text = "Tick at least one server, or choose \"All servers\".";
+                _status.Foreground = Brushes.OrangeRed; _status.Text = Loc.T("WebUsers.PickServer");
                 return;
             }
             var role = (WebRole)Math.Max(0, _role.SelectedIndex);
@@ -147,7 +148,7 @@ namespace WindowsGSM.Functions.WebApi
             _pass.Password = string.Empty;
             Refresh();
             _status.Foreground = Accent;
-            _status.Text = $"Account \"{user}\" saved ({role}).";
+            _status.Text = Loc.T("WebUsers.Saved", user, role);
         }
 
         private void Refresh()
@@ -155,7 +156,7 @@ namespace WindowsGSM.Functions.WebApi
             _list.Items.Clear();
             foreach (var u in _store.Users.OrderBy(x => x.Username))
             {
-                string scope = string.IsNullOrWhiteSpace(u.ServerIds) || u.ServerIds == "*" ? "all servers" : "servers " + u.ServerIds;
+                string scope = string.IsNullOrWhiteSpace(u.ServerIds) || u.ServerIds == "*" ? Loc.T("WebUsers.ScopeAll") : Loc.T("WebUsers.ScopeServers", u.ServerIds);
                 _list.Items.Add($"{u.Username}  —  {u.Role}  —  {scope}");
             }
         }

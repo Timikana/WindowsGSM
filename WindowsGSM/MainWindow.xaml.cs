@@ -166,6 +166,14 @@ namespace WindowsGSM
             // Add all themes to comboBox_Themes
             new[] { "Cyan", "Blue", "Green", "Purple", "Red", "Orange" }.ToList().ForEach(name => comboBox_Themes.Items.Add(name));
 
+            // Language selector (i18n). Tag carries the language code; label is the native name.
+            foreach (var code in Functions.Localization.Loc.Supported)
+            {
+                var item = new System.Windows.Controls.ComboBoxItem { Content = Functions.Localization.Loc.DisplayNames[code], Tag = code };
+                comboBox_Language.Items.Add(item);
+                if (code == Functions.Localization.Loc.Lang) { comboBox_Language.SelectedItem = item; }
+            }
+
             // Set up _serverMetadata
             for (int i = 0; i < MAX_SERVER; i++)
             {
@@ -4080,6 +4088,15 @@ namespace WindowsGSM
 
             //Set theme
             Wpf.Ui.Appearance.ApplicationThemeManager.Apply(MahAppSwitch_DarkTheme.IsChecked == true ? Wpf.Ui.Appearance.ApplicationTheme.Dark : Wpf.Ui.Appearance.ApplicationTheme.Light);
+        }
+
+        private void ComboBox_Language_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!(comboBox_Language.SelectedItem is System.Windows.Controls.ComboBoxItem item) || !(item.Tag is string code)) { return; }
+            if (code == Functions.Localization.Loc.Lang) { return; } // no-op (incl. initial selection)
+            Functions.Localization.Loc.SetLang(code);
+            // Dialogs read Loc at open time, so newly-opened dialogs are already localized; a restart applies it everywhere.
+            try { new Wpf.Ui.Controls.MessageBox { Title = "WindowsGSM", Content = "Language changed. Restart WindowsGSM to fully apply it everywhere." }.ShowDialogAsync(); } catch { }
         }
         #endregion
 

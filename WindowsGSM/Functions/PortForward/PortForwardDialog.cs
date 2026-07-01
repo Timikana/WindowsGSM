@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WindowsGSM.Functions.Localization;
 
 namespace WindowsGSM.Functions.PortForward
 {
@@ -34,7 +35,7 @@ namespace WindowsGSM.Functions.PortForward
             _servers = servers ?? new List<ServerInfo>();
             _cfg = PortForwardConfig.Load();
 
-            Title = "Ports / UPnP";
+            Title = Loc.T("Ports.Title");
             Width = 660;
             Height = 720;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -47,7 +48,7 @@ namespace WindowsGSM.Functions.PortForward
             var header = new StackPanel();
             var master = new CheckBox
             {
-                Content = "Enable UPnP auto port-forward (opens/closes ports on the router at start/stop)",
+                Content = Loc.T("Ports.EnableUpnp"),
                 Foreground = Fg,
                 IsChecked = _cfg.Enabled,
                 Margin = new Thickness(0, 0, 0, 6)
@@ -57,7 +58,7 @@ namespace WindowsGSM.Functions.PortForward
             header.Children.Add(master);
             header.Children.Add(new TextBlock
             {
-                Text = "Tip: if UPnP is disabled on the router (e.g. OPNsense), leave unchecked and simply copy the ports listed below into your manual forward. RCON is never suggested enabled: only open it if necessary.",
+                Text = Loc.T("Ports.Tip"),
                 Foreground = Dim,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 10)
@@ -72,8 +73,8 @@ namespace WindowsGSM.Functions.PortForward
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 10, 0, 0)
             };
-            var save = new Wpf.Ui.Controls.Button { Content = "Save", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
-            var close = new Wpf.Ui.Controls.Button { Content = "Close", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var save = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Save"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
+            var close = new Wpf.Ui.Controls.Button { Content = Loc.T("Common.Close"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, IsCancel = true, Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(6, 0, 0, 0) };
             save.Click += (s, e) => { _cfg.Save(); DialogResult = true; Close(); };
             close.Click += (s, e) => Close();
             buttons.Children.Add(save);
@@ -95,7 +96,7 @@ namespace WindowsGSM.Functions.PortForward
 
             if (_servers.Count == 0)
             {
-                _body.Children.Add(new TextBlock { Text = "No server.", Foreground = Dim });
+                _body.Children.Add(new TextBlock { Text = Loc.T("Ports.NoServer"), Foreground = Dim });
                 return;
             }
 
@@ -132,7 +133,7 @@ namespace WindowsGSM.Functions.PortForward
                     var rowPanel = new DockPanel { Margin = new Thickness(22, 3, 0, 0) };
 
                     // Delete (on the right)
-                    var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Delete this port", VerticalAlignment = VerticalAlignment.Center };
+                    var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, MinWidth = 32, Padding = new Thickness(0), Margin = new Thickness(6, 0, 0, 0), ToolTip = Loc.T("Ports.DeletePortTip"), VerticalAlignment = VerticalAlignment.Center };
                     del.Click += (s, e) => { cardSpf.Ports.Remove(captured); BuildBody(); };
                     DockPanel.SetDock(del, Dock.Right);
                     rowPanel.Children.Add(del);
@@ -161,7 +162,7 @@ namespace WindowsGSM.Functions.PortForward
 
                 // Manual add row
                 var add = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(22, 8, 0, 0) };
-                add.Children.Add(new TextBlock { Text = "Add:", Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+                add.Children.Add(new TextBlock { Text = Loc.T("Ports.AddLabel"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
                 var portBox = new TextBox { Width = 70, VerticalAlignment = VerticalAlignment.Center };
                 var proto = new ComboBox { Width = 80, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
                 proto.Items.Add("Both");
@@ -180,7 +181,7 @@ namespace WindowsGSM.Functions.PortForward
                             Protocol = (string)proto.SelectedItem == "TCP" ? PortProtocol.Tcp
                                      : (string)proto.SelectedItem == "UDP" ? PortProtocol.Udp
                                      : PortProtocol.Both,
-                            Label = "Manual",
+                            Label = Loc.T("Ports.ManualLabel"),
                             Enabled = true
                         });
                         BuildBody();
