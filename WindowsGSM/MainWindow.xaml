@@ -202,9 +202,9 @@
             </Border>
             </Grid>
             <Grid x:Name="MahAppFlyout_Settings" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
-            <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="640" MaxHeight="660" CornerRadius="8" Padding="8" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
+            <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="640" MaxHeight="740" CornerRadius="8" Padding="8" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                    <StackPanel Margin="0,0,0,4">
                         <ui:ToggleSwitch x:Name="MahAppSwitch_HardWareAcceleration" Content="Hardware Acceleration" Margin="20,10,0,15" Click="HardWareAcceleration_IsCheckedChanged"/>
                         <ui:ToggleSwitch x:Name="MahAppSwitch_UIAnimation" Content="UI Animation" Margin="20,0,0,15" Click="UIAnimation_IsCheckedChanged"/>
                         <ui:ToggleSwitch x:Name="MahAppSwitch_DarkTheme" Content="Dark Theme" Margin="20,0,0,15" Click="DarkTheme_IsCheckedChanged"/>
