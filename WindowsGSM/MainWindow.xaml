@@ -8,6 +8,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         xmlns:ctrl="clr-namespace:WindowsGSM.Controls"
+        xmlns:loc="clr-namespace:WindowsGSM.Functions.Localization"
         mc:Ignorable="d"
         Title="WindowsGSM 2.0"
         Height="650"
@@ -28,7 +29,7 @@
         <ui:TitleBar Grid.Row="0" Title="WindowsGSM 2.0">
             <ui:TitleBar.Header>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                    <ui:Button x:Name="button_Website" Content="Website" Icon="{ui:SymbolIcon Globe24}" Click="Button_Website_Click" Appearance="Transparent" Padding="8,2" Margin="2,0"/>
+                    <ui:Button x:Name="button_Website" Content="{loc:Tr MW.TitleBar.Website}" Icon="{ui:SymbolIcon Globe24}" Click="Button_Website_Click" Appearance="Transparent" Padding="8,2" Margin="2,0"/>
                     <ui:Button x:Name="button_Discord" Click="Button_Discord_Click" Appearance="Transparent" Padding="8,2" Margin="2,0">
                         <StackPanel Orientation="Horizontal">
                             <Viewbox Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -45,7 +46,7 @@
                             <TextBlock Text="Patreon" VerticalAlignment="Center"/>
                         </StackPanel>
                     </ui:Button>
-                    <ui:Button x:Name="button_Hide" Content="Hide" Icon="{ui:SymbolIcon EyeOff24}" Click="Button_Hide_Click" Appearance="Transparent" Padding="8,2" Margin="2,0"/>
+                    <ui:Button x:Name="button_Hide" Content="{loc:Tr MW.TitleBar.Hide}" Icon="{ui:SymbolIcon EyeOff24}" Click="Button_Hide_Click" Appearance="Transparent" Padding="8,2" Margin="2,0"/>
                 </StackPanel>
             </ui:TitleBar.Header>
         </ui:TitleBar>
@@ -55,17 +56,17 @@
             <Grid x:Name="MahAppFlyout_TokenHelp" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
                 <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="580" CornerRadius="8" Padding="22" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                     <StackPanel>
-                        <TextBlock Text="Create a Discord bot token" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,14"/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="1.  Open the Discord Developer Portal and sign in."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="2.  &quot;New Application&quot; → give it a name → Create."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="3.  &quot;Bot&quot; tab → &quot;Reset Token&quot; → copy the token (shown only once)."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="4.  Still in &quot;Bot&quot; → enable &quot;MESSAGE CONTENT INTENT&quot; (required to read commands)."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="5.  Paste the token into WindowsGSM (Edit → paste → Save), then enable the bot."/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12" Text="6.  Click &quot;Invite&quot; to add the bot to your server, then put your Discord ID in the Admin List."/>
-                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#E0A030" Margin="0,0,0,16" Text="⚠ Keep your token secret. If it leaks, use &quot;Reset Token&quot; in the portal."/>
+                        <TextBlock Text="{loc:Tr MW.TokenHelp.Title}" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="{loc:Tr MW.TokenHelp.Step1}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="{loc:Tr MW.TokenHelp.Step2}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="{loc:Tr MW.TokenHelp.Step3}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="{loc:Tr MW.TokenHelp.Step4}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,7" Text="{loc:Tr MW.TokenHelp.Step5}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12" Text="{loc:Tr MW.TokenHelp.Step6}"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#E0A030" Margin="0,0,0,16" Text="{loc:Tr MW.TokenHelp.Warn}"/>
                         <DockPanel>
-                            <ui:Button Content="Open the Discord Portal" Icon="{ui:SymbolIcon Globe24}" Appearance="Primary" Click="TokenHelp_OpenPortal_Click"/>
-                            <ui:Button Content="Close" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="TokenHelp_Close_Click"/>
+                            <ui:Button Content="{loc:Tr MW.TokenHelp.OpenPortal}" Icon="{ui:SymbolIcon Globe24}" Appearance="Primary" Click="TokenHelp_OpenPortal_Click"/>
+                            <ui:Button Content="{loc:Tr MW.Common.Close}" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="TokenHelp_Close_Click"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>
@@ -74,17 +75,17 @@
             <Grid x:Name="MahAppFlyout_DiscordAdmin" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
                 <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="500" CornerRadius="8" Padding="20" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                     <StackPanel>
-                        <TextBlock x:Name="da_title" Text="Add a Discord admin" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
-                        <TextBlock Text="User's Discord ID" Margin="0,0,0,4"/>
+                        <TextBlock x:Name="da_title" Text="{loc:Tr MW.DiscordAdmin.TitleAdd}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                        <TextBlock Text="{loc:Tr MW.DiscordAdmin.UserId}" Margin="0,0,0,4"/>
                         <DockPanel Margin="0,0,0,4">
-                            <ui:Button Content="Verify" DockPanel.Dock="Right" Margin="8,0,0,0" Click="DiscordAdmin_Resolve_Click"/>
+                            <ui:Button Content="{loc:Tr MW.DiscordAdmin.Verify}" DockPanel.Dock="Right" Margin="8,0,0,0" Click="DiscordAdmin_Resolve_Click"/>
                             <TextBox x:Name="da_id" Padding="8,2" VerticalContentAlignment="Center" FontFamily="Consolas"/>
                         </DockPanel>
                         <TextBlock x:Name="da_resolved" Text="" FontSize="12" Foreground="Gray" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="0,0,0,12"
-                                   Text="Tip: Discord → Settings → Advanced → Developer Mode. Then right-click the user → &quot;Copy ID&quot;."/>
-                        <CheckBox x:Name="da_all" Content="All servers (full access)" Margin="0,0,0,8" Click="DiscordAdmin_AllToggled"/>
-                        <TextBlock Text="Otherwise, choose the allowed servers:" FontSize="12" Margin="0,0,0,4"/>
+                                   Text="{loc:Tr MW.DiscordAdmin.Tip}"/>
+                        <CheckBox x:Name="da_all" Content="{loc:Tr MW.DiscordAdmin.AllServers}" Margin="0,0,0,8" Click="DiscordAdmin_AllToggled"/>
+                        <TextBlock Text="{loc:Tr MW.DiscordAdmin.ChooseServers}" FontSize="12" Margin="0,0,0,4"/>
                         <Border BorderBrush="{ui:ThemeResource ControlElevationBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,14">
                             <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
                                 <ItemsControl x:Name="da_serverChecks">
@@ -97,8 +98,8 @@
                             </ScrollViewer>
                         </Border>
                         <DockPanel>
-                            <ui:Button Content="Save" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Click="DiscordAdmin_Save_Click"/>
-                            <ui:Button Content="Cancel" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="DiscordAdmin_Cancel_Click"/>
+                            <ui:Button Content="{loc:Tr MW.Common.Save}" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Click="DiscordAdmin_Save_Click"/>
+                            <ui:Button Content="{loc:Tr MW.Common.Cancel}" DockPanel.Dock="Right" HorizontalAlignment="Right" Click="DiscordAdmin_Cancel_Click"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>
@@ -107,28 +108,28 @@
             <Grid x:Name="MahAppFlyout_CrontabWizard" Panel.ZIndex="100" MouseLeftButtonDown="Overlay_BackdropClick" Visibility="Collapsed" Background="#F2000000">
                 <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430" CornerRadius="8" Padding="18" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                     <StackPanel>
-                        <TextBlock Text="Wizard — restart schedule" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                        <TextBlock Text="{loc:Tr MW.Crontab.Title}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/>
                         <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="Frequency" Width="90" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Tr MW.Crontab.Frequency}" Width="90" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cw_freq" SelectionChanged="CrontabWizard_Changed">
-                                <ComboBoxItem Content="Every day" IsSelected="True"/>
-                                <ComboBoxItem Content="Every week"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Crontab.EveryDay}" IsSelected="True"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Crontab.EveryWeek}"/>
                             </ComboBox>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="Day" Width="90" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Tr MW.Crontab.Day}" Width="90" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cw_day" SelectionChanged="CrontabWizard_Changed">
-                                <ComboBoxItem Content="Monday" IsSelected="True"/>
-                                <ComboBoxItem Content="Tuesday"/>
-                                <ComboBoxItem Content="Wednesday"/>
-                                <ComboBoxItem Content="Thursday"/>
-                                <ComboBoxItem Content="Friday"/>
-                                <ComboBoxItem Content="Saturday"/>
-                                <ComboBoxItem Content="Sunday"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Monday}" IsSelected="True"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Tuesday}"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Wednesday}"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Thursday}"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Friday}"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Saturday}"/>
+                                <ComboBoxItem Content="{loc:Tr MW.Day.Sunday}"/>
                             </ComboBox>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="Time" Width="90" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Tr MW.Crontab.Time}" Width="90" VerticalAlignment="Center"/>
                             <ComboBox x:Name="cw_minute" Width="70" DockPanel.Dock="Right" SelectionChanged="CrontabWizard_Changed"/>
                             <TextBlock Text="h" Width="18" DockPanel.Dock="Right" VerticalAlignment="Center" TextAlignment="Center"/>
                             <ComboBox x:Name="cw_hour" Width="70" HorizontalAlignment="Left" SelectionChanged="CrontabWizard_Changed"/>
@@ -137,8 +138,8 @@
                             <TextBlock x:Name="cw_preview" FontFamily="Consolas" Text="cron: 0 6 * * *"/>
                         </Border>
                         <DockPanel>
-                            <Button Content="Cancel" Click="CrontabWizard_Cancel" Width="90" DockPanel.Dock="Left"/>
-                            <Button Content="Apply" Click="CrontabWizard_Apply" Width="110" HorizontalAlignment="Right"/>
+                            <Button Content="{loc:Tr MW.Common.Cancel}" Click="CrontabWizard_Cancel" Width="90" DockPanel.Dock="Left"/>
+                            <Button Content="{loc:Tr MW.Common.Apply}" Click="CrontabWizard_Apply" Width="110" HorizontalAlignment="Right"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>
@@ -148,20 +149,20 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
-                            <Label Content="Installed:" Margin="12,0,0,10" FontSize="14" FontWeight="SemiBold" Padding="5,5.5,0,5"></Label>
+                            <Label Content="{loc:Tr MW.Plugins.Installed}" Margin="12,0,0,10" FontSize="14" FontWeight="SemiBold" Padding="5,5.5,0,5"></Label>
                             <Label x:Name="Label_PluginInstalled" Content=" 0" Margin="0,0,10,10" FontSize="15" FontWeight="SemiBold" Foreground="Aqua"></Label>
-                            <Label Content="Loaded:" Margin="0,0,0,10" FontSize="14" FontWeight="SemiBold" Padding="5,5.5,0,5"></Label>
+                            <Label Content="{loc:Tr MW.Plugins.Loaded}" Margin="0,0,0,10" FontSize="14" FontWeight="SemiBold" Padding="5,5.5,0,5"></Label>
                             <Label x:Name="Label_PluginLoaded" Content="0" Margin="0,0,10,10" FontSize="15" FontWeight="SemiBold" Foreground="GreenYellow"></Label>
-                            <Label Content="Failed:" Margin="0,0,0,10" FontSize="14" FontWeight="SemiBold" Padding="5,5.5,0,5"></Label>
+                            <Label Content="{loc:Tr MW.Plugins.Failed}" Margin="0,0,0,10" FontSize="14" FontWeight="SemiBold" Padding="5,5.5,0,5"></Label>
                             <Label x:Name="Label_PluginFailed" Content="0" Margin="0,0,10,10" FontSize="15" FontWeight="SemiBold" Foreground="Red"></Label>
                         </StackPanel>
-                        <Button x:Name="Button_ImportPlugin" Content="Import Plugin" Height="29" Width="130" HorizontalAlignment="Right" Click="ImportPlugin_Click" Margin="-20,-50,150,0"></Button>
-                        <Button x:Name="Button_RefreshPlugins" Content="Reload Plugins" Height="29" Width="130" HorizontalAlignment="Right" Margin="-20,-50,12,0" Click="RefreshPlugins_Click"></Button>
+                        <Button x:Name="Button_ImportPlugin" Content="{loc:Tr MW.Plugins.Import}" Height="29" Width="130" HorizontalAlignment="Right" Click="ImportPlugin_Click" Margin="-20,-50,150,0"></Button>
+                        <Button x:Name="Button_RefreshPlugins" Content="{loc:Tr MW.Plugins.Reload}" Height="29" Width="130" HorizontalAlignment="Right" Margin="-20,-50,12,0" Click="RefreshPlugins_Click"></Button>
                     </StackPanel>
 
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                         <Label Content="✔️" Margin="10,0,0,10" FontSize="17" FontWeight="SemiBold" Foreground="GreenYellow"></Label>
-                        <Label Content="Loaded Plugin List" Margin="0,0,10,10" FontSize="17" FontWeight="SemiBold"></Label>
+                        <Label Content="{loc:Tr MW.Plugins.LoadedList}" Margin="0,0,10,10" FontSize="17" FontWeight="SemiBold"></Label>
                     </StackPanel>
 
                     <ProgressBar x:Name="ProgressRing_LoadPlugins" IsIndeterminate="True" Foreground="{DynamicResource AccentFillColorDefaultBrush}" Margin="10,0,10,10" DockPanel.Dock="Top" Visibility="Collapsed"/>
@@ -205,15 +206,15 @@
             <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="640" MaxHeight="740" CornerRadius="8" Padding="8" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,0,0,4">
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_HardWareAcceleration" Content="Hardware Acceleration" Margin="20,10,0,15" Click="HardWareAcceleration_IsCheckedChanged"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_UIAnimation" Content="UI Animation" Margin="20,0,0,15" Click="UIAnimation_IsCheckedChanged"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_DarkTheme" Content="Dark Theme" Margin="20,0,0,15" Click="DarkTheme_IsCheckedChanged"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_StartOnBoot" Content="Start WindowsGSM on Login" Margin="20,0,0,15" Click="StartOnLogin_IsCheckedChanged"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_RestartOnCrash" Content="Auto Restart WindowsGSM on Crash" Margin="20,0,0,15" Click="RestartOnCrash_IsCheckedChanged"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_SendStatistics" Content="Send Statistics" Margin="20,0,0,15" Click="SendStatistics_IsCheckedChanged"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_DonorConnect" Content="Donor Connect (Patreon)" Margin="20,0,0,15" Click="DonorConnect_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_HardWareAcceleration" Content="{loc:Tr MW.Settings.HardwareAcceleration}" Margin="20,10,0,15" Click="HardWareAcceleration_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_UIAnimation" Content="{loc:Tr MW.Settings.UIAnimation}" Margin="20,0,0,15" Click="UIAnimation_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_DarkTheme" Content="{loc:Tr MW.Settings.DarkTheme}" Margin="20,0,0,15" Click="DarkTheme_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_StartOnBoot" Content="{loc:Tr MW.Settings.StartOnLogin}" Margin="20,0,0,15" Click="StartOnLogin_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_RestartOnCrash" Content="{loc:Tr MW.Settings.RestartOnCrash}" Margin="20,0,0,15" Click="RestartOnCrash_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_SendStatistics" Content="{loc:Tr MW.Settings.SendStatistics}" Margin="20,0,0,15" Click="SendStatistics_IsCheckedChanged"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_DonorConnect" Content="{loc:Tr MW.Settings.DonorConnect}" Margin="20,0,0,15" Click="DonorConnect_IsCheckedChanged"/>
                         <DockPanel Margin="20,0,20,20">
-                            <Label Content="WindowsGSM Theme (Donor Only)" FontSize="13.5" Padding="0" DockPanel.Dock="Top"></Label>
+                            <Label Content="{loc:Tr MW.Settings.ThemeDonorOnly}" FontSize="13.5" Padding="0" DockPanel.Dock="Top"></Label>
                             <ComboBox x:Name="comboBox_Themes" Margin="0,5,0,0" MinHeight="32" Padding="10,4" DockPanel.Dock="Top" SelectionChanged="ComboBox_Themes_SelectionChanged" IsEnabled="False"></ComboBox>
                         </DockPanel>
                         <DockPanel Margin="20,0,20,20">
@@ -228,11 +229,11 @@
             <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="640" MaxHeight="660" CornerRadius="8" Padding="8" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <StackPanel Orientation="Horizontal">
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_AutoStartAlert" Content="Auto Start Alert" Margin="20,20,0,20" Click="Switch_AutoStartAlert_Click"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_AutoRestartAlert" Content="Auto Restart Alert" Margin="0,20,0,20" Click="Switch_AutoRestartAlert_Click"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_AutoUpdateAlert" Content="Auto Update Alert" Margin="0,20,0,20" Click="Switch_AutoUpdateAlert_Click"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_RestartCrontabAlert" Content="Restart Crontab Alert" Margin="0,20,0,20" Click="Switch_RestartCrontabAlert_Click"/>
-                        <ui:ToggleSwitch x:Name="MahAppSwitch_CrashAlert" Content="Crash Alert" Margin="20,20,0,20" Click="Switch_CrashAlert_Click"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_AutoStartAlert" Content="{loc:Tr MW.Alert.AutoStart}" Margin="20,20,0,20" Click="Switch_AutoStartAlert_Click"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_AutoRestartAlert" Content="{loc:Tr MW.Alert.AutoRestart}" Margin="0,20,0,20" Click="Switch_AutoRestartAlert_Click"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_AutoUpdateAlert" Content="{loc:Tr MW.Alert.AutoUpdate}" Margin="0,20,0,20" Click="Switch_AutoUpdateAlert_Click"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_RestartCrontabAlert" Content="{loc:Tr MW.Alert.RestartCrontab}" Margin="0,20,0,20" Click="Switch_RestartCrontabAlert_Click"/>
+                        <ui:ToggleSwitch x:Name="MahAppSwitch_CrashAlert" Content="{loc:Tr MW.Alert.Crash}" Margin="20,20,0,20" Click="Switch_CrashAlert_Click"/>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -242,13 +243,13 @@
                 <Grid Margin="15,0,15,15">
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,35">
                         <DockPanel DockPanel.Dock="Top">
-                            <Label DockPanel.Dock="Left" Content="Server:" Padding="5,5,0,5"/>
+                            <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Restore.ServerLabel}" Padding="5,5,0,5"/>
                             <Label x:Name="label_RestoreBackupServerName" Content="Server Name"/>
                         </DockPanel>
-                        <Label DockPanel.Dock="Top" Content="Please select a backup"/>
+                        <Label DockPanel.Dock="Top" Content="{loc:Tr MW.Restore.SelectBackup}"/>
                         <ListBox x:Name="listbox_RestoreBackup" DockPanel.Dock="Top" BorderThickness="1" Width="300"/>
                     </DockPanel>
-                    <Button VerticalAlignment="Bottom" x:Name="button_RestoreBackup" Content="Restore" Click="Button_RestoreBackup_Click"/>
+                    <Button VerticalAlignment="Bottom" x:Name="button_RestoreBackup" Content="{loc:Tr MW.Common.Restore}" Click="Button_RestoreBackup_Click"/>
                 </Grid>
             </Border>
             </Grid>
@@ -266,51 +267,51 @@
                         <StackPanel DockPanel.Dock="Top">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <Label Content="Server ID"></Label>
+                                    <Label Content="{loc:Tr MW.EditConfig.ServerID}"></Label>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_EC_ServerID" Height="28" Width="120" TextWrapping="Wrap" Text="" FontFamily="Consolas" VerticalAlignment="Top" IsReadOnly="True"/>
                                 </StackPanel>
                                 <StackPanel Margin="5,0,0,0">
-                                    <Label Content="Server Game"></Label>
+                                    <Label Content="{loc:Tr MW.EditConfig.ServerGame}"></Label>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_EC_ServerGame" Height="28" Width="375" TextWrapping="Wrap" Text="" FontFamily="Consolas" VerticalAlignment="Top" IsReadOnly="True"/>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,10">
-                                <Label Content="Server Name"></Label>
+                                <Label Content="{loc:Tr MW.EditConfig.ServerName}"></Label>
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_EC_ServerName" Height="28" Width="500" TextWrapping="Wrap" Text="" FontFamily="Consolas" VerticalAlignment="Top"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <Label Content="Server IP Address"></Label>
+                                    <Label Content="{loc:Tr MW.EditConfig.ServerIP}"></Label>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_EC_ServerIP" Height="28" Width="120" TextWrapping="Wrap" Text="" FontFamily="Consolas" VerticalAlignment="Top"/>
                                 </StackPanel>
                                 <StackPanel Margin="5,0,0,0">
-                                    <Label Content="Server Port"></Label>
+                                    <Label Content="{loc:Tr MW.EditConfig.ServerPort}"></Label>
                                     <ui:NumberBox x:Name="numericUpDown_EC_ServerPort" Minimum="1" Maximum="65535" FontFamily="Consolas" Width="150"/>
                                 </StackPanel>
                                 <StackPanel Margin="5,0,0,0">
-                                    <Label Content="Server Query Port"></Label>
+                                    <Label Content="{loc:Tr MW.EditConfig.ServerQueryPort}"></Label>
                                     <ui:NumberBox x:Name="numericUpDown_EC_ServerQueryPort" Minimum="1" Maximum="65535" FontFamily="Consolas" Width="150"/>
                                 </StackPanel>
                                 <StackPanel Margin="5,0,0,0">
-                                    <Label Content="Server Maxplayer"></Label>
+                                    <Label Content="{loc:Tr MW.EditConfig.ServerMaxplayer}"></Label>
                                     <ui:NumberBox x:Name="numericUpDown_EC_ServerMaxplayer" Minimum="1" Maximum="100000" FontFamily="Consolas" Width="150"/>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,10">
-                                <Label Content="Server Start Map"></Label>
+                                <Label Content="{loc:Tr MW.EditConfig.ServerStartMap}"></Label>
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_EC_ServerMap" Height="28" Width="500" FontFamily="Consolas" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,10">
-                                <Label Content="Server GSLT"></Label>
+                                <Label Content="{loc:Tr MW.EditConfig.ServerGSLT}"></Label>
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_EC_ServerGSLT" Height="28" Width="500" FontFamily="Consolas" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
                             </StackPanel>
                             <StackPanel>
-                                <Label Content="Server Start Param"></Label>
+                                <Label Content="{loc:Tr MW.EditConfig.ServerStartParam}"></Label>
                             </StackPanel>
                         </StackPanel>
                         <TextBox x:Name="textbox_EC_ServerParam" Width="500" TextWrapping="Wrap" FontFamily="Consolas" Text="" DockPanel.Dock="Top"/>
                     </DockPanel>
-                    <Button x:Name="button_EC_SaveConfig" VerticalAlignment="Bottom" Content="Save" Width="500" Height="25" Click="Button_EditConfig_Save_Click"/>
+                    <Button x:Name="button_EC_SaveConfig" VerticalAlignment="Bottom" Content="{loc:Tr MW.Common.Save}" Width="500" Height="25" Click="Button_EditConfig_Save_Click"/>
                 </Grid>
             </Border>
             </Grid>
@@ -319,24 +320,24 @@
                 <DockPanel VerticalAlignment="Stretch" Height="Auto">
                     <DockPanel Margin="20,0,0,0">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-                            <Label Content="Name: " FontFamily="Consolas"></Label>
+                            <Label Content="{loc:Tr MW.Addons.Name}" FontFamily="Consolas"></Label>
                             <Label x:Name="label_ManageAddonsName" FontFamily="Consolas"></Label>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-                            <Label Content="Game: " FontFamily="Consolas"></Label>
+                            <Label Content="{loc:Tr MW.Addons.Game}" FontFamily="Consolas"></Label>
                             <Label x:Name="label_ManageAddonsGame" FontFamily="Consolas"></Label>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-                            <Label Content="Type: " FontFamily="Consolas"></Label>
+                            <Label Content="{loc:Tr MW.Addons.Type}" FontFamily="Consolas"></Label>
                             <Label x:Name="label_ManageAddonsType" FontFamily="Consolas"></Label>
                         </StackPanel>
                         <DockPanel Margin="0,5,0,0">
                             <DockPanel>
-                                <Label Content="Disabled - Double click item to activate" DockPanel.Dock="Top"></Label>
+                                <Label Content="{loc:Tr MW.Addons.DisabledHint}" DockPanel.Dock="Top"></Label>
                                 <ListBox x:Name="listBox_ManageAddonsLeft" Margin="0,0,0,20" BorderThickness="1" DockPanel.Dock="Top" Width="300" MinHeight="300" MouseDoubleClick="ListBox_ManageAddonsLeft_DoubleClick"/>
                             </DockPanel>
                             <DockPanel Margin="10,0,20,0">
-                                <Label Content="Activated - Double click item to disable" DockPanel.Dock="Top"></Label>
+                                <Label Content="{loc:Tr MW.Addons.ActivatedHint}" DockPanel.Dock="Top"></Label>
                                 <ListBox x:Name="listBox_ManageAddonsRight" Margin="0,0,0,20" BorderThickness="1" DockPanel.Dock="Top" Width="300" MinHeight="300" MouseDoubleClick="ListBox_ManageAddonsRight_DoubleClick"/>
                             </DockPanel>
                         </DockPanel>
@@ -349,7 +350,7 @@
                 <DockPanel VerticalAlignment="Stretch" Height="Auto">
                     <DockPanel Margin="20,0,20,0">
                         <DockPanel DockPanel.Dock="Top">
-                            <Label Content="Game Server"></Label>
+                            <Label Content="{loc:Tr MW.Install.GameServer}"></Label>
                             <Label x:Name="label_GameServerCount" Content="" HorizontalAlignment="Right"></Label>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top" MinWidth="350">
@@ -365,17 +366,17 @@
                             </ComboBox>
                         </DockPanel>
 
-                        <Label Content="Server Name" DockPanel.Dock="Top"></Label>
+                        <Label Content="{loc:Tr MW.Install.ServerName}" DockPanel.Dock="Top"></Label>
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top">
                             <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_InstallServerName" Height="28" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
                         </DockPanel>
 
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top">
-                            <Button x:Name="button_InstallSetAccount" Content="Set Account" DockPanel.Dock="Left" Width="120" Margin="0,0,5,0" Click="Button_SetAccount_Click"/>
-                            <Button x:Name="button_Install" Content="Install" VerticalAlignment="Top" Click="Button_Install_Click"/>
+                            <Button x:Name="button_InstallSetAccount" Content="{loc:Tr MW.Install.SetAccount}" DockPanel.Dock="Left" Width="120" Margin="0,0,5,0" Click="Button_SetAccount_Click"/>
+                            <Button x:Name="button_Install" Content="{loc:Tr MW.Install.Install}" VerticalAlignment="Top" Click="Button_Install_Click"/>
                         </DockPanel>
 
-                        <Label Content="Progress" DockPanel.Dock="Top"></Label>
+                        <Label Content="{loc:Tr MW.Install.Progress}" DockPanel.Dock="Top"></Label>
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top">
                             <Grid Height="23" VerticalAlignment="Top">
                                 <ProgressBar x:Name="progressbar_InstallProgress" Value="0"/>
@@ -384,10 +385,10 @@
                         </DockPanel>
 
                         <DockPanel Margin="0,0,0,5" DockPanel.Dock="Top">
-                            <Label Content="Install Log" DockPanel.Dock="Left"></Label>
+                            <Label Content="{loc:Tr MW.Install.Log}" DockPanel.Dock="Left"></Label>
                             <DockPanel HorizontalAlignment="Right">
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_InstallToken" Height="28" TextWrapping="Wrap" DockPanel.Dock="Left" MaxLines="1" Margin="5,0,5,0" Width="100"/>
-                                <Button x:Name="button_InstallSendToken" Content="Send Token" DockPanel.Dock="Right" Width="100" Click="Button_SendToken_Click"/>
+                                <Button x:Name="button_InstallSendToken" Content="{loc:Tr MW.Install.SendToken}" DockPanel.Dock="Right" Width="100" Click="Button_SendToken_Click"/>
                             </DockPanel>
                         </DockPanel>
                         <TextBox x:Name="textbox_InstallLog" Margin="0,0,0,20" DockPanel.Dock="Top" TextWrapping="Wrap" IsReadOnly="true"/>
@@ -401,7 +402,7 @@
                     <DockPanel Margin="20,0,20,0">
 
                         <DockPanel DockPanel.Dock="Top">
-                            <Label Content="Game Server"></Label>
+                            <Label Content="{loc:Tr MW.Install.GameServer}"></Label>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top" MinWidth="350">
                             <ComboBox x:Name="comboBox_ImportGameServer" VerticalAlignment="Top">
@@ -417,23 +418,23 @@
                             </ComboBox>
                         </DockPanel>
 
-                        <Label Content="Server Name" DockPanel.Dock="Top"></Label>
+                        <Label Content="{loc:Tr MW.Install.ServerName}" DockPanel.Dock="Top"></Label>
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top">
                             <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_ImportServerName" Height="28" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
                         </DockPanel>
 
-                        <Label Content="Old Server Directory:" DockPanel.Dock="Top"/>
+                        <Label Content="{loc:Tr MW.Import.OldServerDir}" DockPanel.Dock="Top"/>
                         <DockPanel Margin="0,0,0,0" DockPanel.Dock="Top">
                             <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textbox_ServerDir" Height="28" TextWrapping="Wrap" Text="" DockPanel.Dock="Left" Width="280"/>
-                            <Button x:Name="button_Browse" Content="Browse" Height="26" Width="70" Click="Button_Browse_Click"/>
+                            <Button x:Name="button_Browse" Content="{loc:Tr MW.Common.Browse}" Height="26" Width="70" Click="Button_Browse_Click"/>
                         </DockPanel>
                         <Label x:Name="label_ServerDirWarn" Content="" DockPanel.Dock="Top"/>
 
                         <DockPanel Margin="0,15,0,15" DockPanel.Dock="Top">
-                            <Button x:Name="button_Import" Content="Import" VerticalAlignment="Top" Click="Button_Import_Click"/>
+                            <Button x:Name="button_Import" Content="{loc:Tr MW.Import.Import}" VerticalAlignment="Top" Click="Button_Import_Click"/>
                         </DockPanel>
 
-                        <Label Content="Progress" DockPanel.Dock="Top"></Label>
+                        <Label Content="{loc:Tr MW.Install.Progress}" DockPanel.Dock="Top"></Label>
                         <DockPanel Margin="0,0,0,15" DockPanel.Dock="Top">
                             <Grid Height="23" VerticalAlignment="Top">
                                 <ProgressBar x:Name="progressbar_ImportProgress" Value="0"/>
@@ -455,31 +456,31 @@
                         <DockPanel DockPanel.Dock="Left">
                             <DockPanel DockPanel.Dock="Top">
                                 <DockPanel DockPanel.Dock="Top">
-                                    <Label DockPanel.Dock="Top" Content="DISCORD BOT" FontWeight="SemiBold" Foreground="Gray"/>
+                                    <Label DockPanel.Dock="Top" Content="{loc:Tr MW.Bot.Heading}" FontWeight="SemiBold" Foreground="Gray"/>
                                 </DockPanel>
                                 <DockPanel DockPanel.Dock="Top">
-                                    <Label Content="Usage: Remote control the game servers with Discord" DockPanel.Dock="Left"/>
-                                    <Button x:Name="button_DiscordBotInvite" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="Invite" Width="75" Height="23" Click="Button_DiscordBotInvite_Click" IsEnabled="False"/>
+                                    <Label Content="{loc:Tr MW.Bot.Usage}" DockPanel.Dock="Left"/>
+                                    <Button x:Name="button_DiscordBotInvite" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="{loc:Tr MW.Bot.Invite}" Width="75" Height="23" Click="Button_DiscordBotInvite_Click" IsEnabled="False"/>
                                 </DockPanel>
-                                <Label Content="Available commands:" DockPanel.Dock="Top"/>
+                                <Label Content="{loc:Tr MW.Bot.AvailableCommands}" DockPanel.Dock="Top"/>
                                 <Label x:Name="label_DiscordBotCommands" Content="" FontFamily="Consolas" DockPanel.Dock="Top"/>
                             </DockPanel>
                             <DockPanel DockPanel.Dock="Top" Margin="5,10,0,0">
-                                <ui:ToggleSwitch DockPanel.Dock="Left" VerticalAlignment="Center" x:Name="switch_DiscordBot" Content="Enable" Width="140" Click="Switch_DiscordBot_Toggled"/>
-                                <ui:ToggleSwitch DockPanel.Dock="Left" VerticalAlignment="Center" x:Name="MahAppSwitch_DiscordBotAutoStart" Content="Auto Start" Width="140" Click="Switch_DiscordBotAutoStart_Click"/>
+                                <ui:ToggleSwitch DockPanel.Dock="Left" VerticalAlignment="Center" x:Name="switch_DiscordBot" Content="{loc:Tr MW.Bot.Enable}" Width="140" Click="Switch_DiscordBot_Toggled"/>
+                                <ui:ToggleSwitch DockPanel.Dock="Left" VerticalAlignment="Center" x:Name="MahAppSwitch_DiscordBotAutoStart" Content="{loc:Tr MW.Toggle.AutoStart}" Width="140" Click="Switch_DiscordBotAutoStart_Click"/>
                                 <DockPanel DockPanel.Dock="Top" Margin="10,0,0,0">
                                     <DockPanel DockPanel.Dock="Top">
-                                        <Label DockPanel.Dock="Left" Content="Bot Prefix"/>
-                                        <Button DockPanel.Dock="Right" x:Name="button_DiscordBotPrefixEdit" Content="Edit" Margin="0,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotPrefixEdit_Click"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Bot.Prefix}"/>
+                                        <Button DockPanel.Dock="Right" x:Name="button_DiscordBotPrefixEdit" Content="{loc:Tr MW.Common.Edit}" Margin="0,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotPrefixEdit_Click"/>
                                     </DockPanel>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotPrefix" Height="24" DockPanel.Dock="Top" Text="" Margin="0,0,0,0" Width="170" IsEnabled="False" FontFamily="Consolas"/>
                                 </DockPanel>
                             </DockPanel>
 
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
-                                <Label Content="Discord Bot Token"/>
-                                <Button x:Name="button_DiscordBotTokenEdit" DockPanel.Dock="Right" Content="Edit" Margin="0,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotTokenEdit_Click"/>
-                                <ui:Button DockPanel.Dock="Right" Content="How to get a token?" Icon="{ui:SymbolIcon QuestionCircle24}" Margin="0,0,8,5" Padding="8,2" Height="23" Click="TokenHelp_Open_Click"/>
+                                <Label Content="{loc:Tr MW.Bot.Token}"/>
+                                <Button x:Name="button_DiscordBotTokenEdit" DockPanel.Dock="Right" Content="{loc:Tr MW.Common.Edit}" Margin="0,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotTokenEdit_Click"/>
+                                <ui:Button DockPanel.Dock="Right" Content="{loc:Tr MW.Bot.HowToToken}" Icon="{ui:SymbolIcon QuestionCircle24}" Margin="0,0,8,5" Padding="8,2" Height="23" Click="TokenHelp_Open_Click"/>
                             </DockPanel>
                             <Grid DockPanel.Dock="Top">
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotToken" Height="24" Text="" IsEnabled="False" FontFamily="Consolas"/>
@@ -490,13 +491,13 @@
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <DockPanel DockPanel.Dock="Left" Width="280">
                                     <DockPanel DockPanel.Dock="Top">
-                                        <Label Content="Dashboard Channel ID(s)" ToolTip="One or more channels (one per Discord server), separated by commas"/>
-                                        <Button x:Name="button_DiscordBotDashboardEdit" DockPanel.Dock="Right" Content="Edit" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotDashboardEdit_Click"/>
+                                        <Label Content="{loc:Tr MW.Bot.DashboardChannels}" ToolTip="{loc:Tr MW.Bot.DashboardChannelsTip}"/>
+                                        <Button x:Name="button_DiscordBotDashboardEdit" DockPanel.Dock="Right" Content="{loc:Tr MW.Common.Edit}" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotDashboardEdit_Click"/>
                                     </DockPanel>
                                     <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotDashboard" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
                                 </DockPanel>
                                 <DockPanel DockPanel.Dock="Right" Margin="10,0,0,0">
-                                    <Label Content="Refresh (sec)" DockPanel.Dock="Top"/>
+                                    <Label Content="{loc:Tr MW.Bot.RefreshSec}" DockPanel.Dock="Top"/>
                                     <ui:NumberBox x:Name="numericUpDown_DiscordRefreshRate" Minimum="10" Maximum="900" Margin="0,4,0,0"/>
                                 </DockPanel>
                             </DockPanel>
@@ -504,31 +505,31 @@
                             <!-- Admin panel: persistent embed + dropdown menu + action buttons, in a dedicated channel -->
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <DockPanel DockPanel.Dock="Top">
-                                    <Label Content="Admin Panel Channel ID(s)" ToolTip="Channel dedicated to administration (one per Discord server), separated by commas. The bot maintains an interactive panel there (dropdown menu + buttons)."/>
-                                    <Button x:Name="button_DiscordBotAdminPanelEdit" DockPanel.Dock="Right" Content="Edit" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotAdminPanelEdit_Click"/>
+                                    <Label Content="{loc:Tr MW.Bot.AdminPanelChannels}" ToolTip="{loc:Tr MW.Bot.AdminPanelChannelsTip}"/>
+                                    <Button x:Name="button_DiscordBotAdminPanelEdit" DockPanel.Dock="Right" Content="{loc:Tr MW.Common.Edit}" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotAdminPanelEdit_Click"/>
                                 </DockPanel>
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotAdminPanel" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
                             </DockPanel>
 
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
-                                <Label Content="Discord Bot Log"/>
+                                <Label Content="{loc:Tr MW.Bot.Log}"/>
                             </DockPanel>
                             <TextBox x:Name="textBox_DiscordBotLog" FontFamily="Consolas" MaxWidth="465" DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True" TextWrapping="NoWrap"/>
                         </DockPanel>
                         <DockPanel DockPanel.Dock="Right" Margin="20,0,0,0">
                             <DockPanel DockPanel.Dock="Top">
-                                <Label Content="Admin List"/>
+                                <Label Content="{loc:Tr MW.Bot.AdminList}"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="button_DiscordBotAddID" Content="Add Admin ID" Margin="0,0,5,5" HorizontalAlignment="Right" Width="97" Height="23" Click="Button_DiscordBotAddID_Click"/>
-                                    <Button x:Name="button_DiscordBotEditServerID" Content="Edit Server ID" Margin="0,0,5,5" HorizontalAlignment="Right" Width="97" Height="23" Click="Button_DiscordBotEditServerID_Click"/>
-                                    <Button x:Name="button_DiscordBotRemoveID" Content="Remove" Margin="0,0,0,5" HorizontalAlignment="Right" Width="70" Height="23" Click="Button_DiscordBotRemoveID_Click"/>
+                                    <Button x:Name="button_DiscordBotAddID" Content="{loc:Tr MW.Bot.AddAdminID}" Margin="0,0,5,5" HorizontalAlignment="Right" Width="97" Height="23" Click="Button_DiscordBotAddID_Click"/>
+                                    <Button x:Name="button_DiscordBotEditServerID" Content="{loc:Tr MW.Bot.EditServerID}" Margin="0,0,5,5" HorizontalAlignment="Right" Width="97" Height="23" Click="Button_DiscordBotEditServerID_Click"/>
+                                    <Button x:Name="button_DiscordBotRemoveID" Content="{loc:Tr MW.Common.Remove}" Margin="0,0,0,5" HorizontalAlignment="Right" Width="70" Height="23" Click="Button_DiscordBotRemoveID_Click"/>
                                 </StackPanel>
                             </DockPanel>
                             <DataGrid x:Name="listBox_DiscordBotAdminList" SelectionMode="Single" BorderThickness="1" DockPanel.Dock="Top">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Admin ID" IsReadOnly="True" Binding="{Binding Path=AdminId}" Width="150" MinWidth="150" MaxWidth="150" FontFamily="Consolas"/>
-                                    <DataGridTextColumn Header="User" IsReadOnly="True" Binding="{Binding Path=Username}" Width="150" MinWidth="120"/>
-                                    <DataGridTextColumn Header="Server IDs" IsReadOnly="True" Binding="{Binding Path=ServerIds}" Width="1*" FontFamily="Consolas"/>
+                                    <DataGridTextColumn Header="{loc:Tr MW.Bot.Col.AdminID}" IsReadOnly="True" Binding="{Binding Path=AdminId}" Width="150" MinWidth="150" MaxWidth="150" FontFamily="Consolas"/>
+                                    <DataGridTextColumn Header="{loc:Tr MW.Bot.Col.User}" IsReadOnly="True" Binding="{Binding Path=Username}" Width="150" MinWidth="120"/>
+                                    <DataGridTextColumn Header="{loc:Tr MW.Bot.Col.ServerIDs}" IsReadOnly="True" Binding="{Binding Path=ServerIds}" Width="1*" FontFamily="Consolas"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
@@ -543,13 +544,13 @@
                 <DockPanel>
                     <Border DockPanel.Dock="Top" CornerRadius="6" Padding="14,10" Margin="0,0,0,12" Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
                         <DockPanel>
-                            <TextBlock Text="Server status" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Top" Margin="0,0,0,6"/>
+                            <TextBlock Text="{loc:Tr MW.Dash.ServerStatus}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Top" Margin="0,0,0,6"/>
                             <TextBlock x:Name="dashboard_health" FontSize="14" TextWrapping="Wrap" Text="—"/>
                         </DockPanel>
                     </Border>
 
                     <!-- Per-server tiles: status + live CPU/RAM + mini-charts + players -->
-                    <Label DockPanel.Dock="Top" Content="SERVERS" FontWeight="SemiBold" Foreground="Gray"/>
+                    <Label DockPanel.Dock="Top" Content="{loc:Tr MW.Dash.Servers}" FontWeight="SemiBold" Foreground="Gray"/>
                     <ItemsControl DockPanel.Dock="Top" x:Name="dashboard_tiles" Margin="0,4,0,8">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -589,21 +590,21 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
                                                 <DockPanel>
-                                                    <TextBlock Text="CPU" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
+                                                    <TextBlock Text="{loc:Tr MW.Dash.CPU}" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
                                                     <TextBlock Text="{Binding Cpu}" FontSize="11" HorizontalAlignment="Right"/>
                                                 </DockPanel>
                                                 <ctrl:Sparkline Height="26" Max="100" Stroke="RoyalBlue" Values="{Binding CpuHistory}"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="2">
                                                 <DockPanel>
-                                                    <TextBlock Text="RAM" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
+                                                    <TextBlock Text="{loc:Tr MW.Dash.RAM}" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
                                                     <TextBlock Text="{Binding Ram}" FontSize="11" HorizontalAlignment="Right"/>
                                                 </DockPanel>
                                                 <ctrl:Sparkline Height="26" Stroke="MediumPurple" Values="{Binding RamHistory}"/>
                                             </StackPanel>
                                         </Grid>
                                         <DockPanel Margin="0,6,0,0">
-                                            <TextBlock Text="Players" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
+                                            <TextBlock Text="{loc:Tr MW.Dash.Players}" FontSize="11" Foreground="Gray" DockPanel.Dock="Left"/>
                                             <TextBlock Text="{Binding Players}" FontSize="11" HorizontalAlignment="Right"/>
                                         </DockPanel>
                                     </StackPanel>
@@ -612,7 +613,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <Label DockPanel.Dock="Top" Content="SYSTEM METRICS" FontWeight="SemiBold" Foreground="Gray"/>
+                    <Label DockPanel.Dock="Top" Content="{loc:Tr MW.Dash.SystemMetrics}" FontWeight="SemiBold" Foreground="Gray"/>
                     <DockPanel DockPanel.Dock="Top">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -627,7 +628,7 @@
                                 <Grid DockPanel.Dock="Left" Background="RoyalBlue" Height="Auto" Width="5"/>
                                 <DockPanel Margin="15">
                                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                                        <Label DockPanel.Dock="Left" Content="CPU" FontSize="25" Padding="0"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Dash.CPU}" FontSize="25" Padding="0"/>
                                         <Label DockPanel.Dock="Right" Content="" VerticalAlignment="Bottom" HorizontalAlignment="Right" x:Name="dashboard_cpu_type"/>
                                     </DockPanel>
                                     <DockPanel DockPanel.Dock="Top">
@@ -641,7 +642,7 @@
                                 <Grid DockPanel.Dock="Left" Background="Purple" Height="Auto" Width="5"/>
                                 <DockPanel Margin="15">
                                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                                        <Label DockPanel.Dock="Left" Content="Memory" FontSize="25" Padding="0"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Dash.Memory}" FontSize="25" Padding="0"/>
                                         <Label DockPanel.Dock="Right" Content="" VerticalAlignment="Bottom" HorizontalAlignment="Right" x:Name="dashboard_ram_type"/>
                                     </DockPanel>
                                     <DockPanel DockPanel.Dock="Top">
@@ -655,7 +656,7 @@
                                 <Grid DockPanel.Dock="Left" Background="ForestGreen" Height="Auto" Width="5"/>
                                 <DockPanel Margin="15">
                                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                                        <Label DockPanel.Dock="Left" Content="Disk" FontSize="25" Padding="0"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Dash.Disk}" FontSize="25" Padding="0"/>
                                         <Label DockPanel.Dock="Left" Content="" FontSize="25" Padding="5,0,0,0" x:Name="dashboard_disk_name"/>
                                         <Label DockPanel.Dock="Right" Content="" VerticalAlignment="Bottom" HorizontalAlignment="Right" x:Name="dashboard_disk_type"/>
                                     </DockPanel>
@@ -669,7 +670,7 @@
                         </Grid>
                     </DockPanel>
 
-                    <Label DockPanel.Dock="Top" Content="GAME SERVERS" FontWeight="SemiBold" Foreground="Gray" Margin="0,10,0,0"/>
+                    <Label DockPanel.Dock="Top" Content="{loc:Tr MW.Dash.GameServers}" FontWeight="SemiBold" Foreground="Gray" Margin="0,10,0,0"/>
                     <DockPanel DockPanel.Dock="Top" x:Name="dashboard_gameservers">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -684,8 +685,8 @@
                                 <Grid DockPanel.Dock="Left" Background="MediumVioletRed" Height="Auto" Width="5"/>
                                 <DockPanel Margin="15">
                                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                                        <Label DockPanel.Dock="Left" Content="Servers" FontSize="25" Padding="0"/>
-                                        <Label DockPanel.Dock="Right" Content="Installed server count" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Dash.ServersBig}" FontSize="25" Padding="0"/>
+                                        <Label DockPanel.Dock="Right" Content="{loc:Tr MW.Dash.InstalledCount}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                                     </DockPanel>
                                     <DockPanel DockPanel.Dock="Top">
                                         <Label DockPanel.Dock="Left" Content="0%" Padding="0" x:Name="dashboard_servers_usage"/>
@@ -698,8 +699,8 @@
                                 <Grid DockPanel.Dock="Left" Background="SpringGreen" Height="Auto" Width="5"/>
                                 <DockPanel Margin="15">
                                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                                        <Label DockPanel.Dock="Left" Content="Online" FontSize="25" Padding="0"/>
-                                        <Label DockPanel.Dock="Right" Content="Started server count" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Dash.Online}" FontSize="25" Padding="0"/>
+                                        <Label DockPanel.Dock="Right" Content="{loc:Tr MW.Dash.StartedCount}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                                     </DockPanel>
                                     <DockPanel DockPanel.Dock="Top">
                                         <Label DockPanel.Dock="Left" Content="0%" Padding="0" x:Name="dashboard_started_usage"/>
@@ -712,7 +713,7 @@
                                 <Grid DockPanel.Dock="Left" Background="Goldenrod" Height="Auto" Width="5"/>
                                 <DockPanel Margin="15">
                                     <DockPanel DockPanel.Dock="Top">
-                                        <Label DockPanel.Dock="Left" Content="Active Players" FontSize="25" VerticalAlignment="Center"/>
+                                        <Label DockPanel.Dock="Left" Content="{loc:Tr MW.Dash.ActivePlayers}" FontSize="25" VerticalAlignment="Center"/>
                                         <Label DockPanel.Dock="Right" Content="0" FontSize="25" HorizontalAlignment="Right" VerticalAlignment="Center" x:Name="dashboard_players_count"/>
                                     </DockPanel>
                                 </DockPanel>
@@ -732,31 +733,31 @@
         <DockPanel Name="hMenu_Home" Margin="190,0,0,0" Visibility="Hidden">
             <Grid DockPanel.Dock="Top">
                 <StackPanel x:Name="menu" Orientation="Horizontal" Height="34" DockPanel.Dock="Top" Margin="1,0,0,0">
-                    <ui:DropDownButton Content="Servers" Appearance="Transparent" Padding="10,2" Margin="1,0">
+                    <ui:DropDownButton Content="{loc:Tr MW.Menu.Servers}" Appearance="Transparent" Padding="10,2" Margin="1,0">
                         <ui:DropDownButton.Flyout>
                         <ContextMenu>
-                        <MenuItem Header="Install GameServer" Click="Install_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.InstallGameServer}" Click="Install_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Install.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Add a Steam server (AppID)…" Click="Servers_AddGenericSteam_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.AddSteamServer}" Click="Servers_AddGenericSteam_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Add24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Import GameServer" Click="Import_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.ImportGameServer}" Click="Import_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="ArrowImport24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Duplicate GameServer" Click="Duplicate_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.DuplicateGameServer}" Click="Duplicate_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Copy24"/>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Delete GameServer" Click="Delete_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.DeleteGameServer}" Click="Delete_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Delete.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
@@ -764,82 +765,82 @@
                         </ContextMenu>
                         </ui:DropDownButton.Flyout>
                     </ui:DropDownButton>
-                    <ui:DropDownButton Content="Actions" Appearance="Transparent" Padding="10,2" Margin="1,0">
+                    <ui:DropDownButton Content="{loc:Tr MW.Menu.Actions}" Appearance="Transparent" Padding="10,2" Margin="1,0">
                         <ui:DropDownButton.Flyout>
                         <ContextMenu>
-                        <MenuItem Header="Start" Click="Actions_Start_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.Start}" Click="Actions_Start_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Start.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Stop" Click="Actions_Stop_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.Stop}" Click="Actions_Stop_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Stop.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Restart" Click="Actions_Restart_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.Restart}" Click="Actions_Restart_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Restart.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="More...">
-                            <MenuItem Header="Start All Servers" Click="Actions_StartAllServers_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.More}">
+                            <MenuItem Header="{loc:Tr MW.Menu.StartAll}" Click="Actions_StartAllServers_Click">
                                 <MenuItem.Icon>
                                     <Image Source="/WindowsGSM;component/Images/Start.ico" Width="23" Margin="3"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Start Servers with Auto Start Enabled" Click="Actions_StartServersWithAutoStartEnabled_Click">
+                            <MenuItem Header="{loc:Tr MW.Menu.StartAutoStart}" Click="Actions_StartServersWithAutoStartEnabled_Click">
                                 <MenuItem.Icon>
                                     <Image Source="/WindowsGSM;component/Images/Start.ico" Width="23" Margin="3"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Stop All Servers" Click="Actions_StopAllServers_Click">
+                            <MenuItem Header="{loc:Tr MW.Menu.StopAll}" Click="Actions_StopAllServers_Click">
                                 <MenuItem.Icon>
                                     <Image Source="/WindowsGSM;component/Images/Stop.ico" Width="23" Margin="3"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Restart All Servers" Click="Actions_RestartAllServers_Click">
+                            <MenuItem Header="{loc:Tr MW.Menu.RestartAll}" Click="Actions_RestartAllServers_Click">
                                 <MenuItem.Icon>
                                     <Image Source="/WindowsGSM;component/Images/Restart.ico" Width="23" Margin="3"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Toggle Console" Click="Actions_ToggleConsole_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.ToggleConsole}" Click="Actions_ToggleConsole_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="WindowConsole20"/>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Update">
+                        <MenuItem Header="{loc:Tr MW.Menu.Update}">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Update.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
-                            <MenuItem Header="Update" Height="30" Click="Actions_Update_Click"/>
-                            <MenuItem Header="Update Validate" Height="30" Click="Actions_UpdateValidate_Click"/>
+                            <MenuItem Header="{loc:Tr MW.Menu.UpdateRun}" Height="30" Click="Actions_Update_Click"/>
+                            <MenuItem Header="{loc:Tr MW.Menu.UpdateValidate}" Height="30" Click="Actions_UpdateValidate_Click"/>
                         </MenuItem>
-                        <MenuItem Header="Update ALL (servers with update available)" Click="Actions_UpdateAllAvailable_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.UpdateAll}" Click="Actions_UpdateAllAvailable_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="ArrowSync24"/>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Backup" Click="Actions_Backup_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.Backup}" Click="Actions_Backup_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Backup.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Backup ALL (all servers)" Click="Actions_BackupAll_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.BackupAll}" Click="Actions_BackupAll_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Save24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Maintenance mode (toggle, selected server)" Click="Actions_ToggleMaintenance_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.MaintenanceMode}" Click="Actions_ToggleMaintenance_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Wrench24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Restore Backup" Click="Actions_RestoreBackup_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.RestoreBackup}" Click="Actions_RestoreBackup_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Restore.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
@@ -847,33 +848,33 @@
                         </ContextMenu>
                         </ui:DropDownButton.Flyout>
                     </ui:DropDownButton>
-                    <ui:DropDownButton Content="Browse" Appearance="Transparent" Padding="10,2" Margin="1,0">
+                    <ui:DropDownButton Content="{loc:Tr MW.Menu.Browse}" Appearance="Transparent" Padding="10,2" Margin="1,0">
                         <ui:DropDownButton.Flyout>
                         <ContextMenu>
-                        <MenuItem Header="Server Backups">
+                        <MenuItem Header="{loc:Tr MW.Menu.ServerBackups}">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Zip.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
-                            <MenuItem Header="Backup Files" Click="Browse_ServerBackups_Click"/>
-                            <MenuItem Header="Backup Configs" Click="Browse_BackupFiles_Click"/>
+                            <MenuItem Header="{loc:Tr MW.Menu.BackupFiles}" Click="Browse_ServerBackups_Click"/>
+                            <MenuItem Header="{loc:Tr MW.Menu.BackupConfigs}" Click="Browse_BackupFiles_Click"/>
                         </MenuItem>
-                        <MenuItem Header="Server Files" Click="Browse_ServerFiles_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.ServerFiles}" Click="Browse_ServerFiles_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Files.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Server Configs" Click="Browse_ServerConfigs_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.ServerConfigs}" Click="Browse_ServerConfigs_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Config.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Action History" Click="Browse_ActionHistory_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.ActionHistory}" Click="Browse_ActionHistory_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="History24"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Uptime Statistics" Click="Browse_Uptime_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.UptimeStats}" Click="Browse_Uptime_Click">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DataHistogram24"/>
                             </MenuItem.Icon>
@@ -881,12 +882,12 @@
                         </ContextMenu>
                         </ui:DropDownButton.Flyout>
                     </ui:DropDownButton>
-                    <ui:DropDownButton Content="Tools" Appearance="Transparent" Padding="10,2" Margin="1,0">
+                    <ui:DropDownButton Content="{loc:Tr MW.Menu.Tools}" Appearance="Transparent" Padding="10,2" Margin="1,0">
                         <ui:DropDownButton.Flyout>
                         <ContextMenu>
-                        <MenuItem Header="Global Server List Check" Click="Tools_GlobalServerListCheck_Click"/>
-                        <MenuItem Header="API Token (selected server)…" Click="Tools_ApiToken_Click"/>
-                        <MenuItem Header="Install Addons">
+                        <MenuItem Header="{loc:Tr MW.Menu.GlobalServerListCheck}" Click="Tools_GlobalServerListCheck_Click"/>
+                        <MenuItem Header="{loc:Tr MW.Menu.ApiToken}" Click="Tools_ApiToken_Click"/>
+                        <MenuItem Header="{loc:Tr MW.Menu.InstallAddons}">
                             <MenuItem Header="AMX Mod X + MetaMod-P" Click="Tool_InstallAMXModXMetamodP_Click">
                                 <MenuItem.Icon>
                                     <Image Source="/WindowsGSM;component/Images/Tools/AMXModX.ico" Width="23" Margin="3"/>
@@ -911,26 +912,26 @@
                         </ContextMenu>
                         </ui:DropDownButton.Flyout>
                     </ui:DropDownButton>
-                    <ui:DropDownButton Content="Help" Appearance="Transparent" Padding="10,2" Margin="1,0">
+                    <ui:DropDownButton Content="{loc:Tr MW.Menu.Help}" Appearance="Transparent" Padding="10,2" Margin="1,0">
                         <ui:DropDownButton.Flyout>
                         <ContextMenu>
-                        <MenuItem Header="Online Documentation" Click="Help_OnlineDocumentation_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.OnlineDocumentation}" Click="Help_OnlineDocumentation_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Book.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Report an issue" Click="Help_ReportIssue_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.ReportIssue}" Click="Help_ReportIssue_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Issue.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Software Updates" Click="Help_SoftwareUpdates_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.SoftwareUpdates}" Click="Help_SoftwareUpdates_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/Update.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="About WindowsGSM" Click="Help_AboutWindowsGSM_Click">
+                        <MenuItem Header="{loc:Tr MW.Menu.About}" Click="Help_AboutWindowsGSM_Click">
                             <MenuItem.Icon>
                                 <Image Source="/WindowsGSM;component/Images/WindowsGSM-Icon.ico" Width="23" Margin="3"/>
                             </MenuItem.Icon>
@@ -942,25 +943,25 @@
             </Grid>
             <Grid Height="1" Background="Black" DockPanel.Dock="Top"/>
             <Grid Height="40" VerticalAlignment="Top" DockPanel.Dock="Top" Margin="0,0,0,0">
-                <Label x:Name="label_select" Content="Select or Install or Import a server" HorizontalAlignment="Left" Margin="11,4,0,2" VerticalAlignment="Center" Height="34"/>
+                <Label x:Name="label_select" Content="{loc:Tr MW.Home.SelectHint}" HorizontalAlignment="Left" Margin="11,4,0,2" VerticalAlignment="Center" Height="34"/>
                 <DockPanel x:Name="grid_action">
-                    <!--<Button x:Name="button_Crash" Cursor="Hand" Content="CRASH" HorizontalAlignment="Left" Margin="10,5,0,5" Width="112" Height="26" Background="Purple" Foreground="White" Click="Actions_Crash_Click"/>-->
-                    <Button x:Name="button_Start" Cursor="Hand" Content="START" HorizontalAlignment="Left" Margin="10,5,0,5" Width="112" Height="26" Click="Actions_Start_Click" Background="LimeGreen" Foreground="White"/>
-                    <Button x:Name="button_Stop" Cursor="Hand" Content="STOP" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_Stop_Click" Background="Orange" Foreground="White"/>
-                    <Button x:Name="button_Restart" Cursor="Hand" Content="RESTART" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_Restart_Click" Background="DeepSkyBlue" Foreground="White"/>
-                    <Button x:Name="button_Kill" Cursor="Hand" Content="KILL" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_Kill_Click" Background="OrangeRed" Foreground="White"/>
-                    <Button x:Name="button_Console" Cursor="Hand" Content="TOGGLE CONSOLE" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_ToggleConsole_Click"/>
-                    <Button x:Name="button_Update" Cursor="Hand" Content="UPDATE" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_Update_Click"/>
-                    <Button x:Name="button_Backup" Cursor="Hand" Content="BACKUP" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_Backup_Click"/>
-                    <Button x:Name="button_ManageAddons" Cursor="Hand" Content="MANAGE ADDONS" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Actions_ManageAddons_Click"/>
-                    <Button x:Name="button_ConfigEditor" Cursor="Hand" Content="CONFIG" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Tools_ConfigEditor_Click"/>
-                    <Button x:Name="button_Mods" Cursor="Hand" Content="MODS" HorizontalAlignment="Left" Margin="5,5,0,5" Width="112" Height="26" Click="Tools_Mods_Click"/>
+                    <!--<Button x:Name="button_Crash" Cursor="Hand" Content="CRASH" HorizontalAlignment="Left" Margin="10,5,0,5" MinWidth="112" Height="26" Background="Purple" Foreground="White" Click="Actions_Crash_Click"/>-->
+                    <Button x:Name="button_Start" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Start}" HorizontalAlignment="Left" Margin="10,5,0,5" MinWidth="112" Height="26" Click="Actions_Start_Click" Background="LimeGreen" Foreground="White"/>
+                    <Button x:Name="button_Stop" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Stop}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_Stop_Click" Background="Orange" Foreground="White"/>
+                    <Button x:Name="button_Restart" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Restart}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_Restart_Click" Background="DeepSkyBlue" Foreground="White"/>
+                    <Button x:Name="button_Kill" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Kill}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_Kill_Click" Background="OrangeRed" Foreground="White"/>
+                    <Button x:Name="button_Console" Cursor="Hand" Content="{loc:Tr MW.Toolbar.ToggleConsole}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_ToggleConsole_Click"/>
+                    <Button x:Name="button_Update" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Update}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_Update_Click"/>
+                    <Button x:Name="button_Backup" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Backup}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_Backup_Click"/>
+                    <Button x:Name="button_ManageAddons" Cursor="Hand" Content="{loc:Tr MW.Toolbar.ManageAddons}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Actions_ManageAddons_Click"/>
+                    <Button x:Name="button_ConfigEditor" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Config}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Tools_ConfigEditor_Click"/>
+                    <Button x:Name="button_Mods" Cursor="Hand" Content="{loc:Tr MW.Toolbar.Mods}" HorizontalAlignment="Left" Margin="5,5,0,5" MinWidth="112" Height="26" Click="Tools_Mods_Click"/>
                 </DockPanel>
             </Grid>
             <Grid Height="1" Background="Black" DockPanel.Dock="Top"/>
             <!-- P1-2: search/filter (name / game / status). Filters the grid live. -->
             <Grid Height="40" DockPanel.Dock="Top" Margin="10,5,10,3">
-                <ui:TextBox x:Name="textBox_Search" PlaceholderText="Search a server (name, game, status)…"
+                <ui:TextBox x:Name="textBox_Search" PlaceholderText="{loc:Tr MW.Home.SearchPlaceholder}"
                             Icon="{ui:SymbolIcon Search24}" HorizontalAlignment="Left" Width="340"
                             TextChanged="TextBox_Search_TextChanged"/>
             </Grid>
@@ -998,7 +999,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Status" IsReadOnly="True" Binding="{Binding Path=Status}" Width="80" MinWidth="80" MaxWidth="80"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.Status}" IsReadOnly="True" Binding="{Binding Path=Status}" Width="80" MinWidth="80" MaxWidth="80"/>
                         <DataGridTemplateColumn Header="MAJ" IsReadOnly="True" Width="44" MinWidth="44" MaxWidth="44">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -1008,9 +1009,9 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Server Name" IsReadOnly="True" Binding="{Binding Path=Name}" Width="10*" MinWidth="105"/>
-                        <DataGridTextColumn Header="IP Address" IsReadOnly="True" Binding="{Binding Path=IP}" Width="4*" MinWidth="88"/>
-                        <DataGridTextColumn Header="Port" IsReadOnly="True" Binding="{Binding Path=Port}" Width="4*" MinWidth="52">
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.ServerName}" IsReadOnly="True" Binding="{Binding Path=Name}" Width="10*" MinWidth="105"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.IPAddress}" IsReadOnly="True" Binding="{Binding Path=IP}" Width="4*" MinWidth="88"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.Port}" IsReadOnly="True" Binding="{Binding Path=Port}" Width="4*" MinWidth="52">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Style.Triggers>
@@ -1023,13 +1024,13 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Query Port" IsReadOnly="True" Binding="{Binding Path=QueryPort}" Width="4*" MinWidth="93"/>
-                        <DataGridTextColumn Header="Map" IsReadOnly="True" Binding="{Binding Path=Defaultmap}" Width="7*" MinWidth="50"/>
-                        <DataGridTextColumn Header="Players" IsReadOnly="True" Binding="{Binding Path=Maxplayers}" Width="3*" MinWidth="70"/>
-                        <DataGridTextColumn Header="Online Players" IsReadOnly="True" Binding="{Binding Path=Players}" Width="3*" MinWidth="70" ToolTipService.ToolTip="Connected players (A2S query)"/>
-                        <DataGridTextColumn Header="CPU" IsReadOnly="True" Binding="{Binding Path=Cpu}" Width="3*" MinWidth="55"/>
-                        <DataGridTextColumn Header="RAM" IsReadOnly="True" Binding="{Binding Path=Ram}" Width="3*" MinWidth="70"/>
-                        <DataGridTextColumn Header="Uptime" IsReadOnly="True" Binding="{Binding Path=Uptime}" Width="4*" MinWidth="80"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.QueryPort}" IsReadOnly="True" Binding="{Binding Path=QueryPort}" Width="4*" MinWidth="93"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.Map}" IsReadOnly="True" Binding="{Binding Path=Defaultmap}" Width="7*" MinWidth="50"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.Players}" IsReadOnly="True" Binding="{Binding Path=Maxplayers}" Width="3*" MinWidth="70"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.OnlinePlayers}" IsReadOnly="True" Binding="{Binding Path=Players}" Width="3*" MinWidth="70" ToolTipService.ToolTip="{loc:Tr MW.Col.OnlinePlayersTip}"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.CPU}" IsReadOnly="True" Binding="{Binding Path=Cpu}" Width="3*" MinWidth="55"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.RAM}" IsReadOnly="True" Binding="{Binding Path=Ram}" Width="3*" MinWidth="70"/>
+                        <DataGridTextColumn Header="{loc:Tr MW.Col.Uptime}" IsReadOnly="True" Binding="{Binding Path=Uptime}" Width="4*" MinWidth="80"/>
                         <!--<DataGridTextColumn Header="RAM Usage" IsReadOnly="True" Binding="{Binding Path=RamUsage}" Width="4*"/>-->
                     </DataGrid.Columns>
                 </DataGrid>
@@ -1045,59 +1046,79 @@
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Grid>
-                        <Button x:Name="button_Status" Content="" HorizontalAlignment="Left" Margin="399,10,0,0" Width="50" Height="11" Background="Orange" Foreground="White" VerticalAlignment="Top" IsHitTestVisible="False" />
+                    <DockPanel LastChildFill="True" Margin="6,6,6,6">
+                        <!-- Clear log (bottom) -->
+                        <Button x:Name="button_clearwgsmlog" DockPanel.Dock="Bottom" Cursor="Hand" Content="{loc:Tr MW.Common.Clear}" Margin="0,4,0,0" Height="24" MinWidth="60" Padding="10,0" Click="Button_ClearWGSMLog_Click" HorizontalAlignment="Left"/>
 
-                        <Label x:Name="label_ProcessPriority" Content="Process Priority" HorizontalAlignment="Left" Margin="5,10,0,0" VerticalAlignment="Top" Height="26"/>
-                        <Slider x:Name="slider_ProcessPriority" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="101,12,0,0" Width="80" MinWidth="0" MaxWidth="80" Height="25" Minimum="0" Maximum="5" IsSnapToTickEnabled="True" TickPlacement="BottomRight" ValueChanged="Slider_ProcessPriority_ValueChanged"/>
-                        <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_ProcessPriority" Height="24" Margin="192,10,0,0" TextWrapping="NoWrap" Text="" VerticalAlignment="Top" IsReadOnly="true" HorizontalAlignment="Left" Width="95" FontFamily="Consolas"/>
+                        <!-- Per-server settings — flexible rows so translated labels never overlap/clip -->
+                        <StackPanel DockPanel.Dock="Top">
+                            <!-- Process priority / affinity / edit config -->
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label x:Name="label_ProcessPriority" Content="{loc:Tr MW.Panel.ProcessPriority}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <Slider x:Name="slider_ProcessPriority" VerticalAlignment="Center" Width="80" Height="25" Minimum="0" Maximum="5" IsSnapToTickEnabled="True" TickPlacement="BottomRight" ValueChanged="Slider_ProcessPriority_ValueChanged" Margin="0,0,6,0"/>
+                                <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_ProcessPriority" Height="24" TextWrapping="NoWrap" Text="" IsReadOnly="true" Width="80" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <Button x:Name="button_SetAffinity" Content="{loc:Tr MW.Panel.SetAffinity}" VerticalAlignment="Center" MinWidth="85" Padding="8,0" Height="26" Click="Button_SetAffinity_Click" Margin="0,0,6,0"/>
+                                <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_SetAffinity" Height="24" TextWrapping="NoWrap" Text="" IsReadOnly="true" Width="60" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <Button x:Name="button_EditConfig" Content="{loc:Tr MW.Panel.EditConfig}" VerticalAlignment="Center" MinWidth="85" Padding="8,0" Height="26" Click="Button_EditConfig_Click" Margin="0,0,10,0"/>
+                                <Button x:Name="button_Status" Content="" Width="50" Height="11" Background="Orange" Foreground="White" IsHitTestVisible="False" VerticalAlignment="Center"/>
+                            </WrapPanel>
 
-                        <Button x:Name="button_SetAffinity" Content="Set Affinity" HorizontalAlignment="Left" Margin="292,10,0,0" VerticalAlignment="Top" Width="85" Height="26" Click="Button_SetAffinity_Click"/>
-                        <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_SetAffinity" Height="24" Margin="389,10,0,0" TextWrapping="NoWrap" Text="" VerticalAlignment="Top" IsReadOnly="true" HorizontalAlignment="Left" Width="66" FontFamily="Consolas"/>
-                        <Button x:Name="button_EditConfig" Content="Edit Config" HorizontalAlignment="Left" Margin="382,10,0,0" VerticalAlignment="Top" Width="85" Height="26" Click="Button_EditConfig_Click"/>
+                            <!-- Restart crontab -->
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label x:Name="label_restartcrontab" Content="{loc:Tr MW.Panel.RestartCrontab}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ui:ToggleSwitch x:Name="switch_restartcrontab" VerticalAlignment="Center" Click="Button_RestartCrontab_Click" Width="44" Height="30" Margin="0,0,6,0"/>
+                                <Button x:Name="button_restartcrontabedit" Cursor="Hand" Content="{loc:Tr MW.Common.Edit}" VerticalAlignment="Center" MinWidth="40" Padding="8,0" Height="26" Click="Button_CrontabEdit_Click" Margin="0,0,6,0"/>
+                                <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_restartcrontab" Height="28" TextWrapping="Wrap" Text="" IsReadOnly="true" Width="95" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_nextcrontab" Height="24" TextWrapping="Wrap" Text="" IsReadOnly="true" Width="175" FontFamily="Consolas" VerticalAlignment="Center"/>
+                            </WrapPanel>
 
-                        <Label x:Name="label_restartcrontab" Content="Restart Crontab" HorizontalAlignment="Left" Margin="5,40,0,0" VerticalAlignment="Top" Height="26"/>
-                        <ui:ToggleSwitch x:Name="switch_restartcrontab" Margin="99,38,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_RestartCrontab_Click" Width="44" Height="30"/>
-                        <Button x:Name="button_restartcrontabedit" Cursor="Hand" Content="Edit" HorizontalAlignment="Left" Margin="150,40,0,0" VerticalAlignment="Top" Width="37" Height="26" Click="Button_CrontabEdit_Click"/>
-                        <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_restartcrontab" Height="28" Margin="192,40,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" IsReadOnly="true" HorizontalAlignment="Left" Width="95"/>
-                        <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_nextcrontab" Height="24" Margin="292,40,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" IsReadOnly="true" HorizontalAlignment="Left" Width="175" FontFamily="Consolas"/>
+                            <!-- Discord alert -->
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label x:Name="label_discordalert" Content="{loc:Tr MW.Panel.DiscordAlert}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ui:ToggleSwitch x:Name="switch_discordalert" VerticalAlignment="Center" Click="Button_DiscordAlert_Click" Width="44" Height="30" Margin="0,0,6,0"/>
+                                <Button x:Name="button_discordedit" Cursor="Hand" Content="{loc:Tr MW.Common.Edit}" VerticalAlignment="Center" MinWidth="40" Padding="8,0" Height="26" Click="Button_DiscordEdit_Click" Margin="0,0,6,0"/>
+                                <Button x:Name="button_discordset" Cursor="Hand" Content="{loc:Tr MW.Panel.SetMessage}" VerticalAlignment="Center" MinWidth="95" Padding="8,0" Height="26" Click="Button_DiscordSetMessage_Click" Margin="0,0,6,0"/>
+                                <Button x:Name="button_discordsettings" Content="{loc:Tr MW.Panel.Settings}" VerticalAlignment="Center" MinWidth="85" Padding="8,0" Height="26" Click="Button_DiscordAlertSettings_Click" Margin="0,0,6,0"/>
+                                <Button x:Name="button_discordtest" Cursor="Hand" Content="{loc:Tr MW.Panel.TestAlert}" VerticalAlignment="Center" MinWidth="85" Padding="8,0" Height="26" Click="Button_DiscordWebhookTest_Click" IsEnabled="False"/>
+                            </WrapPanel>
 
-                        <Label Content="Auto Start" HorizontalAlignment="Left" VerticalAlignment="Top" Height="26" Margin="5,127,0,0"/>
-                        <ui:ToggleSwitch x:Name="switch_autostart" Margin="100,125,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_AutoStart_Click" Width="44" Height="30"/>
+                            <!-- On-start toggles -->
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label x:Name="label_embedconsole" Content="{loc:Tr MW.Panel.EmbedConsole}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <ui:ToggleSwitch x:Name="switch_embedconsole" VerticalAlignment="Center" Click="Button_EmbedConsole_Click" Width="44" Height="30" Margin="0,0,16,0"/>
+                                <Label Content="{loc:Tr MW.Panel.UpdateOnStart}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <ui:ToggleSwitch x:Name="switch_updateonstart" VerticalAlignment="Center" Click="Button_UpdateOnStart_Click" Width="44" Height="30" Margin="0,0,16,0"/>
+                                <Label Content="{loc:Tr MW.Panel.BackupOnStart}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <ui:ToggleSwitch x:Name="switch_backuponstart" VerticalAlignment="Center" Click="Button_BackupOnStart_Click" Width="44" Height="30"/>
+                            </WrapPanel>
 
-                        <Label x:Name="label_embedconsole" Content="Embed Console" HorizontalAlignment="Left" Margin="5,99,0,0" VerticalAlignment="Top"/>
-                        <ui:ToggleSwitch x:Name="switch_embedconsole" Margin="100,97,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_EmbedConsole_Click" Width="44" Height="30"/>
+                            <!-- Auto start / restart / update -->
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label Content="{loc:Tr MW.Panel.AutoStart}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <ui:ToggleSwitch x:Name="switch_autostart" VerticalAlignment="Center" Click="Button_AutoStart_Click" Width="44" Height="30" Margin="0,0,16,0"/>
+                                <Label Content="{loc:Tr MW.Panel.AutoRestart}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <ui:ToggleSwitch x:Name="switch_autorestart" VerticalAlignment="Center" Click="Button_AutoRestart_Click" Width="44" Height="30" Margin="0,0,16,0"/>
+                                <Label Content="{loc:Tr MW.Panel.AutoUpdate}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <ui:ToggleSwitch x:Name="switch_autoupdate" VerticalAlignment="Center" Click="Button_AutoUpdate_Click" Width="44" Height="30"/>
+                            </WrapPanel>
 
-                        <Label Content="Auto Restart" HorizontalAlignment="Left" Margin="177,127,0,0" VerticalAlignment="Top"/>
-                        <ui:ToggleSwitch x:Name="switch_autorestart" Margin="258,125,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_AutoRestart_Click" Width="44" Height="30"/>
+                            <!-- #16: per-server RAM monitoring (toggle + user-defined MB threshold) -->
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Label Content="{loc:Tr MW.Panel.RamWatchdog}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ui:ToggleSwitch x:Name="switch_memwatchdog" VerticalAlignment="Center" Click="Button_MemWatchdog_Click" Width="44" Height="30" Margin="0,0,12,0"/>
+                                <Label Content="{loc:Tr MW.Panel.Limit}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBox x:Name="textBox_memlimit" Padding="8,2" VerticalContentAlignment="Center" Height="24" Width="70" VerticalAlignment="Center" FontFamily="Consolas" LostFocus="TextBox_MemLimit_LostFocus" Margin="0,0,6,0"/>
+                                <Label Content="MB" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                <ui:ToggleSwitch x:Name="switch_backupbeforeupdate" Content="{loc:Tr MW.Panel.BackupBeforeUpdate}" ToolTip="{loc:Tr MW.Panel.BackupBeforeUpdateTip}" VerticalAlignment="Center" Click="Button_BackupBeforeUpdate_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
 
-                        <Label Content="Auto Update" HorizontalAlignment="Left" Margin="338,127,0,0" VerticalAlignment="Top"/>
-                        <ui:ToggleSwitch x:Name="switch_autoupdate" Margin="422,125,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_AutoUpdate_Click" Width="44" Height="30"/>
-
-                        <Label Content="Update on Start" HorizontalAlignment="Left" Margin="159,99,0,0" VerticalAlignment="Top"/>
-                        <ui:ToggleSwitch x:Name="switch_updateonstart" Margin="258,97,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_UpdateOnStart_Click" Width="44" Height="30"/>
-
-                        <Label Content="Backup on Start" HorizontalAlignment="Left" Margin="323,99,0,0" VerticalAlignment="Top"/>
-                        <ui:ToggleSwitch x:Name="switch_backuponstart" Margin="422,97,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_BackupOnStart_Click" Width="44" Height="30"/>
-
-                        <Label x:Name="label_discordalert" Content="Discord Alert" HorizontalAlignment="Left" Margin="5,70,0,0" VerticalAlignment="Top"/>
-                        <ui:ToggleSwitch x:Name="switch_discordalert" Margin="99,68,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_DiscordAlert_Click" Width="44" Height="30"/>
-                        <Button x:Name="button_discordedit" Cursor="Hand" Content="Edit" HorizontalAlignment="Left" Margin="150,70,0,0" VerticalAlignment="Top" Width="37" Height="26" Click="Button_DiscordEdit_Click"/>
-                        <Button x:Name="button_discordset" Cursor="Hand" Content="Set Message" HorizontalAlignment="Left" Margin="192,70,0,0" VerticalAlignment="Top" Width="95" Height="26" Click="Button_DiscordSetMessage_Click"/>
-                        <Button x:Name="button_discordtest" Cursor="Hand" Content="Test Alert" HorizontalAlignment="Left" Margin="382,70,0,0" VerticalAlignment="Top" Width="85" Height="26" Click="Button_DiscordWebhookTest_Click" IsEnabled="False"/>
-                        <Button x:Name="button_discordsettings" Content="Settings" HorizontalAlignment="Left" Margin="292,70,0,0" VerticalAlignment="Top" Width="85" Height="26" Click="Button_DiscordAlertSettings_Click"/>
-                        <!-- #16: per-server RAM monitoring (toggle + user-defined MB threshold) -->
-                        <Label Content="RAM Watchdog" HorizontalAlignment="Left" Margin="5,156,0,0" VerticalAlignment="Top" Height="26"/>
-                        <ui:ToggleSwitch x:Name="switch_memwatchdog" Margin="118,154,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_MemWatchdog_Click" Width="44" Height="30"/>
-                        <Label Content="Limit" HorizontalAlignment="Left" Margin="168,156,0,0" VerticalAlignment="Top" Height="26"/>
-                        <TextBox x:Name="textBox_memlimit" Padding="8,2" VerticalContentAlignment="Center" Height="24" Margin="218,156,0,0" Width="70" VerticalAlignment="Top" HorizontalAlignment="Left" FontFamily="Consolas" LostFocus="TextBox_MemLimit_LostFocus"/>
-                        <Label Content="MB" HorizontalAlignment="Left" Margin="292,156,0,0" VerticalAlignment="Top" Height="26"/>
-                        <ui:ToggleSwitch x:Name="switch_backupbeforeupdate" Content="Backup before update" ToolTip="Back up the server before each update (uses disk space)" Margin="322,154,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="Button_BackupBeforeUpdate_Click"/>
-
-                        <Label x:Name="label_wgsmlog" Content="Log:" HorizontalAlignment="Left" Margin="10,186,0,0" VerticalAlignment="Top"/>
-                        <TextBox x:Name="textBox_wgsmlog" Margin="10,212,10,38" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True"/>
-                        <Button x:Name="button_clearwgsmlog" Cursor="Hand" Content="CLEAR" Margin="10,0,0,8" Height="24" Click="Button_ClearWGSMLog_Click" HorizontalAlignment="Left" Width="60" VerticalAlignment="Bottom"/>
-                    </Grid>
+                        <!-- Log fills the remaining space -->
+                        <DockPanel Margin="0,6,0,0">
+                            <Label x:Name="label_wgsmlog" DockPanel.Dock="Top" Content="{loc:Tr MW.Panel.Log}" HorizontalAlignment="Left"/>
+                            <TextBox x:Name="textBox_wgsmlog" Margin="0,4,6,0" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True"/>
+                        </DockPanel>
+                    </DockPanel>
 
                     <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch">
                         <GridSplitter.Background>
@@ -1110,11 +1131,11 @@
                          (the WPF-UI TextBox ignores them in favor of theme brushes). -->
                     <Grid Grid.Column="2" MinWidth="100" Background="#FF1B1B1B">
                         <Rectangle Height="30" VerticalAlignment="Top" Fill="#FF2A2A2A"/>
-                        <Button x:Name="Button_AutoScroll" Style="{x:Null}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120" Content="✔ Auto Scroll" Background="#FF2A2A2A" Foreground="#FFEAEAEA" Height="30" BorderThickness="0" Click="Button_AutoScroll_Click" />
-                        <Button x:Name="button_clearServerConsole" Style="{x:Null}" Cursor="Hand" Content="CLEAR" Height="30" Click="Button_ClearServerConsole_Click" HorizontalAlignment="Right" Width="61" VerticalAlignment="Top" Background="#FF2A2A2A" Foreground="#FFEAEAEA" BorderThickness="0" />
+                        <Button x:Name="Button_AutoScroll" Style="{x:Null}" Cursor="Hand" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120" Content="{loc:Tr MW.Console.AutoScroll}" Background="#FF2A2A2A" Foreground="#FFEAEAEA" Height="30" BorderThickness="0" Click="Button_AutoScroll_Click" />
+                        <Button x:Name="button_clearServerConsole" Style="{x:Null}" Cursor="Hand" Content="{loc:Tr MW.Common.Clear}" Height="30" Click="Button_ClearServerConsole_Click" HorizontalAlignment="Right" Width="61" VerticalAlignment="Top" Background="#FF2A2A2A" Foreground="#FFEAEAEA" BorderThickness="0" />
                         <TextBox x:Name="console" Style="{x:Null}" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility ="Disabled" Background="#FF1B1B1B" IsReadOnly="True" Margin="0,30,0,26" BorderBrush="#FF1B1B1B" Foreground="#FFEAEAEA" BorderThickness="0" SelectionBrush="#FF3399FF" TextWrapping="Wrap"/>
                         <TextBox x:Name="textbox_servercommand" Style="{x:Null}" Padding="6,3" VerticalContentAlignment="Center" TextWrapping="Wrap" Text="" Margin="0,0,61,0" Height="28" VerticalAlignment="Bottom" KeyDown="Textbox_ServerCommand_KeyDown" IsEnabled="False" Background="#FF1B1B1B" BorderBrush="#FF3A3A3A" Foreground="#FFEAEAEA" CaretBrush="#FFEAEAEA" PreviewKeyDown="Textbox_ServerCommand_PreviewKeyDown"/>
-                        <Button x:Name="button_servercommand" Style="{x:Null}" Cursor="Hand" Content="Send" Click="Button_ServerCommand_Click" IsEnabled="False" Height="26" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="61" Background="#FF2A2A2A" Foreground="#FFEAEAEA" BorderThickness="0" />
+                        <Button x:Name="button_servercommand" Style="{x:Null}" Cursor="Hand" Content="{loc:Tr MW.Console.Send}" Click="Button_ServerCommand_Click" IsEnabled="False" Height="26" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="61" Background="#FF2A2A2A" Foreground="#FFEAEAEA" BorderThickness="0" />
                     </Grid>
                 </Grid>
             </Grid>
@@ -1130,38 +1151,38 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Backups" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,14"/>
+                <TextBlock Grid.Row="0" Text="{loc:Tr MW.Backups.Title}" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,14"/>
                 <DockPanel Grid.Row="1" Margin="0,0,0,12">
-                    <TextBlock Text="Server:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ui:Button Content="Refresh" Icon="{ui:SymbolIcon ArrowSync24}" DockPanel.Dock="Right" Click="Backups_Refresh_Click"/>
-                    <ui:Button Content="Back up all" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Actions_BackupAll_Click"/>
+                    <TextBlock Text="{loc:Tr MW.Backups.ServerLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ui:Button Content="{loc:Tr MW.Backups.Refresh}" Icon="{ui:SymbolIcon ArrowSync24}" DockPanel.Dock="Right" Click="Backups_Refresh_Click"/>
+                    <ui:Button Content="{loc:Tr MW.Backups.BackUpAll}" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Actions_BackupAll_Click"/>
                     <ComboBox x:Name="cb_backupServer" Width="280" HorizontalAlignment="Left" DisplayMemberPath="Name" SelectionChanged="Backups_ServerChanged"/>
                 </DockPanel>
                 <!-- Backup location (path) for the selected server: editable -->
                 <DockPanel Grid.Row="2" Margin="0,0,0,12">
-                    <TextBlock Text="Backup folder:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ui:Button Content="Change…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Click="Backups_ChangeLocation_Click"/>
-                    <ui:Button Content="Folders…" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Backups_ChangeFolders_Click" ToolTip="Limit the backup to specific subfolders of serverfiles (e.g. savegame). Empty = everything (#179)."/>
+                    <TextBlock Text="{loc:Tr MW.Backups.FolderLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ui:Button Content="{loc:Tr MW.Backups.Change}" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Click="Backups_ChangeLocation_Click"/>
+                    <ui:Button Content="{loc:Tr MW.Backups.Folders}" Icon="{ui:SymbolIcon FolderOpen24}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="Backups_ChangeFolders_Click" ToolTip="{loc:Tr MW.Backups.FoldersTip}"/>
                     <TextBox x:Name="textBox_backupLocation" IsReadOnly="True" Padding="8,2" VerticalContentAlignment="Center" Margin="0,0,8,0"
-                             FontFamily="Consolas" ToolTip="Location where this server's backups are stored"/>
+                             FontFamily="Consolas" ToolTip="{loc:Tr MW.Backups.LocationTip}"/>
                 </DockPanel>
                 <ListView x:Name="lv_backups" Grid.Row="3" Background="{DynamicResource ApplicationBackgroundBrush}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderBrush="{DynamicResource ControlElevationBorderBrush}">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Backup" Width="400" DisplayMemberBinding="{Binding Name}"/>
-                            <GridViewColumn Header="Date" Width="170" DisplayMemberBinding="{Binding Date}"/>
-                            <GridViewColumn Header="Size" Width="110" DisplayMemberBinding="{Binding Size}"/>
+                            <GridViewColumn Header="{loc:Tr MW.Backups.Col.Backup}" Width="400" DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="{loc:Tr MW.Backups.Col.Date}" Width="170" DisplayMemberBinding="{Binding Date}"/>
+                            <GridViewColumn Header="{loc:Tr MW.Backups.Col.Size}" Width="110" DisplayMemberBinding="{Binding Size}"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
                 <DockPanel Grid.Row="4" Margin="0,12,0,0">
-                    <ui:Button Content="Back up this server" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Left" Click="Backups_BackupNow_Click"/>
-                    <ui:Button Content="Restore" Icon="{ui:SymbolIcon ArrowUndo24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Caution" Click="Backups_Restore_Click"/>
-                    <ui:Button Content="Delete" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Danger" Click="Backups_Delete_Click"/>
-                    <ui:Button Content="Open folder" Icon="{ui:SymbolIcon FolderOpen24}" Margin="8,0,0,0" DockPanel.Dock="Left" Click="Backups_OpenFolder_Click"/>
+                    <ui:Button Content="{loc:Tr MW.Backups.BackUpThis}" Icon="{ui:SymbolIcon Save24}" DockPanel.Dock="Left" Click="Backups_BackupNow_Click"/>
+                    <ui:Button Content="{loc:Tr MW.Common.Restore}" Icon="{ui:SymbolIcon ArrowUndo24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Caution" Click="Backups_Restore_Click"/>
+                    <ui:Button Content="{loc:Tr MW.Common.Delete}" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" DockPanel.Dock="Left" Appearance="Danger" Click="Backups_Delete_Click"/>
+                    <ui:Button Content="{loc:Tr MW.Backups.OpenFolder}" Icon="{ui:SymbolIcon FolderOpen24}" Margin="8,0,0,0" DockPanel.Dock="Left" Click="Backups_OpenFolder_Click"/>
                     <!-- Scheduled backup (per server) -->
                     <ComboBox x:Name="cb_backupHour" Width="70" DockPanel.Dock="Right" VerticalAlignment="Center" SelectionChanged="BackupSchedule_Changed"/>
-                    <ui:ToggleSwitch x:Name="switch_backupauto" Content="Auto backup at" ToolTip="Daily automatic backup at the chosen time (stop → backup → restart)" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,6,0" Click="BackupSchedule_Changed"/>
+                    <ui:ToggleSwitch x:Name="switch_backupauto" Content="{loc:Tr MW.Backups.AutoBackupAt}" ToolTip="{loc:Tr MW.Backups.AutoBackupTip}" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,6,0" Click="BackupSchedule_Changed"/>
                 </DockPanel>
             </Grid>
         </DockPanel>
@@ -1171,19 +1192,19 @@
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="8,12,8,8">
-                <ui:Button x:Name="NavToggle" Icon="{ui:SymbolIcon Navigation24}" ToolTip="Collapse / pin the menu" Appearance="Secondary" Click="NavToggle_Click" HorizontalAlignment="Left" Margin="0,0,0,8" Padding="10,8"/>
-                <ui:Button x:Name="NavHome" Content="Home" Icon="{ui:SymbolIcon Home24}" Appearance="Primary" Click="NavHome_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavDashboard" Content="Dashboard" Icon="{ui:SymbolIcon DataHistogram24}" Appearance="Secondary" Click="NavDashboard_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavDiscordBot" Content="Discord Bot" Icon="{ui:SymbolIcon Chat24}" Appearance="Secondary" Click="NavDiscordBot_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavBackups" Content="Backups" Icon="{ui:SymbolIcon Archive24}" Appearance="Secondary" Click="NavBackups_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavToggle" Icon="{ui:SymbolIcon Navigation24}" ToolTip="{loc:Tr MW.Nav.ToggleTip}" Appearance="Secondary" Click="NavToggle_Click" HorizontalAlignment="Left" Margin="0,0,0,8" Padding="10,8"/>
+                <ui:Button x:Name="NavHome" Content="{loc:Tr MW.Nav.Home}" Icon="{ui:SymbolIcon Home24}" Appearance="Primary" Click="NavHome_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavDashboard" Content="{loc:Tr MW.Nav.Dashboard}" Icon="{ui:SymbolIcon DataHistogram24}" Appearance="Secondary" Click="NavDashboard_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavDiscordBot" Content="{loc:Tr MW.Nav.DiscordBot}" Icon="{ui:SymbolIcon Chat24}" Appearance="Secondary" Click="NavDiscordBot_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavBackups" Content="{loc:Tr MW.Nav.Backups}" Icon="{ui:SymbolIcon Archive24}" Appearance="Secondary" Click="NavBackups_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <Separator Margin="4,10"/>
-                <ui:Button x:Name="NavPlugins" Content="Plugins" Icon="{ui:SymbolIcon PuzzlePiece24}" Appearance="Secondary" Click="NavPlugins_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavSettings" Content="Settings" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Click="NavSettings_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavPlugins" Content="{loc:Tr MW.Nav.Plugins}" Icon="{ui:SymbolIcon PuzzlePiece24}" Appearance="Secondary" Click="NavPlugins_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavSettings" Content="{loc:Tr MW.Nav.Settings}" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Click="NavSettings_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
                 <Separator Margin="4,10"/>
-                <ui:Button x:Name="NavPorts" Content="Ports / UPnP" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Tools_PortForward_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavDoctor" Content="Server Doctor" Icon="{ui:SymbolIcon Search24}" Appearance="Secondary" Click="Tools_ServerDoctor_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavNotifs" Content="Notifications" Icon="{ui:SymbolIcon Alert24}" Appearance="Secondary" Click="Nav_Notifications_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
-                <ui:Button x:Name="NavWebApi" Content="Web API" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Nav_WebApi_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavPorts" Content="{loc:Tr MW.Nav.Ports}" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Tools_PortForward_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavDoctor" Content="{loc:Tr MW.Nav.Doctor}" Icon="{ui:SymbolIcon Search24}" Appearance="Secondary" Click="Tools_ServerDoctor_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavNotifs" Content="{loc:Tr MW.Nav.Notifications}" Icon="{ui:SymbolIcon Alert24}" Appearance="Secondary" Click="Nav_Notifications_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
+                <ui:Button x:Name="NavWebApi" Content="{loc:Tr MW.Nav.WebApi}" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="Nav_WebApi_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,3" Padding="10,8"/>
             </StackPanel>
             </ScrollViewer>
         </Border>
