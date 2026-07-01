@@ -29,11 +29,13 @@ namespace WindowsGSM.Functions.WebApi
             NativeTheme.EnableDarkTitleBar(this);
 
             var root = new StackPanel { Margin = new Thickness(18) };
-            root.Children.Add(new TextBlock { Text = "Remote-control web API", Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
-            root.Children.Add(new TextBlock { Text = "GET /api/servers (status) · POST /api/servers/{id}/{start|stop|restart|backup}. Bearer token required.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
+            root.Children.Add(new TextBlock { Text = "Remote control (web server)", Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 15, Margin = new Thickness(0, 0, 0, 4) });
+            root.Children.Add(new TextBlock { Text = "Master switch for two independent parts: the token API (below) and the browser portal (further down). You can enable either one alone, or both. The token belongs to the API only — leave it empty to run the portal without the API.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
 
-            var enable = new Wpf.Ui.Controls.ToggleSwitch { Content = "Enable the API", IsChecked = cfg.Enabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 10) };
+            var enable = new Wpf.Ui.Controls.ToggleSwitch { Content = "Enable the web server (master switch)", IsChecked = cfg.Enabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 10) };
             root.Children.Add(enable);
+
+            root.Children.Add(new TextBlock { Text = "Token API — GET /api/servers · POST /api/servers/{id}/{start|stop|restart|backup}. Optional: leave the token empty to disable the API entirely.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 8) });
 
             var portRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
             portRow.Children.Add(new TextBlock { Text = "Port:", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 140 });
