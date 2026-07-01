@@ -17,6 +17,10 @@ namespace WindowsGSM.Functions.WebApi
         // Listen IP/host (HttpListener prefix): "127.0.0.1" = local only (recommended, behind a reverse-proxy),
         // "+" = all interfaces (requires elevated WGSM/urlacl), or a specific machine IP.
         public string BindAddress = "127.0.0.1";
+        // The web portal listens on its OWN IP:port (independent of the token API above). If it matches the
+        // API endpoint exactly, a single listener serves both.
+        public int WebUiPort = 8643;
+        public string WebUiBindAddress = "127.0.0.1";
         // Adds the Secure attribute to the session cookie (enable when WGSM is behind an HTTPS reverse-proxy).
         public bool CookieSecure = false;
         public string Token = string.Empty; // plaintext in memory; encrypted on disk
@@ -53,6 +57,8 @@ namespace WindowsGSM.Functions.WebApi
                     WebUiEnabled = WebUiEnabled,
                     Port = Port,
                     BindAddress = string.IsNullOrWhiteSpace(BindAddress) ? "127.0.0.1" : BindAddress.Trim(),
+                    WebUiPort = WebUiPort,
+                    WebUiBindAddress = string.IsNullOrWhiteSpace(WebUiBindAddress) ? "127.0.0.1" : WebUiBindAddress.Trim(),
                     CookieSecure = CookieSecure,
                     Token = string.IsNullOrEmpty(Token) ? string.Empty : Secret.Protect(Token) // encrypt
                 };

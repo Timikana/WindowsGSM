@@ -64,6 +64,16 @@ namespace WindowsGSM.Functions.WebApi
             var webUi = new Wpf.Ui.Controls.ToggleSwitch { Content = "Enable the web portal", IsChecked = cfg.WebUiEnabled, Foreground = Fg, Margin = new Thickness(0, 0, 0, 8) };
             root.Children.Add(webUi);
             root.Children.Add(new TextBlock { Text = "★ Donator feature.", Foreground = Accent, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) });
+
+            var webPortRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+            webPortRow.Children.Add(new TextBlock { Text = "Portal port:", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 90 });
+            var webPortBox = new TextBox { Text = cfg.WebUiPort.ToString(), Width = 90, VerticalAlignment = VerticalAlignment.Center };
+            webPortRow.Children.Add(webPortBox);
+            webPortRow.Children.Add(new TextBlock { Text = "IP:", Foreground = Fg, VerticalAlignment = VerticalAlignment.Center, Width = 30, Margin = new Thickness(14, 0, 0, 0) });
+            var webIpBox = new TextBox { Text = cfg.WebUiBindAddress, Width = 150, FontFamily = new FontFamily("Consolas"), VerticalAlignment = VerticalAlignment.Center };
+            webPortRow.Children.Add(webIpBox);
+            root.Children.Add(webPortRow);
+            root.Children.Add(new TextBlock { Text = "Independent of the API above. Same IP:port as the API = single shared listener.", Foreground = Dim, TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 0, 0, 6) });
             // The web portal (auth + roles) is donator-only (like multi-channel notifications).
             webUi.Checked += (s, e) =>
             {
@@ -118,16 +128,21 @@ namespace WindowsGSM.Functions.WebApi
                 }
                 if (!int.TryParse(portBox.Text.Trim(), out int port) || port < 1 || port > 65535)
                 {
-                    status.Foreground = Warn; status.Text = "Invalid port.";
+                    status.Foreground = Warn; status.Text = "Invalid API port.";
                     return;
                 }
-                var c = new WebApiConfig { Enabled = enable.IsChecked == true, WebUiEnabled = webUi.IsChecked == true, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), Token = tokenBox.Text.Trim() };
+                if (!int.TryParse(webPortBox.Text.Trim(), out int webPort) || webPort < 1 || webPort > 65535)
+                {
+                    status.Foreground = Warn; status.Text = "Invalid portal port.";
+                    return;
+                }
+                var c = new WebApiConfig { Enabled = enable.IsChecked == true, WebUiEnabled = webUi.IsChecked == true, CookieSecure = cookieSecure.IsChecked == true, Port = port, BindAddress = string.IsNullOrWhiteSpace(ipBox.Text) ? "127.0.0.1" : ipBox.Text.Trim(), WebUiPort = webPort, WebUiBindAddress = string.IsNullOrWhiteSpace(webIpBox.Text) ? "127.0.0.1" : webIpBox.Text.Trim(), Token = tokenBox.Text.Trim() };
                 c.Save();
                 try { _onSaved?.Invoke(); } catch { }
                 status.Foreground = Accent;
                 status.Text = !c.Enabled ? "✔ API disabled."
-                    : c.WebUiEnabled ? $"✔ Started. Web portal: http://<ip>:{port}/ (sign in with an account)."
-                    : $"✔ API started. Test: GET http://<ip>:{port}/api/servers (header Authorization: Bearer <token>).";
+                    : c.WebUiEnabled ? $"✔ Started. Web portal: http://{c.WebUiBindAddress}:{webPort}/ (sign in with an account)."
+                    : $"✔ API started. Test: GET http://{c.BindAddress}:{port}/api/servers (header Authorization: Bearer <token>).";
             };
             close.Click += (s, e) => Close();
             buttons.Children.Add(save);

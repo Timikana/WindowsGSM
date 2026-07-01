@@ -19,7 +19,8 @@ namespace WindowsGSM.Functions.WebApi
     /// </summary>
     public class WebApiServer
     {
-        private HttpListener _listener;
+        private HttpListener _api;      // token API listener (BindAddress:Port)
+        private HttpListener _portal;   // web portal listener (WebUiBindAddress:WebUiPort); == _api when same endpoint
         private string _token;
         private bool _webUi;
         private bool _cookieSecure;
@@ -28,7 +29,7 @@ namespace WindowsGSM.Functions.WebApi
         private readonly Func<string, string, (bool ok, string msg)> _doAction;
 
         public string LastError = string.Empty;
-        public bool IsRunning => _listener != null && _listener.IsListening;
+        public bool IsRunning => (_api != null && _api.IsListening) || (_portal != null && _portal.IsListening);
 
         private sealed class Session { public string User; public DateTime Expiry; }
         private readonly ConcurrentDictionary<string, Session> _sessions = new ConcurrentDictionary<string, Session>();
@@ -53,43 +54,78 @@ namespace WindowsGSM.Functions.WebApi
             // The web portal (auth + roles) is a donator feature: only enabled for a donator/owner.
             _webUi = cfg.WebUiEnabled && Donator.DonatorManager.IsDonator;
             if (cfg.WebUiEnabled && !_webUi) { AppLog.Warn("WebApi", "Web portal skipped: donator-only feature."); }
-            if (string.IsNullOrWhiteSpace(_token) && !_webUi) { LastError = "Token required (the web portal is donator-only)."; _listener = null; return false; }
-            _listener = new HttpListener();
-            string host = string.IsNullOrWhiteSpace(cfg.BindAddress) ? "127.0.0.1" : cfg.BindAddress.Trim();
-            _listener.Prefixes.Add($"http://{host}:{cfg.Port}/");
-            try { _listener.Start(); }
-            catch (Exception e)
+
+            bool haveApi = !string.IsNullOrWhiteSpace(_token);
+            if (!haveApi && !_webUi) { LastError = "Token required (the web portal is donator-only)."; return false; }
+
+            string apiHost = Norm(cfg.BindAddress);
+            string webHost = Norm(cfg.WebUiBindAddress);
+            // The token API and the web portal each listen on their own IP:port. If both are enabled
+            // on the SAME endpoint, a single listener serves both (can't bind the same prefix twice).
+            bool sameEndpoint = haveApi && _webUi && cfg.Port == cfg.WebUiPort && apiHost.Equals(webHost, StringComparison.OrdinalIgnoreCase);
+
+            try
             {
-                bool nonLocal = host != "127.0.0.1" && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
-                LastError = e.Message + (nonLocal ? $" — listening outside localhost: run WGSM as ADMINISTRATOR, or netsh http add urlacl url=http://{host}:{cfg.Port}/ user=Everyone" : "");
-                _listener = null;
+                if (haveApi)
+                {
+                    _api = Listen(apiHost, cfg.Port);
+                    // If they share the endpoint, this listener also serves the portal routes.
+                    BeginGet(_api, isPortal: sameEndpoint);
+                    AppLog.Info("WebApi", $"API listening on http://{apiHost}:{cfg.Port}/{(sameEndpoint ? " (+ portal)" : "")}.");
+                }
+                if (_webUi && !sameEndpoint)
+                {
+                    _portal = Listen(webHost, cfg.WebUiPort);
+                    BeginGet(_portal, isPortal: true);
+                    AppLog.Info("WebApi", $"Web portal listening on http://{webHost}:{cfg.WebUiPort}/.");
+                }
+            }
+            catch (HttpListenerException e)
+            {
+                Stop();
+                LastError = e.Message + " — check the port isn't already in use; listening outside 127.0.0.1 requires WGSM as ADMINISTRATOR (or 'netsh http add urlacl').";
                 return false;
             }
-            BeginGet();
-            AppLog.Info("WebApi", $"Started on http://{host}:{cfg.Port}/ (web={_webUi}).");
+            catch (Exception e) { Stop(); LastError = e.Message; return false; }
             return true;
+        }
+
+        private static string Norm(string host) => string.IsNullOrWhiteSpace(host) ? "127.0.0.1" : host.Trim();
+
+        private static HttpListener Listen(string host, int port)
+        {
+            var l = new HttpListener();
+            l.Prefixes.Add($"http://{host}:{port}/");
+            l.Start();
+            return l;
         }
 
         public void Stop()
         {
-            try { _listener?.Stop(); _listener?.Close(); } catch { }
-            _listener = null;
+            try { _api?.Stop(); _api?.Close(); } catch { }
+            try { if (_portal != null && _portal != _api) { _portal.Stop(); _portal.Close(); } } catch { }
+            _api = null;
+            _portal = null;
             _sessions.Clear();
         }
 
-        private void BeginGet() { try { _listener.BeginGetContext(OnContext, null); } catch { } }
+        private void BeginGet(HttpListener listener, bool isPortal)
+        {
+            try { listener.BeginGetContext(OnContext, (listener, isPortal)); } catch { }
+        }
 
         private void OnContext(IAsyncResult ar)
         {
-            if (_listener == null) { return; }
+            var (listener, isPortal) = ((HttpListener, bool))ar.AsyncState;
+            if (listener == null || !listener.IsListening) { return; }
             HttpListenerContext ctx;
-            try { ctx = _listener.EndGetContext(ar); } catch { return; }
-            BeginGet();
-            try { Handle(ctx); }
+            try { ctx = listener.EndGetContext(ar); } catch { return; }
+            BeginGet(listener, isPortal);
+            try { Handle(ctx, isPortal); }
             catch (Exception e) { AppLog.Warn("WebApi/Handle", e.Message); try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { } }
         }
 
-        private void Handle(HttpListenerContext ctx)
+        private void Handle(HttpListenerContext ctx, bool isPortal)
         {
             var req = ctx.Request;
             var res = ctx.Response;
@@ -100,8 +136,8 @@ namespace WindowsGSM.Functions.WebApi
 
             if (IsBlocked(ip)) { WriteJson(res, 429, "{\"error\":\"too many failed attempts\"}"); return; }
 
-            // ---- Web portal (session cookie) ----
-            if (_webUi)
+            // ---- Web portal (session cookie) — only on the portal listener ----
+            if (_webUi && isPortal)
             {
                 if (path == "/" && method == "GET") { ServePage(res, GetSession(req) != null); return; }
                 if (path == "/login" && method == "POST") { HandleLogin(req, res, ip); return; }
