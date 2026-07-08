@@ -1,0 +1,90 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace WindowsGSM.Functions.Mods
+{
+    /// <summary>
+    /// Downloading Steam Workshop mods via SteamCMD and wiring them into the game config.
+    /// Download = best-effort (anonymous SteamCMD); wiring = writes the list of enabled IDs in the
+    /// profile's file/key (e.g. ARK ActiveMods= in GameUserSettings.ini [ServerSettings]).
+    /// </summary>
+    public static class WorkshopManager
+    {
+        private static string SteamCmdExe() => Path.Combine(Functions.ServerPath.GetBin("steamcmd"), "steamcmd.exe");
+
+        /// <summary>Digits only (anti SteamCMD argument injection).</summary>
+        private static string Digits(string s) => new string((s ?? "").Where(char.IsDigit).ToArray());
+
+        /// <summary>Folder where SteamCMD drops the downloaded Workshop content.</summary>
+        public static string ContentPath(int appId, string id)
+            => Path.Combine(Functions.ServerPath.GetBin("steamcmd"), "steamapps", "workshop", "content", appId.ToString(), Digits(id));
+
+        /// <summary>Downloads a Workshop item via anonymous SteamCMD. Returns (ok, message).</summary>
+        public static async Task<(bool ok, string message)> DownloadAsync(int appId, string id, Action<string> log = null)
+        {
+            string exe = SteamCmdExe();
+            if (!File.Exists(exe)) { return (false, "steamcmd.exe not found (" + exe + ")."); }
+            string sid = Digits(id);
+            if (string.IsNullOrEmpty(sid) || appId <= 0) { return (false, "Invalid ID/AppID."); }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = exe,
+                Arguments = $"+login anonymous +workshop_download_item {appId} {sid} +quit",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                WorkingDirectory = Functions.ServerPath.GetBin("steamcmd")
+            };
+
+            try
+            {
+                var sb = new StringBuilder();
+                using (var p = new Process { StartInfo = psi })
+                {
+                    p.OutputDataReceived += (s, e) => { if (e.Data != null) { sb.AppendLine(e.Data); log?.Invoke(e.Data); } };
+                    p.ErrorDataReceived += (s, e) => { if (e.Data != null) { sb.AppendLine(e.Data); } };
+                    p.Start();
+                    p.BeginOutputReadLine();
+                    p.BeginErrorReadLine();
+                    await Task.Run(() => p.WaitForExit());
+                }
+                string content = ContentPath(appId, sid);
+                bool ok = Directory.Exists(content);
+                Functions.AppLog.Info("Workshop/Download", $"app {appId} item {sid} -> {(ok ? "OK " + content : "failed")}");
+                return ok ? (true, "Downloaded: " + content) : (false, "SteamCMD finished but content missing. See log.");
+            }
+            catch (Exception ex)
+            {
+                Functions.AppLog.Warn("Workshop/Download", ex.Message);
+                return (false, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Writes the list of enabled IDs into the game config (profile.ConfigFileRelative / ConfigKey /
+        /// ConfigSection). Returns the summary. No-op if the profile has no config wiring.
+        /// </summary>
+        public static string ApplyToConfig(string serverFiles, ModProfile profile, IEnumerable<WorkshopEntry> entries)
+        {
+            if (profile == null || string.IsNullOrEmpty(profile.ConfigFileRelative) || string.IsNullOrEmpty(profile.ConfigKey))
+            {
+                return "No config wiring for this game (the server manages mods differently).";
+            }
+            string path = Path.Combine(serverFiles ?? "", profile.ConfigFileRelative);
+            if (!File.Exists(path)) { return "Config file not found: " + path; }
+
+            string value = string.Join(profile.ListSeparator, entries.Where(e => e.Enabled).Select(e => e.Id));
+            var cf = ConfigEditor.ConfigFile.Load(path);
+            cf.SetOrAdd(profile.ConfigSection, profile.ConfigKey, value);
+            cf.Save();
+            return $"{profile.ConfigKey} = {value}  -> written to {Path.GetFileName(path)} (backup .wgsmbak).";
+        }
+    }
+}

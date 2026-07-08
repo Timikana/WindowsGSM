@@ -1,0 +1,21 @@
+.vs
+WindowsGSM/bin/
+WindowsGSM/obj/
+WindowsGSM-Plugin-Development/bin/
+WindowsGSM-Plugin-Development/obj/
+WindowsGSM.sln.DotSettings.user
+# WindowsGSM (local tooling)
+_deploy_stage/
+b.log
+
+# build outputs / junk
+WindowsGSM/publish-net10/
+**/publish-net10/
+*.bak
+build*.log
+*_OLD_wpfui_*
+packages/
+.vs/
+*.user
+*.log
+dist/

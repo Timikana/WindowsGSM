@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Migration .NET Framework 4.7.2 -> .NET 10 (LTS). csproj SDK-style. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>WindowsGSM</RootNamespace>
+    <AssemblyName>WindowsGSM</AssemblyName>
+    <!-- App.xaml (SDK WPF) genere aussi un Main -> on force le point d'entree existant -->
+    <StartupObject>WindowsGSM.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Images\WindowsGSM.ico</ApplicationIcon>
+    <!-- AssemblyInfo.cs already exists -> no auto-generation (otherwise duplicate attributes) -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Tolerate code that assumes the old behavior during the migration -->
+    <NoWarn>$(NoWarn);CS0618;MSB3277;NU1701</NoWarn>
+  </PropertyGroup>
+
+  <!-- WPF resources (the SDK does NOT automatically include <Resource>) -->
+  <ItemGroup>
+    <Resource Include="Images\**\*.png" />
+    <Resource Include="Images\**\*.ico" />
+  </ItemGroup>
+
+  <!-- Default bundled plugins (17, audited). Their .cs MUST NOT be compiled into the app
+       (otherwise duplicate WindowsGSM.Plugins.* types): we exclude them from compilation and
+       copy them as-is to the output. At startup, SeedDefaultPlugins() copies any missing ones into
+       plugins\ -> the existing Roslyn loader compiles them at runtime, like an installed plugin. -->
+  <ItemGroup>
+    <Compile Remove="default_plugins\**\*.cs" />
+    <Content Include="default_plugins\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Firewall COM: handled late-bound (dynamic) in WindowsFirewall.cs, no more COMReference -->
+
+  <!-- Packages: modern versions compatible with .NET 10. The dozens of System.* 4.3.0
+       polyfills from packages.config are REMOVED (built into the .NET 10 runtime). -->
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+    <PackageReference Include="Discord.Net" Version="3.16.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NCrontab.Signed" Version="3.3.3" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="System.Management" Version="9.0.0" />
+    <!-- DPAPI (ProtectedData): at-rest encryption of the Discord bot token. Not in the desktop SDK by default. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
+    <!-- Remplace Microsoft.CodeDom.Providers.DotNetCompilerPlatform (inexistant en .NET 10) -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <!-- Remplace LiveCharts 0.9.7 (abandonne) -->
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc5.4" />
+  </ItemGroup>
+
+</Project>
