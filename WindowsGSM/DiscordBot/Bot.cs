@@ -518,10 +518,14 @@ namespace WindowsGSM.DiscordBot
 						var guild = category.Guild;
 						var servers = Application.Current.Dispatcher.Invoke(
 							() => ((MainWindow)Application.Current.MainWindow).GetServerList().ToList());
+						// Sorted by numeric server id so channels are created (and later kept) in that order.
+						servers = servers.OrderBy(s => int.TryParse(s.Item1, out int n) ? n : int.MaxValue).ToList();
 
 						bool permBlocked = false;
+						int posIndex = -1;
 						foreach ((string id, string state, string name) in servers)
 						{
+							posIndex++;
 							if (permBlocked) { break; } // don't hammer the API/log for every server once denied
 							try
 							{
@@ -533,11 +537,13 @@ namespace WindowsGSM.DiscordBot
 
 								if (chan == null)
 								{
+									int createPos = posIndex;
 									// Needs the "Manage Channels" permission; throws (caught) otherwise.
 									var created = await guild.CreateTextChannelAsync(MakeChannelName(id, name), p =>
 									{
 										p.CategoryId = catId;
 										p.Topic = marker;
+										p.Position = createPos;
 									});
 									_gameChannelMessages[id] = await created.SendMessageAsync(embed: embed, components: comp);
 									continue;
@@ -581,7 +587,13 @@ namespace WindowsGSM.DiscordBot
 								_gameChannelMessages.Remove(id); // retried next cycle
 							}
 						}
-						if (!permBlocked) { _gameChanWarned = false; } // recovered -> allow a fresh warning if it breaks again
+						if (!permBlocked)
+						{
+							_gameChanWarned = false; // recovered -> allow a fresh warning if it breaks again
+							// Keep the channels sorted by server id (only re-orders when actually out of order).
+							try { await SortGameChannels(category, servers); }
+							catch (Exception se) { BotLog($"Game channels sort: {se.Message}"); }
+						}
 					}
 				}
 				catch (Exception e)
@@ -593,6 +605,35 @@ namespace WindowsGSM.DiscordBot
 				if (rate < 10) { rate = 10; }
 				await Task.Delay(rate * 1000);
 			}
+		}
+
+		// Keeps the auto game channels ordered by server id. Calls the Discord API ONLY when the current
+		// relative order differs from the desired one (so it doesn't burn rate limits every cycle).
+		private async Task SortGameChannels(SocketCategoryChannel category, List<(string, string, string)> serversSortedById)
+		{
+			const string marker = "wgsm:server:";
+			var idOrder = serversSortedById.Select(s => s.Item1).ToList();
+
+			var chans = new List<(int order, SocketTextChannel ch)>();
+			foreach (var ch in category.Channels.OfType<SocketTextChannel>())
+			{
+				string topic = ch.Topic ?? string.Empty;
+				int mi = topic.IndexOf(marker, StringComparison.Ordinal);
+				if (mi < 0) { continue; }
+				string sid = topic.Substring(mi + marker.Length).Trim();
+				int ord = idOrder.IndexOf(sid);
+				chans.Add((ord < 0 ? int.MaxValue : ord, ch));
+			}
+			if (chans.Count < 2) { return; }
+
+			var current = chans.OrderBy(c => c.ch.Position).Select(c => c.ch.Id).ToList();
+			var desired = chans.OrderBy(c => c.order).Select(c => c.ch.Id).ToList();
+			if (current.SequenceEqual(desired)) { return; } // already sorted -> no API call
+
+			int basePos = chans.Min(c => c.ch.Position);
+			var reorder = desired.Select((cid, i) => new ReorderChannelProperties(cid, basePos + i));
+			await category.Guild.ReorderChannelsAsync(reorder);
+			BotLog("Auto game channels: reordered by server id.");
 		}
 
 		// A Discord-safe channel name derived from the server id + name.
