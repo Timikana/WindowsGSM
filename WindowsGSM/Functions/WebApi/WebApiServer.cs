@@ -27,6 +27,9 @@ namespace WindowsGSM.Functions.WebApi
         private static readonly string[] AllowedActions = { "start", "stop", "restart", "backup" };
         private readonly Func<string> _getServersJson;
         private readonly Func<string, string, (bool ok, string msg)> _doAction;
+        // Palworld admin bridge: (serverId, action, payloadJson) -> (ok, data). For "players" data is a JSON
+        // array; for the other actions it is a status/error message. Null when not wired.
+        private readonly Func<string, string, string, (bool ok, string data)> _palAdmin;
 
         // /api/servers is polled every 5s by every open dashboard tab; each hit did a UI-thread
         // Dispatcher.Invoke + full JSON rebuild. Cache the result briefly so N concurrent pollers share
@@ -56,10 +59,11 @@ namespace WindowsGSM.Functions.WebApi
 
         private sealed class Principal { public bool ViaToken; public WebUser User; }
 
-        public WebApiServer(Func<string> getServersJson, Func<string, string, (bool, string)> doAction)
+        public WebApiServer(Func<string> getServersJson, Func<string, string, (bool, string)> doAction, Func<string, string, string, (bool, string)> palAdmin = null)
         {
             _getServersJson = getServersJson;
             _doAction = doAction;
+            _palAdmin = palAdmin;
         }
 
         public bool Start()
@@ -211,6 +215,41 @@ namespace WindowsGSM.Functions.WebApi
                 var (ok, msg) = _doAction(id, action);
                 AppLog.Info("WebApi/Audit", $"Action {action} on #{id} by {(prin.ViaToken ? "token" : prin.User?.Username)} ip={ip} -> {(ok ? "OK" : "denied")}");
                 WriteJson(res, ok ? 202 : 400, $"{{\"ok\":{(ok ? "true" : "false")},\"message\":{JsonConvert.ToString(msg ?? string.Empty)}}}");
+                return;
+            }
+
+            // ---- Palworld live admin (REST + RCON) ----
+            if (_palAdmin != null && parts.Length == 4 &&
+                parts[0].Equals("api", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("palworld", StringComparison.OrdinalIgnoreCase))
+            {
+                string id = parts[2]; string sub = parts[3].ToLowerInvariant();
+                if (!IsValidId(id)) { WriteJson(res, 400, "{\"error\":\"invalid request\"}"); return; }
+
+                bool isRead = sub == "players";
+                string[] palPost = { "announce", "kick", "ban", "unban", "save", "shutdown", "rcon" };
+                bool isPost = Array.IndexOf(palPost, sub) >= 0;
+                if (!((isRead && method == "GET") || (isPost && method == "POST"))) { WriteJson(res, 404, "{\"error\":\"not found\"}"); return; }
+
+                // Rights: token = full; otherwise Operator+ AND allowed server; the free-form RCON console is Admin-only.
+                if (!prin.ViaToken)
+                {
+                    if (!prin.User.CanControl || !prin.User.AllowsServer(id)) { WriteJson(res, 403, "{\"error\":\"forbidden\"}"); return; }
+                    if (sub == "rcon" && !prin.User.IsAdmin) { WriteJson(res, 403, "{\"error\":\"admin only\"}"); return; }
+                    if (isPost && !SameOrigin(req)) { AppLog.Warn("WebApi/Audit", $"CSRF denied palworld id={id} sub={sub} ip={ip}"); WriteJson(res, 403, "{\"error\":\"bad origin\"}"); return; }
+                }
+
+                string payload = null;
+                if (isPost)
+                {
+                    if (req.ContentLength64 > MaxLoginBody) { WriteJson(res, 413, "{\"error\":\"payload too large\"}"); return; }
+                    using (var sr = new StreamReader(req.InputStream, req.ContentEncoding ?? Encoding.UTF8)) { payload = sr.ReadToEnd(); }
+                    if (payload != null && payload.Length > MaxLoginBody) { WriteJson(res, 413, "{\"error\":\"payload too large\"}"); return; }
+                }
+
+                var (pok, pdata) = _palAdmin(id, sub, payload);
+                AppLog.Info("WebApi/Audit", $"Palworld {sub} on #{id} by {(prin.ViaToken ? "token" : prin.User?.Username)} ip={ip} -> {(pok ? "OK" : "fail")}");
+                if (isRead) { WriteJson(res, pok ? 200 : 400, pok ? (pdata ?? "[]") : $"{{\"error\":{JsonConvert.ToString(pdata ?? string.Empty)}}}"); }
+                else { WriteJson(res, pok ? 202 : 400, $"{{\"ok\":{(pok ? "true" : "false")},\"message\":{JsonConvert.ToString(pdata ?? string.Empty)}}}"); }
                 return;
             }
 
@@ -408,15 +447,38 @@ th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #2f2f2f;font-size
 th{color:#9a9a9a;font-weight:600}
 .on{color:#6ad06a}.off{color:#9a9a9a}
 button{margin:0 2px;padding:5px 9px;border:0;border-radius:5px;cursor:pointer;font-size:12px;color:#fff}
-.start{background:#2e9e44}.stop{background:#c97a00}.restart{background:#2b8fd0}.backup{background:#555}
-#msg{margin-top:10px;color:#4cc2d6;min-height:18px;font-size:13px}</style></head><body>
+.start{background:#2e9e44}.stop{background:#c97a00}.restart{background:#2b8fd0}.backup{background:#555}.admin{background:#4cc2d6;color:#08272d;font-weight:600}
+#msg{margin-top:10px;color:#4cc2d6;min-height:18px;font-size:13px}
+#palbg{display:none;position:fixed;inset:0;background:#000a;align-items:flex-start;justify-content:center;z-index:9;overflow:auto}
+#pal{background:#222;border:1px solid #383838;border-radius:10px;padding:18px 20px;width:720px;max-width:94vw;margin:32px 0;box-shadow:0 10px 40px #000b}
+#pal h2{color:#4cc2d6;font-size:17px;margin:0}
+.palhead{display:flex;justify-content:space-between;align-items:center}
+#palclose{cursor:pointer;color:#9a9a9a;font-size:18px;padding:0 6px}
+#palinfo{color:#9a9a9a;font-size:12px;margin:4px 0 8px}
+.palrow{display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.palrow input{flex:1;min-width:120px;padding:8px;border:1px solid #3a3a3a;border-radius:6px;background:#1b1b1b;color:#eaeaea}
+#palb td{font-size:13px}
+#palout{background:#151515;border:1px solid #333;border-radius:6px;color:#cfcfcf;font-family:Consolas,monospace;font-size:12px;height:120px;overflow:auto;white-space:pre;margin-top:10px;padding:8px}
+#palm{color:#4cc2d6;font-size:13px;min-height:18px;margin-top:8px}</style></head><body>
 <h1>WindowsGSM</h1><a class='logout' href='/logout'>Sign out</a>
 <div id='msg'></div><table><thead><tr><th>ID</th><th>Name</th><th>Game</th><th>Status</th><th>Players</th><th>Actions</th></tr></thead><tbody id='b'></tbody></table>
+<div id='palbg'><div id='pal'>
+ <div class='palhead'><h2 id='palt'>Palworld</h2><span id='palclose'>&#10005;</span></div>
+ <div id='palinfo'></div>
+ <table><thead><tr><th>Player</th><th>Lv</th><th>Ping</th><th>SteamID</th><th></th></tr></thead><tbody id='palb'></tbody></table>
+ <div class='palrow'><input id='palann' placeholder='Broadcast message to all players…'><button id='palannb' class='start'>Announce</button></div>
+ <div class='palrow'><button id='palsave' class='backup'>Save world</button>
+  <input id='palsec' type='number' value='30' style='flex:0 0 70px;min-width:60px'><input id='palmsg' placeholder='Shutdown notice…'><button id='palsd' class='stop'>Shutdown</button></div>
+ <div class='palrow'><input id='palcmd' placeholder='RCON command (admin only): ShowPlayers, Broadcast msg, Save…'><button id='palsend' class='restart'>Send</button></div>
+ <pre id='palout'></pre><div id='palm'></div>
+ <div class='palrow' style='justify-content:flex-end'><button id='palrefresh' class='backup'>Refresh</button></div>
+</div></div>
 <script>
+function E(id){return document.getElementById(id);}
 async function load(){
  try{
   var r=await fetch('/api/servers',{credentials:'same-origin'});
-  var a=await r.json();var b=document.getElementById('b');b.innerHTML='';
+  var a=await r.json();var b=E('b');b.innerHTML='';
   a.forEach(function(s){
    var on=(s.status||'').toLowerCase().indexOf('start')>=0;
    var tr=document.createElement('tr');
@@ -427,19 +489,70 @@ async function load(){
    [['start','Start'],['stop','Stop'],['restart','Restart'],['backup','Backup']].forEach(function(x){
     var btn=document.createElement('button');btn.textContent=x[1];btn.className=x[0];
     btn.addEventListener('click',function(){act(s.id,x[0]);});ac.appendChild(btn);});
+   if((s.game||'').toLowerCase().indexOf('palworld')===0){
+    var ab=document.createElement('button');ab.textContent='Admin';ab.className='admin';
+    ab.addEventListener('click',(function(id,name){return function(){palOpen(id,name);};})(s.id,s.name));ac.appendChild(ab);}
    tr.appendChild(ac);b.appendChild(tr);
   });
- }catch(e){document.getElementById('msg').textContent='Load error.';}
+ }catch(e){E('msg').textContent='Load error.';}
 }
 async function act(id,a){
- document.getElementById('msg').textContent='...';
+ E('msg').textContent='...';
  try{
   var r=await fetch('/api/servers/'+id+'/'+a,{method:'POST',credentials:'same-origin'});
   var j=await r.json();
-  document.getElementById('msg').textContent=(r.status==202?'OK: ':'Denied: ')+(j.message||j.error||r.status);
+  E('msg').textContent=(r.status==202?'OK: ':'Denied: ')+(j.message||j.error||r.status);
   setTimeout(load,1500);
- }catch(e){document.getElementById('msg').textContent='Error.';}
+ }catch(e){E('msg').textContent='Error.';}
 }
+var palId=null;
+function palOpen(id,name){palId=id;E('palt').textContent='Palworld — '+(name||'');E('palout').textContent='';E('palm').textContent='';E('palbg').style.display='flex';palLoad();}
+function palClose(){E('palbg').style.display='none';palId=null;}
+async function palLoad(){
+ if(palId==null)return;var m=E('palm');m.textContent='Loading…';
+ try{
+  var r=await fetch('/api/palworld/'+palId+'/players',{credentials:'same-origin'});
+  var b=E('palb');b.innerHTML='';
+  if(!r.ok){var j=await r.json();E('palinfo').textContent='';m.textContent=j.error||('HTTP '+r.status);return;}
+  var a=await r.json();E('palinfo').textContent=a.length+' player(s) connected';
+  a.forEach(function(p){
+   var tr=document.createElement('tr');
+   [p.Name,p.Level,p.Ping,p.SteamId].forEach(function(v){var td=document.createElement('td');td.textContent=(v==null?'':v);tr.appendChild(td);});
+   var td=document.createElement('td');
+   var kb=document.createElement('button');kb.textContent='Kick';kb.className='stop';
+   kb.addEventListener('click',(function(u){return function(){palPost('kick',{userid:u});};})(p.UserId));
+   var bb=document.createElement('button');bb.textContent='Ban';bb.className='restart';bb.style.background='#c0392b';
+   bb.addEventListener('click',(function(u){return function(){if(confirm('Ban this player?'))palPost('ban',{userid:u});};})(p.UserId));
+   td.appendChild(kb);td.appendChild(bb);tr.appendChild(td);b.appendChild(tr);
+  });
+  m.textContent='';
+ }catch(e){m.textContent='Load error.';}
+}
+async function palPost(sub,body){
+ if(palId==null)return;var m=E('palm');m.textContent='...';
+ try{
+  var r=await fetch('/api/palworld/'+palId+'/'+sub,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+  var j=await r.json();
+  m.textContent=(r.status==202?'OK: ':'Error: ')+(j.message||j.error||r.status);
+  if(sub==='kick'||sub==='ban')setTimeout(palLoad,800);
+  return {status:r.status,j:j};
+ }catch(e){m.textContent='Error.';}
+}
+E('palclose').addEventListener('click',palClose);
+E('palrefresh').addEventListener('click',palLoad);
+E('palbg').addEventListener('click',function(e){if(e.target===this)palClose();});
+E('palannb').addEventListener('click',function(){var v=E('palann').value.trim();if(v)palPost('announce',{message:v}).then(function(){E('palann').value='';});});
+E('palsave').addEventListener('click',function(){palPost('save',{});});
+E('palsd').addEventListener('click',function(){var s=parseInt(E('palsec').value)||30;if(confirm('Shut down in '+s+'s?'))palPost('shutdown',{waittime:String(s),message:E('palmsg').value});});
+E('palsend').addEventListener('click',async function(){
+ var cmd=E('palcmd').value.trim();if(!cmd||palId==null)return;var out=E('palout');
+ try{
+  var r=await fetch('/api/palworld/'+palId+'/rcon',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})});
+  var j=await r.json();
+  out.textContent+='> '+cmd+'\n'+(r.status==202?(j.message||''):(j.error||j.message||('HTTP '+r.status)))+'\n';
+  out.scrollTop=out.scrollHeight;if(r.status==202)E('palcmd').value='';
+ }catch(e){out.textContent+='> '+cmd+'\n(error)\n';}
+});
 load();setInterval(load,5000);
 </script></body></html>";
         }

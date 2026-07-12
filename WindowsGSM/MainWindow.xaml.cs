@@ -1610,7 +1610,8 @@ namespace WindowsGSM
                 {
                     _webApi = new Functions.WebApi.WebApiServer(
                         () => Dispatcher.Invoke(() => Api_GetServersJson()),
-                        (id, action) => Dispatcher.Invoke(() => Api_DoAction(id, action)));
+                        (id, action) => Dispatcher.Invoke(() => Api_DoAction(id, action)),
+                        (id, action, payload) => Api_PalworldAdmin(id, action, payload)); // pure network I/O -> off the UI thread
                 }
                 _webApi.Stop();
                 if (Functions.WebApi.WebApiConfig.Load().Enabled)
@@ -1646,6 +1647,82 @@ namespace WindowsGSM
                 case "backup": _ = GameServer_Backup(s, " | API"); return (true, "backup requested");
                 default: return (false, $"unknown action: {action}");
             }
+        }
+
+        private static string JField(string json, string key)
+        {
+            try { return string.IsNullOrEmpty(json) ? null : Newtonsoft.Json.Linq.JObject.Parse(json).Value<string>(key); }
+            catch { return null; }
+        }
+
+        /// <summary>Palworld live admin for the web portal (REST + RCON). Runs on the listener thread
+        /// (pure network I/O — never touches the UI). Returns (ok, data): a JSON array for "players",
+        /// otherwise a status/error message. Host is loopback (portal is co-located with the server).</summary>
+        public (bool ok, string data) Api_PalworldAdmin(string id, string action, string payload)
+        {
+            var (enabled, restPort, pwd) = ReadPalworldRest(id);
+            if (!enabled || restPort <= 0 || string.IsNullOrEmpty(pwd)) { return (false, "Palworld REST API not enabled for this server"); }
+            var api = new Functions.Palworld.PalworldAdmin("127.0.0.1", restPort, pwd);
+            try
+            {
+                switch (action)
+                {
+                    case "players":
+                    {
+                        var (ok, players, err) = api.GetPlayersAsync().GetAwaiter().GetResult();
+                        return ok ? (true, Newtonsoft.Json.JsonConvert.SerializeObject(players)) : (false, err);
+                    }
+                    case "announce":
+                    {
+                        var (ok, err) = api.AnnounceAsync(JField(payload, "message")).GetAwaiter().GetResult();
+                        return (ok, ok ? "announced" : err);
+                    }
+                    case "kick":
+                    case "ban":
+                    {
+                        string uid = JField(payload, "userid");
+                        if (string.IsNullOrEmpty(uid)) { return (false, "userid required"); }
+                        var (ok, err) = (action == "ban"
+                            ? api.BanAsync(uid, "Banned by an administrator.")
+                            : api.KickAsync(uid, "Kicked by an administrator.")).GetAwaiter().GetResult();
+                        return (ok, ok ? action + " ok" : err);
+                    }
+                    case "unban":
+                    {
+                        var (ok, err) = api.UnbanAsync(JField(payload, "userid")).GetAwaiter().GetResult();
+                        return (ok, ok ? "unbanned" : err);
+                    }
+                    case "save":
+                    {
+                        var (ok, err) = api.SaveAsync().GetAwaiter().GetResult();
+                        return (ok, ok ? "saved" : err);
+                    }
+                    case "shutdown":
+                    {
+                        if (!int.TryParse(JField(payload, "waittime"), out int wait) || wait <= 0) { wait = 30; }
+                        string msg = JField(payload, "message");
+                        if (string.IsNullOrEmpty(msg)) { msg = "Server shutting down."; }
+                        var (ok, err) = api.ShutdownAsync(wait, msg).GetAwaiter().GetResult();
+                        return (ok, ok ? "shutdown scheduled" : err);
+                    }
+                    case "rcon":
+                    {
+                        int rconPort = ReadPalworldRconPort(id);
+                        if (rconPort <= 0) { return (false, "RCON not enabled"); }
+                        string cmd = JField(payload, "command");
+                        if (string.IsNullOrEmpty(cmd)) { return (false, "command required"); }
+                        using (var rc = new Functions.Palworld.RconClient("127.0.0.1", rconPort))
+                        {
+                            var (cok, cerr) = rc.ConnectAsync(pwd).GetAwaiter().GetResult();
+                            if (!cok) { return (false, cerr); }
+                            var (eok, text) = rc.ExecuteAsync(cmd).GetAwaiter().GetResult();
+                            return (eok, text);
+                        }
+                    }
+                    default: return (false, "unknown action");
+                }
+            }
+            catch (Exception ex) { return (false, ex.Message); }
         }
 
         // Custom window dragging (works around the MahApps get_CriticalHandle bug on .NET).
