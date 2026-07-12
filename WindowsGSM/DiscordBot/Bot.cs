@@ -544,7 +544,7 @@ namespace WindowsGSM.DiscordBot
 								{
 									int createPos = posIndex;
 									// Needs the "Manage Channels" permission; throws (caught) otherwise.
-									var created = await guild.CreateTextChannelAsync(MakeChannelName(id, name), p =>
+									var created = await guild.CreateTextChannelAsync(EmojiName(on, id, name), p =>
 									{
 										p.CategoryId = catId;
 										p.Topic = marker;
@@ -606,12 +606,11 @@ namespace WindowsGSM.DiscordBot
 									bool eon = estate == "Started";
 									if (_gameChanLastState.TryGetValue(eid, out var eprev) && eprev != estate) { string ev = StatusEvent(estate); if (ev != null) { try { await ech.SendMessageAsync(ev); } catch { } } }
 									_gameChanLastState[eid] = estate;
-									// Stable channel name (status is shown in the embed/color, NOT the name — renaming for
-									// status hammers Discord's rename rate limit). Only rename to fix a wrong/archived name,
-									// at most once per 15 min per channel (cooldown) so a throttled rename can't loop.
+									// 🟢/⚫ status prefix in the name. It only changes on a real on/off flip (rare), and a
+									// 15-min per-channel cooldown means a throttled rename can never loop. Also un-archives.
 									try
 									{
-										string nn = MakeChannelName(eid, ename);
+										string nn = EmojiName(eon, eid, ename); // 🟢/⚫ prefix in the channel name (changes only on on/off flip)
 										if (ech.Name != nn && (!_chanRenameAt.TryGetValue(ech.Id, out var last) || (DateTime.UtcNow - last).TotalMinutes >= 15))
 										{
 											_chanRenameAt[ech.Id] = DateTime.UtcNow;
