@@ -23,6 +23,8 @@ namespace WindowsGSM.DiscordBot
 		private readonly Dictionary<ulong, string> _adminPanelSelection = new Dictionary<ulong, string>();
 		// Auto game channels: server id -> its live status message (one channel per server under the configured category).
 		private readonly Dictionary<string, IUserMessage> _gameChannelMessages = new Dictionary<string, IUserMessage>();
+		private readonly Dictionary<string, string> _gameChanLastState = new Dictionary<string, string>(); // event feed: last status per server
+		private readonly Dictionary<string, bool> _gameChanLastOn = new Dictionary<string, bool>();          // name emoji: last on/off per server
 		private bool _gameChanWarned; // throttles the "missing permission" log to once per failure episode
 		private CancellationTokenSource _cancellationTokenSource;
 		private int _loopsStarted; // 0/1 guard so the Ready background loops start only once per connection lifetime
@@ -529,23 +531,26 @@ namespace WindowsGSM.DiscordBot
 							if (permBlocked) { break; } // don't hammer the API/log for every server once denied
 							try
 							{
-								string marker = $"wgsm:server:{id}";
+								string marker = $"wgsm:server:{id}"; bool on = state == "Started";
 								var chan = category.Channels.OfType<SocketTextChannel>()
 									.FirstOrDefault(c => (c.Topic ?? string.Empty).Contains(marker));
 
-								var (embed, comp) = await BuildPanelMessage(id);
+								var (embed, comp) = await BuildGameChannel(id);
 
 								if (chan == null)
 								{
 									int createPos = posIndex;
 									// Needs the "Manage Channels" permission; throws (caught) otherwise.
-									var created = await guild.CreateTextChannelAsync(MakeChannelName(id, name), p =>
+									var created = await guild.CreateTextChannelAsync(EmojiName(on, id, name), p =>
 									{
 										p.CategoryId = catId;
 										p.Topic = marker;
 										p.Position = createPos;
 									});
+									try { await created.AddPermissionOverwriteAsync(guild.EveryoneRole, new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Deny, addReactions: PermValue.Deny)); } catch { }
 									_gameChannelMessages[id] = await created.SendMessageAsync(embed: embed, components: comp);
+									_gameChanLastState[id] = state;
+									_gameChanLastOn[id] = on;
 									continue;
 								}
 
@@ -591,7 +596,17 @@ namespace WindowsGSM.DiscordBot
 						{
 							_gameChanWarned = false; // recovered -> allow a fresh warning if it breaks again
 							// Keep the channels sorted by server id (only re-orders when actually out of order).
-							try { await SortGameChannels(category, servers); }
+							foreach ((string eid, string estate, string ename) in servers)
+								{
+									var ech = category.Channels.OfType<SocketTextChannel>().FirstOrDefault(c => (c.Topic ?? string.Empty).Contains($"wgsm:server:{eid}"));
+									if (ech == null) { continue; }
+									bool eon = estate == "Started";
+									if (_gameChanLastState.TryGetValue(eid, out var eprev) && eprev != estate) { string ev = StatusEvent(estate); if (ev != null) { try { await ech.SendMessageAsync(ev); } catch { } } }
+									_gameChanLastState[eid] = estate;
+									if (!_gameChanLastOn.TryGetValue(eid, out var elast) || elast != eon) { try { string nn = EmojiName(eon, eid, ename); if (ech.Name != nn) { await ech.ModifyAsync(c => c.Name = nn); } } catch { } _gameChanLastOn[eid] = eon; }
+								}
+								try { await ArchiveRemovedGameChannels(category, servers); } catch (Exception ae) { BotLog($"Game channels archive: {ae.Message}"); }
+								try { await SortGameChannels(category, servers); }
 							catch (Exception se) { BotLog($"Game channels sort: {se.Message}"); }
 						}
 					}
@@ -646,6 +661,83 @@ namespace WindowsGSM.DiscordBot
 			if (slug.Length > 80) { slug = slug.Substring(0, 80); }
 			string n = ($"{id}-{slug}").Trim('-');
 			return string.IsNullOrEmpty(n) ? $"server-{id}" : n;
+		}
+
+		private static string EmojiName(bool on, string id, string name) => (on ? "🟢-" : "⚫-") + MakeChannelName(id, name);
+
+		private static string StatusEvent(string status)
+		{
+			switch (status)
+			{
+				case "Started": return Loc.T("Bot.EvtStarted");
+				case "Stopped": return Loc.T("Bot.EvtStopped");
+				case "Restarted":
+				case "Restarting": return Loc.T("Bot.EvtRestarting");
+				case "Updated":
+				case "Updating": return Loc.T("Bot.EvtUpdating");
+				case "Backuped":
+				case "Backuping": return Loc.T("Bot.EvtBackuping");
+				case "Crashed": return Loc.T("Bot.EvtCrashed");
+				default: return null;
+			}
+		}
+
+		// A server removed from WindowsGSM: rename its channel (once) instead of deleting it.
+		private async Task ArchiveRemovedGameChannels(SocketCategoryChannel category, List<(string, string, string)> servers)
+		{
+			const string marker = "wgsm:server:";
+			var live = new HashSet<string>(servers.Select(s => s.Item1));
+			foreach (var ch in category.Channels.OfType<SocketTextChannel>())
+			{
+				string topic = ch.Topic ?? string.Empty;
+				int mi = topic.IndexOf(marker, StringComparison.Ordinal);
+				if (mi < 0) { continue; }
+				string sid = topic.Substring(mi + marker.Length).Trim();
+				if (live.Contains(sid) || ch.Name.StartsWith("archived-", StringComparison.OrdinalIgnoreCase)) { continue; }
+				try { await ch.ModifyAsync(c => c.Name = "archived-" + ch.Name); await ch.SendMessageAsync(Loc.T("Bot.EvtRemoved")); } catch { }
+			}
+		}
+
+		// Rich per-server status embed + control buttons for a game channel.
+		private async Task<(Embed, MessageComponent)> BuildGameChannel(string serverId)
+		{
+			var snap = Application.Current.Dispatcher.Invoke(
+				() => ((MainWindow)Application.Current.MainWindow).GetServerSnapshot(serverId));
+			bool started = snap.status == "Started";
+
+			string playerList = string.Empty;
+			if (started)
+			{
+				try
+				{
+					var names = await Task.Run(() => ((MainWindow)Application.Current.MainWindow).GetPalworldPlayerNames(serverId));
+					if (names != null && names.Count > 0) { playerList = string.Join(", ", names.Take(40)); }
+				}
+				catch { }
+			}
+
+			var embed = new EmbedBuilder()
+				.WithTitle($"🎮 #{serverId} {snap.name}")
+				.WithColor(started ? Color.Green : Color.LightGrey)
+				.WithFooter(Loc.T("Bot.ControlFooter", MainWindow.WGSM_VERSION))
+				.WithCurrentTimestamp();
+			embed.AddField(Loc.T("Bot.FieldStatus"), (started ? "🟢 " : "⚫ ") + snap.status, true);
+			embed.AddField(Loc.T("Bot.GcPlayers"), string.IsNullOrWhiteSpace(snap.players) ? "—" : snap.players, true);
+			if (!string.IsNullOrWhiteSpace(snap.map)) { embed.AddField(Loc.T("Bot.GcMap"), snap.map, true); }
+			if (started && !string.IsNullOrWhiteSpace(snap.uptime)) { embed.AddField(Loc.T("Bot.GcUptime"), snap.uptime, true); }
+			if (started && !string.IsNullOrWhiteSpace(snap.cpu)) { embed.AddField("CPU", snap.cpu, true); }
+			if (started && !string.IsNullOrWhiteSpace(snap.ram)) { embed.AddField("RAM", snap.ram, true); }
+			if (!string.IsNullOrWhiteSpace(snap.conn)) { embed.AddField(Loc.T("Bot.GcConnect"), $"`{snap.conn}`", false); }
+			if (!string.IsNullOrEmpty(playerList)) { embed.AddField(Loc.T("Bot.GcPlayerList"), playerList.Length > 1000 ? playerList.Substring(0, 1000) + "…" : playerList, false); }
+
+			var cb = new ComponentBuilder()
+				.WithButton(Loc.T("Bot.BtnStart"), $"wgsm:start:{serverId}", ButtonStyle.Success)
+				.WithButton(Loc.T("Bot.BtnStop"), $"wgsm:stop:{serverId}", ButtonStyle.Danger)
+				.WithButton(Loc.T("Bot.BtnRestart"), $"wgsm:restart:{serverId}", ButtonStyle.Primary)
+				.WithButton(Loc.T("Bot.BtnBackup"), $"wgsm:backup:{serverId}", ButtonStyle.Secondary)
+				.WithButton(Loc.T("Bot.BtnUpdate"), $"wgsm:update:{serverId}", ButtonStyle.Secondary)
+				.WithButton(Loc.T("Bot.GcBtnPlayers"), $"wgsmgc:players:{serverId}", ButtonStyle.Secondary, row: 1);
+			return (embed.Build(), cb.Build());
 		}
 
 		// Builds the admin panel for a channel: embed (selected server) + dropdown menu + buttons.
@@ -914,6 +1006,24 @@ namespace WindowsGSM.DiscordBot
 		{
 			try
 			{
+				// Game-channel "Players" button: ephemeral player list (names for Palworld, else the count).
+				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsmgc:players:"))
+				{
+					try
+					{
+						string sid = comp.Data.CustomId.Substring("wgsmgc:players:".Length);
+						await comp.DeferAsync(ephemeral: true);
+						var names = await Task.Run(() => ((MainWindow)Application.Current.MainWindow).GetPalworldPlayerNames(sid));
+						string body;
+						if (names != null && names.Count > 0) { body = "👥 " + string.Join(", ", names); }
+						else { string pc = Application.Current.Dispatcher.Invoke(() => ((MainWindow)Application.Current.MainWindow).GetServerPlayers(sid)); body = Loc.T("Bot.GcPlayersOnly", string.IsNullOrEmpty(pc) ? "—" : pc); }
+						if (body.Length > 1900) { body = body.Substring(0, 1900) + "…"; }
+						await comp.FollowupAsync(body, ephemeral: true);
+					}
+					catch (Exception ex) { try { await comp.FollowupAsync(Loc.T("Bot.Error", ex.Message), ephemeral: true); } catch { } }
+					return;
+				}
+
 				string[] parts = (comp.Data.CustomId ?? string.Empty).Split(':');
 				if (parts.Length != 3 || (parts[0] != "wgsm" && parts[0] != "wgsmadm")) { return; }
 				bool isAdminPanel = parts[0] == "wgsmadm";

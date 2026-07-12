@@ -5554,6 +5554,32 @@ namespace WindowsGSM
 
         public string GetServerGame(string serverId) => GetServerTableById(serverId)?.Game ?? string.Empty;
 
+        /// <summary>One-shot rich snapshot of a server for the Discord game-channel embed (UI thread).</summary>
+        public (bool exists, string name, string game, string status, string players, string map, string uptime, string cpu, string ram, string conn) GetServerSnapshot(string serverId)
+        {
+            var s = GetServerTableById(serverId);
+            if (s == null) { return (false, $"#{serverId}", string.Empty, "?", "-", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty); }
+            return (true, s.Name, s.Game, GetServerStatus(serverId).ToString(), s.Players, s.Defaultmap, s.Uptime, s.Cpu, s.Ram, GetServerConnectInfo(serverId));
+        }
+
+        /// <summary>Connected player NAMES for a Palworld server (via its REST API), best-effort. Empty otherwise.
+        /// Network I/O — safe to call off the UI thread (e.g. from the Discord bot).</summary>
+        public System.Collections.Generic.List<string> GetPalworldPlayerNames(string serverId)
+        {
+            var names = new System.Collections.Generic.List<string>();
+            try
+            {
+                if (!GetServerGame(serverId).StartsWith("Palworld", StringComparison.OrdinalIgnoreCase)) { return names; }
+                var (enabled, restPort, pwd) = ReadPalworldRest(serverId);
+                if (!enabled || restPort <= 0 || string.IsNullOrEmpty(pwd)) { return names; }
+                var api = new Functions.Palworld.PalworldAdmin("127.0.0.1", restPort, pwd);
+                var (ok, players, _) = api.GetPlayersAsync().GetAwaiter().GetResult();
+                if (ok && players != null) { foreach (var p in players) { names.Add(p.Name); } }
+            }
+            catch { }
+            return names;
+        }
+
         // Last lines of a server's console (for the Discord console/log command).
         public string GetServerConsoleTail(string serverId, int lines)
         {

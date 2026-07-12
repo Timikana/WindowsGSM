@@ -730,6 +730,21 @@ namespace WindowsGSM.Functions.Localization
             E("Bot.NoPermOrMissingId", "You don't have permission to access, or missing server id.", "Tu n'as pas la permission d'accès, ou l'ID du serveur est manquant.", "No tienes permiso de acceso, o falta el ID del servidor.", "Du hast keine Zugriffsberechtigung, oder die Server-ID fehlt.");
             E("Bot.FieldId", "ID", "ID", "ID", "ID");
             E("Bot.FieldStatus", "Status", "Statut", "Estado", "Status");
+            // Auto game channels
+            E("Bot.GcPlayers", "Players", "Joueurs", "Jugadores", "Spieler");
+            E("Bot.GcMap", "Map", "Carte", "Mapa", "Karte");
+            E("Bot.GcUptime", "Uptime", "Temps en ligne", "Tiempo activo", "Laufzeit");
+            E("Bot.GcConnect", "Connect", "Connexion", "Conexión", "Verbindung");
+            E("Bot.GcPlayerList", "Player list", "Liste des joueurs", "Lista de jugadores", "Spielerliste");
+            E("Bot.GcBtnPlayers", "Players", "Joueurs", "Jugadores", "Spieler");
+            E("Bot.GcPlayersOnly", "Players online: {0}", "Joueurs en ligne : {0}", "Jugadores en línea: {0}", "Spieler online: {0}");
+            E("Bot.EvtStarted", "🟢 **Server started.**", "🟢 **Serveur démarré.**", "🟢 **Servidor iniciado.**", "🟢 **Server gestartet.**");
+            E("Bot.EvtStopped", "⚫ **Server stopped.**", "⚫ **Serveur arrêté.**", "⚫ **Servidor detenido.**", "⚫ **Server gestoppt.**");
+            E("Bot.EvtRestarting", "🔄 **Server restarting.**", "🔄 **Redémarrage du serveur.**", "🔄 **Reiniciando servidor.**", "🔄 **Server startet neu.**");
+            E("Bot.EvtUpdating", "⬇️ **Server updating.**", "⬇️ **Mise à jour du serveur.**", "⬇️ **Actualizando servidor.**", "⬇️ **Server wird aktualisiert.**");
+            E("Bot.EvtBackuping", "💾 **Backup in progress.**", "💾 **Sauvegarde en cours.**", "💾 **Copia de seguridad en curso.**", "💾 **Backup läuft.**");
+            E("Bot.EvtCrashed", "💥 **Server crashed.**", "💥 **Le serveur a planté.**", "💥 **El servidor se bloqueó.**", "💥 **Server abgestürzt.**");
+            E("Bot.EvtRemoved", "🗄️ This server was removed from WindowsGSM. Channel archived.", "🗄️ Ce serveur a été retiré de WindowsGSM. Canal archivé.", "🗄️ Este servidor fue eliminado de WindowsGSM. Canal archivado.", "🗄️ Dieser Server wurde aus WindowsGSM entfernt. Kanal archiviert.");
             E("Bot.FieldServerName", "Server Name", "Nom du serveur", "Nombre del servidor", "Servername");
             E("Bot.StartingServer", "⏳ Starting server #{0}...", "⏳ Démarrage du serveur #{0}...", "⏳ Iniciando el servidor #{0}...", "⏳ Server #{0} wird gestartet...");
             E("Bot.ServerStarted", "Server (ID: {0}) Started.", "Serveur (ID : {0}) démarré.", "Servidor (ID: {0}) iniciado.", "Server (ID: {0}) gestartet.");
