@@ -160,6 +160,19 @@ namespace WindowsGSM.DiscordBot
 			}
 		}
 
+		// ===== Auto game channels: category ID under which the bot creates/updates one channel per server =====
+		public static string GetGameChannelsCategory()
+		{
+			try { return File.ReadAllText(Path.Combine(_botPath, "category.txt")).Trim(); }
+			catch { return string.Empty; }
+		}
+
+		public static void SetGameChannelsCategory(string categoryId)
+		{
+			Directory.CreateDirectory(_botPath);
+			File.WriteAllText(Path.Combine(_botPath, "category.txt"), (categoryId ?? string.Empty).Trim());
+		}
+
 		public static int GetDashboardRefreshRate()
 		{
 			try

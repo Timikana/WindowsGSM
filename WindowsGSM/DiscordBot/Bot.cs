@@ -21,6 +21,8 @@ namespace WindowsGSM.DiscordBot
 		// Interactive administration panel: 1 message per channel + selected server per channel.
 		private readonly Dictionary<ulong, IUserMessage> _adminPanelMessages = new Dictionary<ulong, IUserMessage>();
 		private readonly Dictionary<ulong, string> _adminPanelSelection = new Dictionary<ulong, string>();
+		// Auto game channels: server id -> its live status message (one channel per server under the configured category).
+		private readonly Dictionary<string, IUserMessage> _gameChannelMessages = new Dictionary<string, IUserMessage>();
 		private CancellationTokenSource _cancellationTokenSource;
 		private int _loopsStarted; // 0/1 guard so the Ready background loops start only once per connection lifetime
 		private static WindowsGSM.Functions.SystemMetrics _metrics; // shared; static machine info computed once
@@ -206,6 +208,7 @@ namespace WindowsGSM.DiscordBot
 				StartDiscordPresenceUpdate(),
 				StartDashboardMessageUpdate(),
 				StartAdminPanelUpdate(),
+				StartGameChannelsUpdate(),
 			};
 
 			_cancellationTokenSource = new CancellationTokenSource();
@@ -494,6 +497,96 @@ namespace WindowsGSM.DiscordBot
 				if (rate < 10) { rate = 10; }
 				await Task.Delay(rate * 1000);
 			}
+		}
+
+		// ===== Auto game channels: one channel per server under a configured category =====
+		// The bot creates a channel per server (marker in the channel Topic), and keeps a live status
+		// embed + control buttons in it (reusing BuildPanelMessage + the "wgsm:" button handler).
+		// Never deletes channels (safe). No-op unless a category ID is configured.
+		private async Task StartGameChannelsUpdate()
+		{
+			_gameChannelMessages.Clear();
+			while (_client != null && _client.ConnectionState == ConnectionState.Connected)
+			{
+				try
+				{
+					string catStr = Configs.GetGameChannelsCategory();
+					if (!string.IsNullOrWhiteSpace(catStr) && ulong.TryParse(catStr, out ulong catId)
+						&& _client.GetChannel(catId) is SocketCategoryChannel category)
+					{
+						var guild = category.Guild;
+						var servers = Application.Current.Dispatcher.Invoke(
+							() => ((MainWindow)Application.Current.MainWindow).GetServerList().ToList());
+
+						foreach ((string id, string state, string name) in servers)
+						{
+							try
+							{
+								string marker = $"wgsm:server:{id}";
+								var chan = category.Channels.OfType<SocketTextChannel>()
+									.FirstOrDefault(c => (c.Topic ?? string.Empty).Contains(marker));
+
+								var (embed, comp) = await BuildPanelMessage(id);
+
+								if (chan == null)
+								{
+									// Needs the "Manage Channels" permission; throws (caught) otherwise.
+									var created = await guild.CreateTextChannelAsync(MakeChannelName(id, name), p =>
+									{
+										p.CategoryId = catId;
+										p.Topic = marker;
+									});
+									_gameChannelMessages[id] = await created.SendMessageAsync(embed: embed, components: comp);
+									continue;
+								}
+
+								if (_gameChannelMessages.TryGetValue(id, out var msg) && msg != null)
+								{
+									await msg.ModifyAsync(m => { m.Embed = embed; m.Components = comp; });
+								}
+								else
+								{
+									var adopted = await AdoptOrCleanupBotMessage(chan, embed.Title);
+									if (adopted != null)
+									{
+										await adopted.ModifyAsync(m => { m.Embed = embed; m.Components = comp; });
+										_gameChannelMessages[id] = adopted;
+									}
+									else
+									{
+										_gameChannelMessages[id] = await chan.SendMessageAsync(embed: embed, components: comp);
+									}
+								}
+							}
+							catch (Exception e)
+							{
+								BotLog($"Game channel (server {id}): {e.Message}");
+								_gameChannelMessages.Remove(id); // retried next cycle
+							}
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					BotLog($"Game channels: {e.Message}");
+				}
+
+				int rate = Configs.GetDashboardRefreshRate();
+				if (rate < 10) { rate = 10; }
+				await Task.Delay(rate * 1000);
+			}
+		}
+
+		// A Discord-safe channel name derived from the server id + name.
+		private static string MakeChannelName(string id, string name)
+		{
+			string slug = new string((name ?? string.Empty).ToLowerInvariant()
+				.Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray());
+			while (slug.Contains("--")) { slug = slug.Replace("--", "-"); }
+			slug = slug.Trim('-');
+			if (slug.Length > 80) { slug = slug.Substring(0, 80); }
+			string n = ($"{id}-{slug}").Trim('-');
+			return string.IsNullOrEmpty(n) ? $"server-{id}" : n;
 		}
 
 		// Builds the admin panel for a channel: embed (selected server) + dropdown menu + buttons.
@@ -799,7 +892,9 @@ namespace WindowsGSM.DiscordBot
 
 		public string GetInviteLink()
 		{
-			return (_client == null || _client.CurrentUser == null) ? string.Empty : $"https://discordapp.com/api/oauth2/authorize?client_id={_client.CurrentUser.Id}&permissions=67497024&scope=bot";
+			// 0x10 = Manage Channels (needed for the auto game channels feature). OR is idempotent.
+			const ulong perms = 67497024UL | 0x10UL;
+			return (_client == null || _client.CurrentUser == null) ? string.Empty : $"https://discordapp.com/api/oauth2/authorize?client_id={_client.CurrentUser.Id}&permissions={perms}&scope=bot";
 		}
 
 		public bool IsConnected => _client != null && _client.ConnectionState == ConnectionState.Connected;

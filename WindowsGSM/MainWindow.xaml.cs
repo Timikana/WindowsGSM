@@ -5248,6 +5248,23 @@ namespace WindowsGSM
             }
         }
 
+        private void Button_DiscordBotGameCategoryEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if ((string)button_DiscordBotGameCategoryEdit.Content == "Edit")
+            {
+                button_DiscordBotGameCategoryEdit.Content = "Save";
+                textBox_DiscordBotGameCategory.IsEnabled = true;
+                textBox_DiscordBotGameCategory.Focus();
+                textBox_DiscordBotGameCategory.SelectAll();
+            }
+            else
+            {
+                button_DiscordBotGameCategoryEdit.Content = "Edit";
+                textBox_DiscordBotGameCategory.IsEnabled = false;
+                DiscordBot.Configs.SetGameChannelsCategory(textBox_DiscordBotGameCategory.Text);
+            }
+        }
+
         private void Button_DiscordBotAddID_Click(object sender, RoutedEventArgs e)
         {
             OpenDiscordAdminOverlay(null, "0");
@@ -5716,6 +5733,7 @@ namespace WindowsGSM
                 button_DiscordBotAdminPanelEdit.Content = "Edit";
                 textBox_DiscordBotAdminPanel.IsEnabled = false;
                 textBox_DiscordBotAdminPanel.Text = DiscordBot.Configs.GetAdminPanelChannel();
+                textBox_DiscordBotGameCategory.Text = DiscordBot.Configs.GetGameChannelsCategory();
                 Refresh_DiscordBotAdminList(listBox_DiscordBotAdminList.SelectedIndex);
                 if (listBox_DiscordBotAdminList.Items.Count > 0 && listBox_DiscordBotAdminList.SelectedItem == null)
                     listBox_DiscordBotAdminList.SelectedItem = listBox_DiscordBotAdminList.Items[0];

@@ -544,6 +544,15 @@
                                 <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotAdminPanel" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
                             </DockPanel>
 
+                            <!-- Auto game channels: the bot creates/updates one channel per server under a given category -->
+                            <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Label Content="{loc:Tr MW.Bot.GameCategory}" ToolTip="{loc:Tr MW.Bot.GameCategoryTip}"/>
+                                    <Button x:Name="button_DiscordBotGameCategoryEdit" DockPanel.Dock="Right" Content="{loc:Tr MW.Common.Edit}" Margin="35,0,0,5" HorizontalAlignment="Right" Width="75" Height="23" Click="Button_DiscordBotGameCategoryEdit_Click"/>
+                                </DockPanel>
+                                <TextBox Padding="8,2" VerticalContentAlignment="Center" x:Name="textBox_DiscordBotGameCategory" Height="24" DockPanel.Dock="Top" Text="" IsEnabled="False" FontFamily="Consolas"/>
+                            </DockPanel>
+
                             <DockPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                                 <Label Content="{loc:Tr MW.Bot.Log}"/>
                             </DockPanel>
