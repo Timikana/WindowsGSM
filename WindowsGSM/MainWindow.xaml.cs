@@ -1655,6 +1655,12 @@ namespace WindowsGSM
             catch { return null; }
         }
 
+        /// <summary>Runs a raw RCON command on a Palworld server (for the Discord console button). Off-UI.</summary>
+        public (bool ok, string text) RunPalworldRcon(string serverId, string command)
+        {
+            return Api_PalworldAdmin(serverId, "rcon", Newtonsoft.Json.JsonConvert.SerializeObject(new { command }));
+        }
+
         /// <summary>Palworld live admin for the web portal (REST + RCON). Runs on the listener thread
         /// (pure network I/O — never touches the UI). Returns (ok, data): a JSON array for "players",
         /// otherwise a status/error message. Host is loopback (portal is co-located with the server).</summary>

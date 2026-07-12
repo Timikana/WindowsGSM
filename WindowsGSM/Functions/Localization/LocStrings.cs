@@ -737,6 +737,9 @@ namespace WindowsGSM.Functions.Localization
             E("Bot.GcConnect", "Connect", "Connexion", "Conexión", "Verbindung");
             E("Bot.GcPlayerList", "Player list", "Liste des joueurs", "Lista de jugadores", "Spielerliste");
             E("Bot.GcBtnPlayers", "Players", "Joueurs", "Jugadores", "Spieler");
+            E("Bot.GcBtnConsole", "Console", "Console", "Consola", "Konsole");
+            E("Bot.GcConsoleTitle", "Palworld RCON console", "Console RCON Palworld", "Consola RCON de Palworld", "Palworld-RCON-Konsole");
+            E("Bot.GcConsoleInput", "Command (e.g. ShowPlayers, Broadcast hi)", "Commande (ex. ShowPlayers, Broadcast salut)", "Comando (p. ej. ShowPlayers, Broadcast hola)", "Befehl (z. B. ShowPlayers, Broadcast hallo)");
             E("Bot.GcPlayersOnly", "Players online: {0}", "Joueurs en ligne : {0}", "Jugadores en línea: {0}", "Spieler online: {0}");
             E("Bot.EvtStarted", "🟢 **Server started.**", "🟢 **Serveur démarré.**", "🟢 **Servidor iniciado.**", "🟢 **Server gestartet.**");
             E("Bot.EvtStopped", "⚫ **Server stopped.**", "⚫ **Serveur arrêté.**", "⚫ **Servidor detenido.**", "⚫ **Server gestoppt.**");

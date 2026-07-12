@@ -25,6 +25,7 @@ namespace WindowsGSM.DiscordBot
 		private readonly Dictionary<string, IUserMessage> _gameChannelMessages = new Dictionary<string, IUserMessage>();
 		private readonly Dictionary<string, string> _gameChanLastState = new Dictionary<string, string>(); // event feed: last status per server
 		private readonly Dictionary<string, bool> _gameChanLastOn = new Dictionary<string, bool>();          // name emoji: last on/off per server
+		private readonly Dictionary<string, int> _gameChanMissing = new Dictionary<string, int>();          // archive: consecutive cycles a server has been absent
 		private bool _gameChanWarned; // throttles the "missing permission" log to once per failure episode
 		private CancellationTokenSource _cancellationTokenSource;
 		private int _loopsStarted; // 0/1 guard so the Ready background loops start only once per connection lifetime
@@ -91,6 +92,7 @@ namespace WindowsGSM.DiscordBot
 			_client.SlashCommandExecuted += On_SlashCommandExecuted;
 			_client.ButtonExecuted += On_ButtonExecuted;
 			_client.SelectMenuExecuted += On_SelectMenuExecuted;
+			_client.ModalSubmitted += On_ModalSubmitted;
 
 			try
 			{
@@ -603,7 +605,9 @@ namespace WindowsGSM.DiscordBot
 									bool eon = estate == "Started";
 									if (_gameChanLastState.TryGetValue(eid, out var eprev) && eprev != estate) { string ev = StatusEvent(estate); if (ev != null) { try { await ech.SendMessageAsync(ev); } catch { } } }
 									_gameChanLastState[eid] = estate;
-									if (!_gameChanLastOn.TryGetValue(eid, out var elast) || elast != eon) { try { string nn = EmojiName(eon, eid, ename); if (ech.Name != nn) { await ech.ModifyAsync(c => c.Name = nn); } } catch { } _gameChanLastOn[eid] = eon; }
+									// Rename to the emoji name only when it actually differs (handles on/off flip AND
+									// un-archives a channel whose server came back). Self-throttling -> no rename spam.
+									try { string nn = EmojiName(eon, eid, ename); if (ech.Name != nn) { await ech.ModifyAsync(c => c.Name = nn); } } catch { }
 								}
 								try { await ArchiveRemovedGameChannels(category, servers); } catch (Exception ae) { BotLog($"Game channels archive: {ae.Message}"); }
 								try { await SortGameChannels(category, servers); }
@@ -642,11 +646,13 @@ namespace WindowsGSM.DiscordBot
 			if (chans.Count < 2) { return; }
 
 			var current = chans.OrderBy(c => c.ch.Position).Select(c => c.ch.Id).ToList();
-			var desired = chans.OrderBy(c => c.order).Select(c => c.ch.Id).ToList();
-			if (current.SequenceEqual(desired)) { return; } // already sorted -> no API call
+			var desiredChans = chans.OrderBy(c => c.order).ToList();
+			if (current.SequenceEqual(desiredChans.Select(c => c.ch.Id))) { return; } // already sorted -> no API call
 
-			int basePos = chans.Min(c => c.ch.Position);
-			var reorder = desired.Select((cid, i) => new ReorderChannelProperties(cid, basePos + i));
+			// Permute ONLY within the position slots these channels ALREADY occupy: assign the k-th smallest
+			// existing position to the k-th desired channel. No collision with other channels -> converges in one pass.
+			var slots = chans.Select(c => c.ch.Position).OrderBy(x => x).ToList();
+			var reorder = desiredChans.Select((c, i) => new ReorderChannelProperties(c.ch.Id, slots[i]));
 			await category.Guild.ReorderChannelsAsync(reorder);
 			BotLog("Auto game channels: reordered by server id.");
 		}
@@ -693,7 +699,13 @@ namespace WindowsGSM.DiscordBot
 				int mi = topic.IndexOf(marker, StringComparison.Ordinal);
 				if (mi < 0) { continue; }
 				string sid = topic.Substring(mi + marker.Length).Trim();
-				if (live.Contains(sid) || ch.Name.StartsWith("archived-", StringComparison.OrdinalIgnoreCase)) { continue; }
+				if (live.Contains(sid)) { _gameChanMissing.Remove(sid); continue; } // present -> reset absence counter
+
+				// Absent: only archive after several CONSECUTIVE missing cycles, so a transient incomplete
+				// server list (e.g. while plugins are still compiling at startup) never falsely archives.
+				int miss = _gameChanMissing.TryGetValue(sid, out var m) ? m + 1 : 1;
+				_gameChanMissing[sid] = miss;
+				if (miss < 3 || ch.Name.StartsWith("archived-", StringComparison.OrdinalIgnoreCase)) { continue; }
 				try { await ch.ModifyAsync(c => c.Name = "archived-" + ch.Name); await ch.SendMessageAsync(Loc.T("Bot.EvtRemoved")); } catch { }
 			}
 		}
@@ -737,6 +749,10 @@ namespace WindowsGSM.DiscordBot
 				.WithButton(Loc.T("Bot.BtnBackup"), $"wgsm:backup:{serverId}", ButtonStyle.Secondary)
 				.WithButton(Loc.T("Bot.BtnUpdate"), $"wgsm:update:{serverId}", ButtonStyle.Secondary)
 				.WithButton(Loc.T("Bot.GcBtnPlayers"), $"wgsmgc:players:{serverId}", ButtonStyle.Secondary, row: 1);
+			if (!string.IsNullOrEmpty(snap.game) && snap.game.StartsWith("Palworld", StringComparison.OrdinalIgnoreCase))
+			{
+				cb.WithButton(Loc.T("Bot.GcBtnConsole"), $"wgsmgc:console:{serverId}", ButtonStyle.Secondary, row: 1);
+			}
 			return (embed.Build(), cb.Build());
 		}
 
@@ -1001,11 +1017,48 @@ namespace WindowsGSM.DiscordBot
 			});
 		}
 
+		// RCON console modal submit (customId = "wgsmgcmodal:<serverId>"): runs the command, replies ephemeral.
+		private async Task On_ModalSubmitted(SocketModal modal)
+		{
+			try
+			{
+				string cid = modal.Data.CustomId ?? string.Empty;
+				if (!cid.StartsWith("wgsmgcmodal:")) { return; }
+				string sid = cid.Substring("wgsmgcmodal:".Length);
+				var ids = Configs.GetServerIdsByAdminId(modal.User.Id.ToString());
+				bool full = ids.Contains("0");
+				if (ids.Count == 0 || (!full && !ids.Contains(sid))) { await modal.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+
+				string cmd = modal.Data.Components.FirstOrDefault(c => c.CustomId == "cmd")?.Value ?? string.Empty;
+				await modal.DeferAsync(ephemeral: true);
+				var (ok, text) = await Task.Run(() => ((MainWindow)Application.Current.MainWindow).RunPalworldRcon(sid, cmd));
+				string body = "> " + cmd + "\n" + (ok ? (string.IsNullOrWhiteSpace(text) ? "(ok)" : text) : Loc.T("Bot.Error", text));
+				if (body.Length > 1900) { body = body.Substring(0, 1900) + "…"; }
+				await modal.FollowupAsync(body, ephemeral: true);
+			}
+			catch (Exception e) { try { await modal.RespondAsync(Loc.T("Bot.Error", e.Message), ephemeral: true); } catch { } }
+		}
+
 		// Click on a panel button: customId = "wgsm:<action>:<serverId>".
 		private async Task On_ButtonExecuted(SocketMessageComponent comp)
 		{
 			try
 			{
+				// Game-channel "Console" button (Palworld): opens a modal to type an RCON command. Admin-only.
+				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsmgc:console:"))
+				{
+					string sid = comp.Data.CustomId.Substring("wgsmgc:console:".Length);
+					var cids = Configs.GetServerIdsByAdminId(comp.User.Id.ToString());
+					bool cfull = cids.Contains("0");
+					if (cids.Count == 0 || (!cfull && !cids.Contains(sid))) { await comp.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+					var modal = new ModalBuilder()
+						.WithTitle(Loc.T("Bot.GcConsoleTitle"))
+						.WithCustomId($"wgsmgcmodal:{sid}")
+						.AddTextInput(Loc.T("Bot.GcConsoleInput"), "cmd", placeholder: "ShowPlayers", required: true, maxLength: 200);
+					await comp.RespondWithModalAsync(modal.Build());
+					return;
+				}
+
 				// Game-channel "Players" button: ephemeral player list (names for Palworld, else the count).
 				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsmgc:players:"))
 				{
