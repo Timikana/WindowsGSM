@@ -1462,6 +1462,24 @@ namespace WindowsGSM
             }
         }
 
+        private static readonly System.Text.RegularExpressions.Regex _palRconEnabledRx = new System.Text.RegularExpressions.Regex(@"RCONEnabled=True", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex _palRconPortRx = new System.Text.RegularExpressions.Regex(@"RCONPort=(\d+)", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        // Returns the RCON port if RCON is enabled on this Palworld server, otherwise 0.
+        private int ReadPalworldRconPort(string serverId)
+        {
+            try
+            {
+                string ini = Functions.ServerPath.GetServersServerFiles(serverId, @"Pal\Saved\Config\WindowsServer\PalWorldSettings.ini");
+                if (!System.IO.File.Exists(ini)) { return 0; }
+                string text = System.IO.File.ReadAllText(ini);
+                if (!_palRconEnabledRx.IsMatch(text)) { return 0; }
+                var m = _palRconPortRx.Match(text);
+                return (m.Success && int.TryParse(m.Groups[1].Value, out int p)) ? p : 25575;
+            }
+            catch { return 0; }
+        }
+
         private async void StartConsoleRefresh()
         {
             string lastId = null;
@@ -4419,6 +4437,33 @@ namespace WindowsGSM
                 new Functions.ConfigEditor.ConfigEditorDialog(row.ID, row.Name, row.Game, serverFiles) { Owner = this }.ShowDialog();
             }
             catch (Exception ex) { Functions.AppLog.Warn("ConfigEditor/UI", ex.Message); }
+        }
+
+        private void Tools_PalworldAdmin_Click(object sender, RoutedEventArgs e)
+        {
+            var row = ServerGrid.SelectedItem as ServerTable;
+            if (row == null)
+            {
+                System.Windows.MessageBox.Show(Loc.T("Msg.SelectServerFromList"), Loc.T("PalAdmin.MenuOpen"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (string.IsNullOrEmpty(row.Game) || !row.Game.StartsWith("Palworld", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.MessageBox.Show(Loc.T("PalAdmin.NotEnabled"), Loc.T("PalAdmin.MenuOpen"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var (enabled, restPort, pwd) = ReadPalworldRest(row.ID);
+            if (!enabled || restPort <= 0 || string.IsNullOrEmpty(pwd))
+            {
+                System.Windows.MessageBox.Show(Loc.T("PalAdmin.NotEnabled"), Loc.T("PalAdmin.MenuOpen"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            try
+            {
+                int rconPort = ReadPalworldRconPort(row.ID);
+                new Functions.Palworld.PalworldAdminDialog(row.Name, row.IP, restPort, pwd, rconPort) { Owner = this }.ShowDialog();
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("PalworldAdmin/UI", ex.Message); }
         }
 
         private void Tools_Mods_Click(object sender, RoutedEventArgs e)

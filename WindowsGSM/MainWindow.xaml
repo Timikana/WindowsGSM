@@ -920,6 +920,7 @@
                         <ContextMenu>
                         <MenuItem Header="{loc:Tr MW.Menu.GlobalServerListCheck}" Click="Tools_GlobalServerListCheck_Click"/>
                         <MenuItem Header="{loc:Tr MW.Menu.ApiToken}" Click="Tools_ApiToken_Click"/>
+                        <MenuItem Header="{loc:Tr PalAdmin.MenuOpen}" Click="Tools_PalworldAdmin_Click"/>
                         <MenuItem Header="{loc:Tr MW.Menu.InstallAddons}">
                             <MenuItem Header="AMX Mod X + MetaMod-P" Click="Tool_InstallAMXModXMetamodP_Click">
                                 <MenuItem.Icon>
