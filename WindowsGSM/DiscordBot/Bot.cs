@@ -26,6 +26,7 @@ namespace WindowsGSM.DiscordBot
 		private readonly Dictionary<string, string> _gameChanLastState = new Dictionary<string, string>(); // event feed: last status per server
 		private readonly Dictionary<string, bool> _gameChanLastOn = new Dictionary<string, bool>();          // name emoji: last on/off per server
 		private readonly Dictionary<string, int> _gameChanMissing = new Dictionary<string, int>();          // archive: consecutive cycles a server has been absent
+		private readonly Dictionary<ulong, DateTime> _chanRenameAt = new Dictionary<ulong, DateTime>();     // per-channel rename cooldown (rate-limit safety)
 		private bool _gameChanWarned; // throttles the "missing permission" log to once per failure episode
 		private CancellationTokenSource _cancellationTokenSource;
 		private int _loopsStarted; // 0/1 guard so the Ready background loops start only once per connection lifetime
@@ -535,7 +536,7 @@ namespace WindowsGSM.DiscordBot
 							{
 								string marker = $"wgsm:server:{id}"; bool on = state == "Started";
 								var chan = category.Channels.OfType<SocketTextChannel>()
-									.FirstOrDefault(c => (c.Topic ?? string.Empty).Contains(marker));
+									.FirstOrDefault(c => (c.Topic ?? string.Empty).Trim() == marker);
 
 								var (embed, comp) = await BuildGameChannel(id);
 
@@ -543,7 +544,7 @@ namespace WindowsGSM.DiscordBot
 								{
 									int createPos = posIndex;
 									// Needs the "Manage Channels" permission; throws (caught) otherwise.
-									var created = await guild.CreateTextChannelAsync(EmojiName(on, id, name), p =>
+									var created = await guild.CreateTextChannelAsync(MakeChannelName(id, name), p =>
 									{
 										p.CategoryId = catId;
 										p.Topic = marker;
@@ -600,14 +601,24 @@ namespace WindowsGSM.DiscordBot
 							// Keep the channels sorted by server id (only re-orders when actually out of order).
 							foreach ((string eid, string estate, string ename) in servers)
 								{
-									var ech = category.Channels.OfType<SocketTextChannel>().FirstOrDefault(c => (c.Topic ?? string.Empty).Contains($"wgsm:server:{eid}"));
+									var ech = category.Channels.OfType<SocketTextChannel>().FirstOrDefault(c => (c.Topic ?? string.Empty).Trim() == $"wgsm:server:{eid}");
 									if (ech == null) { continue; }
 									bool eon = estate == "Started";
 									if (_gameChanLastState.TryGetValue(eid, out var eprev) && eprev != estate) { string ev = StatusEvent(estate); if (ev != null) { try { await ech.SendMessageAsync(ev); } catch { } } }
 									_gameChanLastState[eid] = estate;
-									// Rename to the emoji name only when it actually differs (handles on/off flip AND
-									// un-archives a channel whose server came back). Self-throttling -> no rename spam.
-									try { string nn = EmojiName(eon, eid, ename); if (ech.Name != nn) { await ech.ModifyAsync(c => c.Name = nn); } } catch { }
+									// Stable channel name (status is shown in the embed/color, NOT the name — renaming for
+									// status hammers Discord's rename rate limit). Only rename to fix a wrong/archived name,
+									// at most once per 15 min per channel (cooldown) so a throttled rename can't loop.
+									try
+									{
+										string nn = MakeChannelName(eid, ename);
+										if (ech.Name != nn && (!_chanRenameAt.TryGetValue(ech.Id, out var last) || (DateTime.UtcNow - last).TotalMinutes >= 15))
+										{
+											_chanRenameAt[ech.Id] = DateTime.UtcNow;
+											await ech.ModifyAsync(c => c.Name = nn);
+										}
+									}
+									catch { }
 								}
 								try { await ArchiveRemovedGameChannels(category, servers); } catch (Exception ae) { BotLog($"Game channels archive: {ae.Message}"); }
 								try { await SortGameChannels(category, servers); }
