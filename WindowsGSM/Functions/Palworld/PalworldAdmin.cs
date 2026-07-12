@@ -9,16 +9,16 @@ using Newtonsoft.Json.Linq;
 
 namespace WindowsGSM.Functions.Palworld
 {
-    /// <summary>One connected player, as returned by GET /v1/api/players.</summary>
+    /// <summary>One connected player, as returned by GET /v1/api/players. Properties (not fields) so a DataGrid can bind.</summary>
     public sealed class PalPlayer
     {
-        public string Name;
-        public string PlayerId;
-        public string UserId;   // "steam_0110000..." — the id kick/ban expect
-        public string SteamId;
-        public int Ping;
-        public int Level;
-        public string Ip;
+        public string Name { get; set; }
+        public string PlayerId { get; set; }
+        public string UserId { get; set; }   // "steam_0110000..." — the id kick/ban expect
+        public string SteamId { get; set; }  // numeric SteamID64 (derived from UserId when not provided)
+        public int Ping { get; set; }
+        public int Level { get; set; }
+        public string Ip { get; set; }
     }
 
     public sealed class PalInfo
@@ -78,12 +78,18 @@ namespace WindowsGSM.Functions.Palworld
                     {
                         foreach (var p in arr)
                         {
+                            string userId = p.Value<string>("userId") ?? "";
+                            string steamId = p.Value<string>("steamid") ?? p.Value<string>("steamId") ?? "";
+                            if (string.IsNullOrEmpty(steamId) && userId.StartsWith("steam_", StringComparison.OrdinalIgnoreCase))
+                            {
+                                steamId = userId.Substring(6);
+                            }
                             list.Add(new PalPlayer
                             {
                                 Name = p.Value<string>("name") ?? "",
                                 PlayerId = p.Value<string>("playerId") ?? "",
-                                UserId = p.Value<string>("userId") ?? "",
-                                SteamId = p.Value<string>("steamid") ?? p.Value<string>("steamId") ?? "",
+                                UserId = userId,
+                                SteamId = steamId,
                                 Ping = (int)Math.Round(p.Value<double?>("ping") ?? 0),
                                 Level = p.Value<int?>("level") ?? 0,
                                 Ip = p.Value<string>("iP") ?? p.Value<string>("ip") ?? ""
