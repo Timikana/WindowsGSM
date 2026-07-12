@@ -23,6 +23,7 @@ namespace WindowsGSM.DiscordBot
 		private readonly Dictionary<ulong, string> _adminPanelSelection = new Dictionary<ulong, string>();
 		// Auto game channels: server id -> its live status message (one channel per server under the configured category).
 		private readonly Dictionary<string, IUserMessage> _gameChannelMessages = new Dictionary<string, IUserMessage>();
+		private bool _gameChanWarned; // throttles the "missing permission" log to once per failure episode
 		private CancellationTokenSource _cancellationTokenSource;
 		private int _loopsStarted; // 0/1 guard so the Ready background loops start only once per connection lifetime
 		private static WindowsGSM.Functions.SystemMetrics _metrics; // shared; static machine info computed once
@@ -518,8 +519,10 @@ namespace WindowsGSM.DiscordBot
 						var servers = Application.Current.Dispatcher.Invoke(
 							() => ((MainWindow)Application.Current.MainWindow).GetServerList().ToList());
 
+						bool permBlocked = false;
 						foreach ((string id, string state, string name) in servers)
 						{
+							if (permBlocked) { break; } // don't hammer the API/log for every server once denied
 							try
 							{
 								string marker = $"wgsm:server:{id}";
@@ -560,10 +563,25 @@ namespace WindowsGSM.DiscordBot
 							}
 							catch (Exception e)
 							{
-								BotLog($"Game channel (server {id}): {e.Message}");
+								bool isPerm = e.Message.Contains("50013") || e.Message.IndexOf("Missing Permissions", StringComparison.OrdinalIgnoreCase) >= 0;
+								if (isPerm)
+								{
+									// Log ONCE (not per-server, not every cycle) and stop the cycle to avoid API/log spam.
+									if (!_gameChanWarned)
+									{
+										BotLog("Auto game channels: permission denied (50013). The bot needs 'Manage Channels' on that category — re-invite it with the Invite link, or add the permission to the bot's role / category. Skipping until fixed.");
+										_gameChanWarned = true;
+									}
+									permBlocked = true;
+								}
+								else
+								{
+									BotLog($"Game channel (server {id}): {e.Message}");
+								}
 								_gameChannelMessages.Remove(id); // retried next cycle
 							}
 						}
+						if (!permBlocked) { _gameChanWarned = false; } // recovered -> allow a fresh warning if it breaks again
 					}
 				}
 				catch (Exception e)
