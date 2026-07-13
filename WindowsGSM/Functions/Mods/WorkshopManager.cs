@@ -141,8 +141,18 @@ namespace WindowsGSM.Functions.Mods
                     {
                         var j = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(info));
                         string pkg = j.Value<string>("package_name") ?? j.Value<string>("PackageName") ?? j.Value<string>("packageName") ?? j.Value<string>("mod_name");
-                        var rule = j["InstallRule"] as Newtonsoft.Json.Linq.JObject;
-                        bool isServer = rule?.Value<bool?>("IsServer") ?? true; // assume ok when unspecified
+                        // InstallRule may be an object OR an array of rules; the mod is server-usable if any
+                        // rule carries "IsServer": true (assume ok when the field is absent entirely).
+                        bool isServer = true;
+                        var ruleTok = j["InstallRule"];
+                        if (ruleTok is Newtonsoft.Json.Linq.JArray arr)
+                        {
+                            isServer = !arr.Any(x => x["IsServer"] != null) || arr.Any(x => (bool?)x["IsServer"] == true);
+                        }
+                        else if (ruleTok is Newtonsoft.Json.Linq.JObject o && o["IsServer"] != null)
+                        {
+                            isServer = o.Value<bool?>("IsServer") == true;
+                        }
                         if (!isServer) { notServer++; }
                         if (!string.IsNullOrWhiteSpace(pkg)) { pkgs.Add(pkg); }
                         else { noInfo++; }
