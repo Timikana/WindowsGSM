@@ -86,44 +86,44 @@ namespace WindowsGSM.Functions.ConfigEditor
                 RelativePaths = new[] { @"Pal\Saved\Config\WindowsServer\PalWorldSettings.ini" }
             };
             // — Server —
-            s.Fields.Add(new FieldSpec("ServerName", "Server name", FieldKind.Text, "Server"));
-            s.Fields.Add(new FieldSpec("ServerDescription", "Description", FieldKind.Text, "Server"));
-            s.Fields.Add(new FieldSpec("ServerPassword", "Server password", FieldKind.Secret, "Server", "Empty = public server."));
-            s.Fields.Add(new FieldSpec("AdminPassword", "Admin password", FieldKind.Secret, "Server", "Required for RCON/REST."));
-            s.Fields.Add(new FieldSpec("ServerPlayerMaxNum", "Max players", FieldKind.Int, "Server") { Min = 1, Max = 32, Step = 1 });
-            s.Fields.Add(new FieldSpec("PublicPort", "Public port", FieldKind.Int, "Server") { Min = 1, Max = 65535, Step = 1 });
+            s.Fields.Add(new FieldSpec("ServerName", "Server name", FieldKind.Text, "Server", "Name shown in the server list."));
+            s.Fields.Add(new FieldSpec("ServerDescription", "Description", FieldKind.Text, "Server", "Short text shown in the server browser."));
+            s.Fields.Add(new FieldSpec("ServerPassword", "Server password", FieldKind.Secret, "Server", "Password required to join. Leave empty for a public server."));
+            s.Fields.Add(new FieldSpec("AdminPassword", "Admin password", FieldKind.Secret, "Server", "Grants RCON / REST admin access (full control). Keep it secret."));
+            s.Fields.Add(new FieldSpec("ServerPlayerMaxNum", "Max players", FieldKind.Int, "Server", "Maximum simultaneous players (Palworld caps at 32).") { Min = 1, Max = 32, Step = 1 });
+            s.Fields.Add(new FieldSpec("PublicPort", "Public port", FieldKind.Int, "Server", "UDP game port players connect to (default 8211). Must be open/forwarded.") { Min = 1, Max = 65535, Step = 1 });
             // — Gameplay —
-            s.Fields.Add(new FieldSpec("Difficulty", "Difficulty", FieldKind.Enum, "Gameplay") { EnumValues = new[] { "None", "Casual", "Normal", "Hard" } });
-            s.Fields.Add(new FieldSpec("DeathPenalty", "Death penalty", FieldKind.Enum, "Gameplay") { EnumValues = new[] { "None", "Item", "ItemAndEquipment", "All" } });
-            s.Fields.Add(new FieldSpec("bIsPvP", "PvP enabled", FieldKind.Bool, "Gameplay"));
-            s.Fields.Add(new FieldSpec("bEnablePlayerToPlayerDamage", "Player-to-player damage", FieldKind.Bool, "Gameplay"));
-            s.Fields.Add(new FieldSpec("bEnableFriendlyFire", "Friendly fire", FieldKind.Bool, "Gameplay"));
-            s.Fields.Add(new FieldSpec("bHardcore", "Hardcore", FieldKind.Bool, "Gameplay"));
+            s.Fields.Add(new FieldSpec("Difficulty", "Difficulty", FieldKind.Enum, "Gameplay", "Overall preset. 'None' lets you tune every rate manually.") { EnumValues = new[] { "None", "Casual", "Normal", "Hard" } });
+            s.Fields.Add(new FieldSpec("DeathPenalty", "Death penalty", FieldKind.Enum, "Gameplay", "What you lose on death: nothing / items / items+gear / all (incl. Pals).") { EnumValues = new[] { "None", "Item", "ItemAndEquipment", "All" } });
+            s.Fields.Add(new FieldSpec("bIsPvP", "PvP enabled", FieldKind.Bool, "Gameplay", "Allow players to fight each other."));
+            s.Fields.Add(new FieldSpec("bEnablePlayerToPlayerDamage", "Player-to-player damage", FieldKind.Bool, "Gameplay", "Players can actually damage each other (needed for real PvP)."));
+            s.Fields.Add(new FieldSpec("bEnableFriendlyFire", "Friendly fire", FieldKind.Bool, "Gameplay", "Guild members can damage each other."));
+            s.Fields.Add(new FieldSpec("bHardcore", "Hardcore", FieldKind.Bool, "Gameplay", "Permanent character death (no respawn)."));
             // — Rates —
-            s.Fields.Add(new FieldSpec("DayTimeSpeedRate", "Daytime speed", FieldKind.Float, "Rates") { Min = 0.1, Max = 5, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("NightTimeSpeedRate", "Nighttime speed", FieldKind.Float, "Rates") { Min = 0.1, Max = 5, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("ExpRate", "XP rate", FieldKind.Float, "Rates") { Min = 0.1, Max = 20, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("PalCaptureRate", "Capture rate", FieldKind.Float, "Rates") { Min = 0.5, Max = 5, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("PalSpawnNumRate", "Pal density", FieldKind.Float, "Rates") { Min = 0.1, Max = 3, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("CollectionDropRate", "Gathering rate", FieldKind.Float, "Rates") { Min = 0.1, Max = 10, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("EnemyDropItemRate", "Enemy loot", FieldKind.Float, "Rates") { Min = 0.1, Max = 10, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("WorkSpeedRate", "Work speed", FieldKind.Float, "Rates") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("DayTimeSpeedRate", "Daytime speed", FieldKind.Float, "Rates", "How fast daytime passes (higher = shorter days).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("NightTimeSpeedRate", "Nighttime speed", FieldKind.Float, "Rates", "How fast nighttime passes (higher = shorter nights).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("ExpRate", "XP rate", FieldKind.Float, "Rates", "XP multiplier for players and Pals (higher = faster leveling).") { Min = 0.1, Max = 20, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalCaptureRate", "Capture rate", FieldKind.Float, "Rates", "Chance of catching Pals (higher = easier captures).") { Min = 0.5, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalSpawnNumRate", "Pal density", FieldKind.Float, "Rates", "How many wild Pals spawn in the world.") { Min = 0.1, Max = 3, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("CollectionDropRate", "Gathering rate", FieldKind.Float, "Rates", "Amount harvested from nodes (wood, stone, ore…).") { Min = 0.1, Max = 10, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("EnemyDropItemRate", "Enemy loot", FieldKind.Float, "Rates", "Loot dropped by defeated enemies.") { Min = 0.1, Max = 10, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("WorkSpeedRate", "Work speed", FieldKind.Float, "Rates", "How fast Pals perform base tasks (crafting, building…).") { Min = 0.1, Max = 5, Step = 0.1 });
             // — Combat —
-            s.Fields.Add(new FieldSpec("PalDamageRateAttack", "Pal damage (attack)", FieldKind.Float, "Combat") { Min = 0.1, Max = 5, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("PalDamageRateDefense", "Pal damage (defense)", FieldKind.Float, "Combat") { Min = 0.1, Max = 5, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("PlayerDamageRateAttack", "Player damage (attack)", FieldKind.Float, "Combat") { Min = 0.1, Max = 5, Step = 0.1 });
-            s.Fields.Add(new FieldSpec("PlayerDamageRateDefense", "Player damage (defense)", FieldKind.Float, "Combat") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalDamageRateAttack", "Pal damage (attack)", FieldKind.Float, "Combat", "Damage dealt BY Pals (higher = stronger Pals).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalDamageRateDefense", "Pal damage (defense)", FieldKind.Float, "Combat", "Damage taken BY Pals (higher = they die faster).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PlayerDamageRateAttack", "Player damage (attack)", FieldKind.Float, "Combat", "Damage dealt BY players.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PlayerDamageRateDefense", "Player damage (defense)", FieldKind.Float, "Combat", "Damage taken BY players (higher = you're squishier).") { Min = 0.1, Max = 5, Step = 0.1 });
             // — Guild / Base —
-            s.Fields.Add(new FieldSpec("GuildPlayerMaxNum", "Max players / guild", FieldKind.Int, "Guild & base") { Min = 1, Max = 100, Step = 1 });
-            s.Fields.Add(new FieldSpec("CoopPlayerMaxNum", "Max co-op players", FieldKind.Int, "Guild & base") { Min = 1, Max = 4, Step = 1 });
-            s.Fields.Add(new FieldSpec("BaseCampMaxNum", "Max base camps", FieldKind.Int, "Guild & base") { Min = 1, Max = 256, Step = 1 });
-            s.Fields.Add(new FieldSpec("PalEggDefaultHatchingTime", "Egg hatching (h)", FieldKind.Float, "Guild & base") { Min = 0, Max = 240, Step = 1 });
+            s.Fields.Add(new FieldSpec("GuildPlayerMaxNum", "Max players / guild", FieldKind.Int, "Guild & base", "Maximum members per guild.") { Min = 1, Max = 100, Step = 1 });
+            s.Fields.Add(new FieldSpec("CoopPlayerMaxNum", "Max co-op players", FieldKind.Int, "Guild & base", "Max players sharing a single world in co-op.") { Min = 1, Max = 4, Step = 1 });
+            s.Fields.Add(new FieldSpec("BaseCampMaxNum", "Max base camps", FieldKind.Int, "Guild & base", "Maximum base camps on the whole server.") { Min = 1, Max = 256, Step = 1 });
+            s.Fields.Add(new FieldSpec("PalEggDefaultHatchingTime", "Egg hatching (h)", FieldKind.Float, "Guild & base", "Hours for a Pal egg to hatch (0 = instant).") { Min = 0, Max = 240, Step = 1 });
             // — Advanced —
-            s.Fields.Add(new FieldSpec("AutoSaveSpan", "Auto-save (s)", FieldKind.Float, "Advanced") { Min = 30, Max = 3600, Step = 10 });
-            s.Fields.Add(new FieldSpec("RESTAPIEnabled", "REST API enabled", FieldKind.Bool, "Advanced"));
-            s.Fields.Add(new FieldSpec("RESTAPIPort", "REST API port", FieldKind.Int, "Advanced") { Min = 1, Max = 65535, Step = 1 });
-            s.Fields.Add(new FieldSpec("RCONEnabled", "RCON enabled", FieldKind.Bool, "Advanced"));
-            s.Fields.Add(new FieldSpec("RCONPort", "RCON port", FieldKind.Int, "Advanced") { Min = 1, Max = 65535, Step = 1 });
+            s.Fields.Add(new FieldSpec("AutoSaveSpan", "Auto-save (s)", FieldKind.Float, "Advanced", "Seconds between automatic world saves.") { Min = 30, Max = 3600, Step = 10 });
+            s.Fields.Add(new FieldSpec("RESTAPIEnabled", "REST API enabled", FieldKind.Bool, "Advanced", "Built-in HTTP API. Used by WindowsGSM's admin panel & live player count."));
+            s.Fields.Add(new FieldSpec("RESTAPIPort", "REST API port", FieldKind.Int, "Advanced", "Port of the REST API (default 8212).") { Min = 1, Max = 65535, Step = 1 });
+            s.Fields.Add(new FieldSpec("RCONEnabled", "RCON enabled", FieldKind.Bool, "Advanced", "Remote console. Used by WindowsGSM's RCON console (Broadcast, ShowPlayers…)."));
+            s.Fields.Add(new FieldSpec("RCONPort", "RCON port", FieldKind.Int, "Advanced", "Port of RCON (default 25575).") { Min = 1, Max = 65535, Step = 1 });
             return s;
         }
 
