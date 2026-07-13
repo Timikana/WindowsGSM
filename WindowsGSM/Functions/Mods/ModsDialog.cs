@@ -246,11 +246,9 @@ namespace WindowsGSM.Functions.Mods
             // Add row
             var add = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
             add.Children.Add(new TextBlock { Text = Loc.T("Mods.AddLabel"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
-            var idBox = new TextBox { MinWidth = 150, VerticalAlignment = VerticalAlignment.Center };
-            ApplyPlaceholder(idBox, Loc.T("Mods.WorkshopId"));
-            var nameBox = new TextBox { MinWidth = 220, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
-            ApplyPlaceholder(nameBox, Loc.T("Mods.NameOptional"));
-            var addBtn = new Wpf.Ui.Controls.Button { Content = "+", Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(12, 2, 12, 2), ToolTip = Loc.T("Common.AddEntry") };
+            var idBox = new Wpf.Ui.Controls.TextBox { MinWidth = 200, VerticalAlignment = VerticalAlignment.Center, PlaceholderText = Loc.T("Mods.WorkshopIdHint") };
+            var nameBox = new Wpf.Ui.Controls.TextBox { MinWidth = 200, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, PlaceholderText = Loc.T("Mods.NameOptional") };
+            var addBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.AddBtn"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), ToolTip = Loc.T("Common.AddEntry") };
             addBtn.Click += (s, e) =>
             {
                 string id = new string((idBox.Text ?? "").Trim().Where(char.IsDigit).ToArray());

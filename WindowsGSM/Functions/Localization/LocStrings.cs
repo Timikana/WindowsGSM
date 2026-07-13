@@ -178,9 +178,11 @@ namespace WindowsGSM.Functions.Localization
             E("Mods.FilterAllFiles", "All files", "Tous les fichiers", "Todos los archivos", "Alle Dateien");
             E("Mods.ChooseMods", "Choose one or more mods", "Choisir un ou plusieurs mods", "Elegir uno o varios mods", "Einen oder mehrere Mods auswählen");
             E("Mods.ModsAdded", "{0} mod(s) added.", "{0} mod(s) ajouté(s).", "{0} mod(s) añadido(s).", "{0} Mod(s) hinzugefügt.");
-            E("Mods.AddLabel", "Add:", "Ajouter :", "Añadir:", "Hinzufügen:");
+            E("Mods.AddLabel", "Add a Workshop mod:", "Ajouter un mod Workshop :", "Añadir un mod de Workshop:", "Workshop-Mod hinzufügen:");
             E("Mods.WorkshopId", "Workshop ID", "ID Workshop", "ID de Workshop", "Workshop-ID");
-            E("Mods.NameOptional", "Name (optional)", "Nom (facultatif)", "Nombre (opcional)", "Name (optional)");
+            E("Mods.WorkshopIdHint", "Workshop ID (the number in the URL)", "ID Workshop (le nombre dans l'URL)", "ID de Workshop (el número en la URL)", "Workshop-ID (die Zahl in der URL)");
+            E("Mods.NameOptional", "Display name (optional)", "Nom affiché (optionnel)", "Nombre visible (opcional)", "Anzeigename (optional)");
+            E("Mods.AddBtn", "Add", "Ajouter", "Añadir", "Hinzufügen");
             E("Mods.InvalidWorkshopId", "Invalid Workshop ID (digits only).", "ID Workshop invalide (chiffres uniquement).", "ID de Workshop no válido (solo dígitos).", "Ungültige Workshop-ID (nur Ziffern).");
             E("Mods.DownloadSteamCmd", "Download (SteamCMD)", "Télécharger (SteamCMD)", "Descargar (SteamCMD)", "Herunterladen (SteamCMD)");
             E("Mods.WriteConfigKey", "Write {0} to the config", "Écrire {0} dans la config", "Escribir {0} en la config", "{0} in die Konfiguration schreiben");
