@@ -440,18 +440,19 @@ namespace WindowsGSM.Functions.Mods
             btn.IsEnabled = false;
             try
             {
-                int ok = 0, fail = 0;
+                int ok = 0, fail = 0; string lastErr = null;
                 foreach (var e in _ws.Items.Where(x => x.Enabled).ToList())
                 {
                     if (_closed) { return; } // dialog closed → stop launching further downloads
                     _status.Foreground = Dim;
                     _status.Text = Loc.T("Mods.Downloading", e.Id);
                     var (success, msg) = await WorkshopManager.DownloadAsync(_profile.WorkshopAppId, e.Id);
-                    if (success) { ok++; } else { fail++; }
+                    if (success) { ok++; } else { fail++; lastErr = msg; }
                 }
                 if (_closed) { return; }
                 _status.Foreground = fail == 0 ? Accent : Warn;
-                _status.Text = Loc.T("Mods.DownloadFinished", ok, fail, _profile.ConfigKey);
+                _status.Text = Loc.T("Mods.DownloadFinished", ok, fail, _profile.ConfigKey)
+                    + (fail > 0 && !string.IsNullOrEmpty(lastErr) ? " — " + lastErr : "");
             }
             catch (Exception ex) { Fail(ex.Message); }
             finally { btn.IsEnabled = true; }

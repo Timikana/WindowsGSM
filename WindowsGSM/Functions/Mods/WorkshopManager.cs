@@ -58,7 +58,21 @@ namespace WindowsGSM.Functions.Mods
                 string content = ContentPath(appId, sid);
                 bool ok = Directory.Exists(content);
                 Functions.AppLog.Info("Workshop/Download", $"app {appId} item {sid} -> {(ok ? "OK " + content : "failed")}");
-                return ok ? (true, "Downloaded: " + content) : (false, "SteamCMD finished but content missing. See log.");
+                if (ok) { return (true, "Downloaded: " + content); }
+
+                // Diagnose the common failure: anonymous SteamCMD can't decrypt content for games that
+                // require ownership (Palworld, ARK…). Give an actionable message instead of a bare "failed".
+                string outText = sb.ToString();
+                if (outText.IndexOf("Missing decryption key", StringComparison.OrdinalIgnoreCase) >= 0
+                    || outText.IndexOf("No subscription", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return (false, "OWNERSHIP: Steam blocks anonymous Workshop downloads for this game — it needs a Steam account that OWNS it. (Games like Project Zomboid / Garry's Mod download mods by themselves at server start; for Palworld/ARK you need an owning Steam login.)");
+                }
+                if (outText.IndexOf("Rate Limit", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return (false, "Steam rate-limited the download. Wait a minute and retry.");
+                }
+                return (false, "SteamCMD finished but content is missing. See the SteamCMD log.");
             }
             catch (Exception ex)
             {
