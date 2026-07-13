@@ -293,6 +293,27 @@ namespace WindowsGSM.Functions.Mods
             add.Children.Add(addBtn);
             _body.Children.Add(add);
 
+            // Steam account for downloads (games that require ownership: Palworld, ARK…).
+            if (!_profile.ServerAutoDownloads)
+            {
+                var acct = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+                acct.Children.Add(new TextBlock { Text = Loc.T("Mods.SteamAccount"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+                var acctBox = new Wpf.Ui.Controls.TextBox { MinWidth = 150, Text = WorkshopManager.GetSteamAccount(), PlaceholderText = Loc.T("Mods.SteamAccountHint"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
+                acct.Children.Add(acctBox);
+                var loginBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.SteamLogin"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5) };
+                loginBtn.Click += (s, e) =>
+                {
+                    string u = (acctBox.Text ?? string.Empty).Trim();
+                    if (u.Length == 0) { Fail(Loc.T("Mods.SteamAccountHint")); return; }
+                    WorkshopManager.SetSteamAccount(u);
+                    WorkshopManager.LaunchInteractiveLogin(u);
+                    _status.Foreground = Accent; _status.Text = Loc.T("Mods.SteamLoginOpened");
+                };
+                acct.Children.Add(loginBtn);
+                _body.Children.Add(acct);
+                _body.Children.Add(new TextBlock { Text = Loc.T("Mods.SteamAccountNote"), Foreground = Dim, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
+            }
+
             // Global actions
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
             if (!_profile.ServerAutoDownloads)

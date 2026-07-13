@@ -24,7 +24,33 @@ namespace WindowsGSM.Functions.Mods
         public static string ContentPath(int appId, string id)
             => Path.Combine(Functions.ServerPath.GetBin("steamcmd"), "steamapps", "workshop", "content", appId.ToString(), Digits(id));
 
-        /// <summary>Downloads a Workshop item via anonymous SteamCMD. Returns (ok, message).</summary>
+        // Steam account used for Workshop downloads (username only — the password/Steam Guard is entered
+        // ONCE by the user via the interactive login, and cached by SteamCMD). Empty = anonymous.
+        private static string AccountFile() => Functions.ServerPath.Get("configs", "steam_workshop_account.txt");
+        public static string GetSteamAccount() { try { return File.Exists(AccountFile()) ? File.ReadAllText(AccountFile()).Trim() : string.Empty; } catch { return string.Empty; } }
+        public static void SetSteamAccount(string user)
+        {
+            try { Directory.CreateDirectory(Path.GetDirectoryName(AccountFile())); File.WriteAllText(AccountFile(), (user ?? string.Empty).Trim()); } catch { }
+        }
+
+        /// <summary>Opens SteamCMD in a normal console so the user can log in interactively (password +
+        /// Steam Guard) ONCE. SteamCMD then caches the session; later downloads reuse it passwordless.</summary>
+        public static void LaunchInteractiveLogin(string user)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = SteamCmdExe(),
+                    Arguments = $"+login {user} +quit",
+                    UseShellExecute = true, // visible window so the user can type the password / Steam Guard code
+                    WorkingDirectory = Functions.ServerPath.GetBin("steamcmd")
+                });
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("Workshop/Login", ex.Message); }
+        }
+
+        /// <summary>Downloads a Workshop item via SteamCMD (configured account if any, otherwise anonymous). Returns (ok, message).</summary>
         public static async Task<(bool ok, string message)> DownloadAsync(int appId, string id, Action<string> log = null)
         {
             string exe = SteamCmdExe();
@@ -32,10 +58,13 @@ namespace WindowsGSM.Functions.Mods
             string sid = Digits(id);
             if (string.IsNullOrEmpty(sid) || appId <= 0) { return (false, "Invalid ID/AppID."); }
 
+            string account = GetSteamAccount();
+            string login = string.IsNullOrEmpty(account) ? "+login anonymous" : $"+login {account}";
+
             var psi = new ProcessStartInfo
             {
                 FileName = exe,
-                Arguments = $"+login anonymous +workshop_download_item {appId} {sid} +quit",
+                Arguments = $"{login} +workshop_download_item {appId} {sid} +quit",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
