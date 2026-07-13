@@ -124,6 +124,98 @@ namespace WindowsGSM.Functions.ConfigEditor
             s.Fields.Add(new FieldSpec("RESTAPIPort", "REST API port", FieldKind.Int, "Advanced", "Port of the REST API (default 8212).") { Min = 1, Max = 65535, Step = 1 });
             s.Fields.Add(new FieldSpec("RCONEnabled", "RCON enabled", FieldKind.Bool, "Advanced", "Remote console. Used by WindowsGSM's RCON console (Broadcast, ShowPlayers…)."));
             s.Fields.Add(new FieldSpec("RCONPort", "RCON port", FieldKind.Int, "Advanced", "Port of RCON (default 25575).") { Min = 1, Max = 65535, Step = 1 });
+
+            // — Server (network / access) —
+            s.Fields.Add(new FieldSpec("PublicIP", "Public IP", FieldKind.Text, "Server", "Public IP announced to players. Leave empty to auto-detect."));
+            s.Fields.Add(new FieldSpec("Region", "Region", FieldKind.Text, "Server", "Server region code. Leave empty to auto-detect."));
+            s.Fields.Add(new FieldSpec("bUseAuth", "Require authentication", FieldKind.Bool, "Server", "Require Steam auth to join (recommended ON)."));
+            s.Fields.Add(new FieldSpec("BanListURL", "Ban list URL", FieldKind.Text, "Server", "URL of the ban list (default = official Palworld list)."));
+            s.Fields.Add(new FieldSpec("bShowPlayerList", "Public player list", FieldKind.Bool, "Server", "Expose the connected-player list publicly."));
+            s.Fields.Add(new FieldSpec("ChatPostLimitPerMinute", "Chat limit / min", FieldKind.Int, "Server", "Anti-spam: max chat messages per player per minute.") { Min = 1, Max = 600, Step = 1 });
+            s.Fields.Add(new FieldSpec("CrossplayPlatforms", "Crossplay platforms", FieldKind.Text, "Server", "Allowed platforms, format (Steam,Xbox,PS5,Mac)."));
+            s.Fields.Add(new FieldSpec("LogFormatType", "Log format", FieldKind.Enum, "Server", "Server log file format.") { EnumValues = new[] { "Text", "Json" } });
+            s.Fields.Add(new FieldSpec("bIsShowJoinLeftMessage", "Join/leave messages", FieldKind.Bool, "Server", "Show join/leave messages in chat."));
+            s.Fields.Add(new FieldSpec("bAllowClientMod", "Allow client mods", FieldKind.Bool, "Server", "Allow players with client-side mods to connect."));
+            s.Fields.Add(new FieldSpec("bIsMultiplay", "Multiplayer flag", FieldKind.Bool, "Server", "Internal multiplayer flag (leave as is for a dedicated server)."));
+            s.Fields.Add(new FieldSpec("bIsUseBackupSaveData", "Backup save data", FieldKind.Bool, "Server", "Keep backup copies of the save file."));
+
+            // — Gameplay (world / features) —
+            s.Fields.Add(new FieldSpec("bEnableInvaderEnemy", "Base raids", FieldKind.Bool, "Gameplay", "Enable invader/raid enemies attacking bases."));
+            s.Fields.Add(new FieldSpec("EnablePredatorBossPal", "Predator/boss Pals", FieldKind.Bool, "Gameplay", "Enable roaming predator (boss) Pals."));
+            s.Fields.Add(new FieldSpec("bEnableFastTravel", "Fast travel", FieldKind.Bool, "Gameplay", "Allow fast travel between statues."));
+            s.Fields.Add(new FieldSpec("bIsStartLocationSelectByMap", "Choose start on map", FieldKind.Bool, "Gameplay", "Let players pick their starting location on the map."));
+            s.Fields.Add(new FieldSpec("bExistPlayerAfterLogout", "Body stays after logout", FieldKind.Bool, "Gameplay", "The player's body remains in the world after logging out."));
+            s.Fields.Add(new FieldSpec("bEnableNonLoginPenalty", "Non-login penalty", FieldKind.Bool, "Gameplay", "Apply a penalty for players who don't log in for a while."));
+            s.Fields.Add(new FieldSpec("SupplyDropSpan", "Supply drop interval (min)", FieldKind.Int, "Gameplay", "Minutes between air supply drops.") { Min = 0, Max = 1440, Step = 5 });
+            s.Fields.Add(new FieldSpec("bActiveUNKO", "UNKO feature", FieldKind.Bool, "Gameplay", "Enable the 'UNKO' (fertilizer) feature."));
+            s.Fields.Add(new FieldSpec("bEnableAimAssistPad", "Aim assist (controller)", FieldKind.Bool, "Gameplay", "Aim assist for gamepad players."));
+            s.Fields.Add(new FieldSpec("bEnableAimAssistKeyboard", "Aim assist (keyboard)", FieldKind.Bool, "Gameplay", "Aim assist for keyboard/mouse players."));
+            s.Fields.Add(new FieldSpec("RandomizerType", "Randomizer", FieldKind.Text, "Gameplay", "Pal randomizer mode (None / Region / All)."));
+            s.Fields.Add(new FieldSpec("RandomizerSeed", "Randomizer seed", FieldKind.Text, "Gameplay", "Seed for the randomizer (empty = random)."));
+            s.Fields.Add(new FieldSpec("bIsRandomizerPalLevelRandom", "Random Pal levels", FieldKind.Bool, "Gameplay", "Randomize Pal levels when the randomizer is on."));
+
+            // — Rates (survival / regen) —
+            s.Fields.Add(new FieldSpec("PlayerStomachDecreaceRate", "Player hunger drain", FieldKind.Float, "Rates", "How fast the player's hunger drops (lower = eat less).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PlayerStaminaDecreaceRate", "Player stamina drain", FieldKind.Float, "Rates", "How fast the player's stamina drops.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PlayerAutoHPRegeneRate", "Player HP regen", FieldKind.Float, "Rates", "Player health regeneration speed.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PlayerAutoHpRegeneRateInSleep", "Player HP regen (sleep)", FieldKind.Float, "Rates", "Player health regen while sleeping.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalStomachDecreaceRate", "Pal hunger drain", FieldKind.Float, "Rates", "How fast Pals' hunger drops.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalStaminaDecreaceRate", "Pal stamina drain", FieldKind.Float, "Rates", "How fast Pals' stamina drops.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalAutoHPRegeneRate", "Pal HP regen", FieldKind.Float, "Rates", "Pal health regeneration speed.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("PalAutoHpRegeneRateInSleep", "Pal HP regen (Palbox)", FieldKind.Float, "Rates", "Pal health regen while in the Palbox.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("ItemWeightRate", "Item weight", FieldKind.Float, "Rates", "Item weight multiplier (lower = carry more).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("EquipmentDurabilityDamageRate", "Equip. durability loss", FieldKind.Float, "Rates", "How fast equipment durability drops.") { Min = 0, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("ItemCorruptionMultiplier", "Item corruption", FieldKind.Float, "Rates", "Rate at which items corrupt/spoil.") { Min = 0, Max = 5, Step = 0.1 });
+
+            // — Build & gathering —
+            s.Fields.Add(new FieldSpec("BuildObjectHpRate", "Structure HP", FieldKind.Float, "Build & gather", "Structure health multiplier.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("BuildObjectDamageRate", "Structure damage", FieldKind.Float, "Build & gather", "Damage dealt to structures.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("BuildObjectDeteriorationDamageRate", "Structure decay", FieldKind.Float, "Build & gather", "Structure deterioration speed (0 = no decay).") { Min = 0, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("CollectionObjectHpRate", "Node HP", FieldKind.Float, "Build & gather", "HP of gatherable nodes (trees, rocks…).") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("CollectionObjectRespawnSpeedRate", "Node respawn", FieldKind.Float, "Build & gather", "How fast gatherable nodes respawn.") { Min = 0.1, Max = 5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("MaxBuildingLimitNum", "Max buildings", FieldKind.Int, "Build & gather", "Max buildings on the server (0 = unlimited).") { Min = 0, Max = 100000, Step = 100 });
+            s.Fields.Add(new FieldSpec("bBuildAreaLimit", "Build area limit", FieldKind.Bool, "Build & gather", "Restrict building to the area around a base."));
+
+            // — Drops & items —
+            s.Fields.Add(new FieldSpec("DropItemMaxNum", "Max dropped items", FieldKind.Int, "Drops & items", "Max items lying on the ground worldwide.") { Min = 0, Max = 20000, Step = 100 });
+            s.Fields.Add(new FieldSpec("DropItemMaxNum_UNKO", "Max dropped UNKO", FieldKind.Int, "Drops & items", "Max dropped 'UNKO' items.") { Min = 0, Max = 5000, Step = 50 });
+            s.Fields.Add(new FieldSpec("DropItemAliveMaxHours", "Dropped item lifetime (h)", FieldKind.Float, "Drops & items", "Hours a dropped item stays before despawning.") { Min = 0, Max = 240, Step = 0.5 });
+            s.Fields.Add(new FieldSpec("ItemContainerForceMarkDirtyInterval", "Container save interval", FieldKind.Float, "Drops & items", "Advanced: seconds between forced container saves.") { Min = 0, Max = 60, Step = 0.5 });
+
+            // — Guild & base (extra) —
+            s.Fields.Add(new FieldSpec("BaseCampWorkerMaxNum", "Workers / base", FieldKind.Int, "Guild & base", "Max working Pals per base camp.") { Min = 1, Max = 50, Step = 1 });
+            s.Fields.Add(new FieldSpec("BaseCampMaxNumInGuild", "Bases / guild", FieldKind.Int, "Guild & base", "Max base camps per guild.") { Min = 1, Max = 20, Step = 1 });
+            s.Fields.Add(new FieldSpec("bAutoResetGuildNoOnlinePlayers", "Auto-disband guilds", FieldKind.Bool, "Guild & base", "Disband guilds whose members are all offline for too long."));
+            s.Fields.Add(new FieldSpec("AutoResetGuildTimeNoOnlinePlayers", "Auto-disband after (h)", FieldKind.Float, "Guild & base", "Hours offline before a guild is disbanded.") { Min = 1, Max = 720, Step = 1 });
+            s.Fields.Add(new FieldSpec("GuildRejoinCooldownMinutes", "Guild rejoin cooldown (min)", FieldKind.Int, "Guild & base", "Cooldown before a player can rejoin a guild.") { Min = 0, Max = 1440, Step = 1 });
+            s.Fields.Add(new FieldSpec("bEnableDefenseOtherGuildPlayer", "Defend vs other guilds", FieldKind.Bool, "Guild & base", "Allow base defenses to target other-guild players."));
+            s.Fields.Add(new FieldSpec("bInvisibleOtherGuildBaseCampAreaFX", "Hide other base FX", FieldKind.Bool, "Guild & base", "Hide the area effect of other guilds' base camps."));
+            s.Fields.Add(new FieldSpec("bCanPickupOtherGuildDeathPenaltyDrop", "Loot other guild drops", FieldKind.Bool, "Guild & base", "Allow looting death-penalty drops of other guilds."));
+
+            // — Death / respawn / PvP —
+            s.Fields.Add(new FieldSpec("bPalLost", "Lose Pals on death", FieldKind.Bool, "Death & PvP", "Player loses Pals in their party on death (hardcore-like)."));
+            s.Fields.Add(new FieldSpec("bCharacterRecreateInHardcore", "Recreate char (hardcore)", FieldKind.Bool, "Death & PvP", "In hardcore, recreate the character on death."));
+            s.Fields.Add(new FieldSpec("BlockRespawnTime", "Respawn block (s)", FieldKind.Float, "Death & PvP", "Time before you can respawn.") { Min = 0, Max = 120, Step = 1 });
+            s.Fields.Add(new FieldSpec("RespawnPenaltyDurationThreshold", "Respawn penalty threshold", FieldKind.Float, "Death & PvP", "Advanced: threshold before the respawn penalty applies.") { Min = 0, Max = 3600, Step = 1 });
+            s.Fields.Add(new FieldSpec("RespawnPenaltyTimeScale", "Respawn penalty scale", FieldKind.Float, "Death & PvP", "Advanced: multiplier for the respawn penalty duration.") { Min = 0, Max = 10, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("bDisplayPvPItemNumOnWorldMap_BaseCamp", "Show base PvP items on map", FieldKind.Bool, "Death & PvP", "Display PvP item counts for base camps on the world map."));
+            s.Fields.Add(new FieldSpec("bDisplayPvPItemNumOnWorldMap_Player", "Show player PvP items on map", FieldKind.Bool, "Death & PvP", "Display PvP item counts for players on the world map."));
+            s.Fields.Add(new FieldSpec("bAdditionalDropItemWhenPlayerKillingInPvPMode", "Extra PvP-kill drop", FieldKind.Bool, "Death & PvP", "Drop an additional item when killing a player in PvP."));
+            s.Fields.Add(new FieldSpec("AdditionalDropItemWhenPlayerKillingInPvPMode", "PvP-kill drop item", FieldKind.Text, "Death & PvP", "Which item is dropped on a PvP kill."));
+            s.Fields.Add(new FieldSpec("AdditionalDropItemNumWhenPlayerKillingInPvPMode", "PvP-kill drop count", FieldKind.Int, "Death & PvP", "How many items drop on a PvP kill.") { Min = 0, Max = 100, Step = 1 });
+
+            // — Stat leveling —
+            s.Fields.Add(new FieldSpec("bAllowEnhanceStat_Health", "Allow leveling: Health", FieldKind.Bool, "Stat leveling", "Players can spend points into Health."));
+            s.Fields.Add(new FieldSpec("bAllowEnhanceStat_Attack", "Allow leveling: Attack", FieldKind.Bool, "Stat leveling", "Players can spend points into Attack."));
+            s.Fields.Add(new FieldSpec("bAllowEnhanceStat_Stamina", "Allow leveling: Stamina", FieldKind.Bool, "Stat leveling", "Players can spend points into Stamina."));
+            s.Fields.Add(new FieldSpec("bAllowEnhanceStat_Weight", "Allow leveling: Weight", FieldKind.Bool, "Stat leveling", "Players can spend points into carry Weight."));
+            s.Fields.Add(new FieldSpec("bAllowEnhanceStat_WorkSpeed", "Allow leveling: Work speed", FieldKind.Bool, "Stat leveling", "Players can spend points into Work Speed."));
+
+            // — Palbox / advanced —
+            s.Fields.Add(new FieldSpec("bAllowGlobalPalboxExport", "Global Palbox export", FieldKind.Bool, "Advanced", "Allow exporting Pals to the global Palbox (cross-server)."));
+            s.Fields.Add(new FieldSpec("bAllowGlobalPalboxImport", "Global Palbox import", FieldKind.Bool, "Advanced", "Allow importing Pals from the global Palbox (cross-server)."));
+            s.Fields.Add(new FieldSpec("DenyTechnologyList", "Disabled technologies", FieldKind.Text, "Advanced", "Comma-separated list of technologies to disable (empty = all allowed)."));
+            s.Fields.Add(new FieldSpec("ServerReplicatePawnCullDistance", "Pawn cull distance", FieldKind.Float, "Advanced", "Network draw distance for pawns (lower = better perf, less visible range).") { Min = 5000, Max = 30000, Step = 1000 });
             return s;
         }
 
