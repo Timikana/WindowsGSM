@@ -22,6 +22,7 @@ namespace WindowsGSM.Functions.Mods
         private readonly StackPanel _body;
         private readonly TextBlock _status;
         private bool _closed; // stop a multi-item download loop from writing into a closed dialog
+        private string _filter = string.Empty; // mods list search filter (persists across rebuilds)
 
         protected override void OnClosed(EventArgs e)
         {
@@ -144,34 +145,66 @@ namespace WindowsGSM.Functions.Mods
                 return;
             }
 
-            foreach (var m in mods)
+            var count = new TextBlock { Foreground = Dim, FontSize = 11, Margin = new Thickness(2, 0, 0, 6) };
+            var host = new StackPanel();
+            var search = SearchBox(host, filter =>
             {
-                var captured = m;
-                var card = new Border
-                {
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(6),
-                    Margin = new Thickness(0, 0, 0, 6),
-                    Padding = new Thickness(10)
-                };
-                var dp = new DockPanel();
+                var list = string.IsNullOrWhiteSpace(filter) ? mods
+                    : mods.Where(m => (m.Name ?? "").IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                count.Text = Loc.T("Mods.Count", list.Count, mods.Count);
+                if (list.Count == 0) { host.Children.Add(Info(Loc.T("Mods.NoMatch"))); return; }
+                foreach (var m in list) { host.Children.Add(FolderCard(m)); }
+            });
+            _body.Children.Add(search);
+            _body.Children.Add(count);
+            _body.Children.Add(host);
+        }
 
-                var toggle = new Wpf.Ui.Controls.ToggleSwitch { IsChecked = m.Enabled, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
-                toggle.Checked += (s, e) => DoToggle(captured);
-                toggle.Unchecked += (s, e) => DoToggle(captured);
-                DockPanel.SetDock(toggle, Dock.Left);
-                dp.Children.Add(toggle);
+        private Border FolderCard(ModFolder.ModItem m)
+        {
+            var captured = m;
+            var card = new Border
+            {
+                BorderBrush = WindowsGSM.Functions.Controls.DialogTheme.CardBorder,
+                Background = WindowsGSM.Functions.Controls.DialogTheme.CardBg,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Margin = new Thickness(0, 0, 0, 6),
+                Padding = new Thickness(10)
+            };
+            var dp = new DockPanel();
 
-                var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-                meta.Children.Add(new TextBlock { Text = m.Name, Foreground = m.Enabled ? Fg : Dim, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-                string sub = (m.IsDirectory ? Loc.T("Mods.TypeFolder") : SizeStr(m.SizeBytes)) + (m.Enabled ? "" : " · " + Loc.T("Mods.Disabled"));
-                meta.Children.Add(new TextBlock { Text = sub, Foreground = Dim, FontSize = 11 });
-                dp.Children.Add(meta);
+            var toggle = new Wpf.Ui.Controls.ToggleSwitch { IsChecked = m.Enabled, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            toggle.Checked += (s, e) => DoToggle(captured);
+            toggle.Unchecked += (s, e) => DoToggle(captured);
+            DockPanel.SetDock(toggle, Dock.Left);
+            dp.Children.Add(toggle);
 
-                card.Child = dp;
-                _body.Children.Add(card);
-            }
+            var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            meta.Children.Add(new TextBlock { Text = m.Name, Foreground = m.Enabled ? Fg : Dim, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
+            string sub = (m.IsDirectory ? Loc.T("Mods.TypeFolder") : SizeStr(m.SizeBytes)) + (m.Enabled ? "" : " · " + Loc.T("Mods.Disabled"));
+            meta.Children.Add(new TextBlock { Text = sub, Foreground = Dim, FontSize = 11 });
+            dp.Children.Add(meta);
+
+            card.Child = dp;
+            return card;
+        }
+
+        /// <summary>A reusable filter box: repopulates <paramref name="host"/> via <paramref name="render"/>
+        /// on every keystroke. The filter text persists across rebuilds (BuildBody) via _filter.</summary>
+        private Wpf.Ui.Controls.TextBox SearchBox(StackPanel host, Action<string> render)
+        {
+            var box = new Wpf.Ui.Controls.TextBox
+            {
+                PlaceholderText = Loc.T("Mods.SearchPlaceholder"),
+                Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Search24 },
+                Margin = new Thickness(0, 0, 0, 6),
+                Text = _filter
+            };
+            void Run() { host.Children.Clear(); render(_filter ?? string.Empty); }
+            box.TextChanged += (s, e) => { _filter = box.Text ?? string.Empty; Run(); };
+            Run(); // initial population
+            return box;
         }
 
         private void DoToggle(ModFolder.ModItem item)
@@ -257,42 +290,58 @@ namespace WindowsGSM.Functions.Mods
                 return;
             }
 
-            foreach (var entry in _ws.Items)
+            var count = new TextBlock { Foreground = Dim, FontSize = 11, Margin = new Thickness(2, 0, 0, 6) };
+            var host = new StackPanel();
+            var search = SearchBox(host, filter =>
             {
-                var captured = entry;
-                var card = new Border
-                {
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(0x3a, 0x3a, 0x3a)),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(6),
-                    Margin = new Thickness(0, 0, 0, 6),
-                    Padding = new Thickness(10)
-                };
-                var dp = new DockPanel();
+                var list = string.IsNullOrWhiteSpace(filter) ? _ws.Items.ToList()
+                    : _ws.Items.Where(x => (x.Name ?? "").IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0
+                                        || (x.Id ?? "").IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                count.Text = Loc.T("Mods.Count", list.Count, _ws.Items.Count);
+                if (list.Count == 0) { host.Children.Add(Info(Loc.T("Mods.NoMatch"))); return; }
+                foreach (var entry in list) { host.Children.Add(WorkshopCard(entry)); }
+            });
+            _body.Children.Add(search);
+            _body.Children.Add(count);
+            _body.Children.Add(host);
+        }
 
-                var toggle = new Wpf.Ui.Controls.ToggleSwitch { IsChecked = entry.Enabled, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
-                toggle.Checked += (s, e) => { captured.Enabled = true; _ws.Save(); };
-                toggle.Unchecked += (s, e) => { captured.Enabled = false; _ws.Save(); };
-                DockPanel.SetDock(toggle, Dock.Left);
-                dp.Children.Add(toggle);
+        private Border WorkshopCard(WorkshopEntry entry)
+        {
+            var captured = entry;
+            var card = new Border
+            {
+                BorderBrush = WindowsGSM.Functions.Controls.DialogTheme.CardBorder,
+                Background = WindowsGSM.Functions.Controls.DialogTheme.CardBg,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Margin = new Thickness(0, 0, 0, 6),
+                Padding = new Thickness(10)
+            };
+            var dp = new DockPanel();
 
-                var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc.T("Mods.RemoveFromList") };
-                del.Click += (s, e) =>
-                {
-                    if (System.Windows.MessageBox.Show(Loc.T("Common.ConfirmRemove"), Loc.T("Common.ConfirmTitle"), System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question) != System.Windows.MessageBoxResult.Yes) { return; }
-                    _ws.Items.Remove(captured); _ws.Save(); BuildBody();
-                };
-                DockPanel.SetDock(del, Dock.Right);
-                dp.Children.Add(del);
+            var toggle = new Wpf.Ui.Controls.ToggleSwitch { IsChecked = entry.Enabled, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            toggle.Checked += (s, e) => { captured.Enabled = true; _ws.Save(); };
+            toggle.Unchecked += (s, e) => { captured.Enabled = false; _ws.Save(); };
+            DockPanel.SetDock(toggle, Dock.Left);
+            dp.Children.Add(toggle);
 
-                var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-                meta.Children.Add(new TextBlock { Text = string.IsNullOrEmpty(entry.Name) ? entry.Id : $"{entry.Name}", Foreground = Fg, FontWeight = FontWeights.SemiBold });
-                meta.Children.Add(new TextBlock { Text = "ID " + entry.Id + (entry.Enabled ? "" : " · " + Loc.T("Mods.Disabled")), Foreground = Dim, FontSize = 11 });
-                dp.Children.Add(meta);
+            var del = new Wpf.Ui.Controls.Button { Content = "✕", Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Width = 32, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc.T("Mods.RemoveFromList") };
+            del.Click += (s, e) =>
+            {
+                if (System.Windows.MessageBox.Show(Loc.T("Common.ConfirmRemove"), Loc.T("Common.ConfirmTitle"), System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question) != System.Windows.MessageBoxResult.Yes) { return; }
+                _ws.Items.Remove(captured); _ws.Save(); BuildBody();
+            };
+            DockPanel.SetDock(del, Dock.Right);
+            dp.Children.Add(del);
 
-                card.Child = dp;
-                _body.Children.Add(card);
-            }
+            var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            meta.Children.Add(new TextBlock { Text = string.IsNullOrEmpty(entry.Name) ? entry.Id : $"{entry.Name}", Foreground = Fg, FontWeight = FontWeights.SemiBold });
+            meta.Children.Add(new TextBlock { Text = "ID " + entry.Id + (entry.Enabled ? "" : " · " + Loc.T("Mods.Disabled")), Foreground = Dim, FontSize = 11 });
+            dp.Children.Add(meta);
+
+            card.Child = dp;
+            return card;
         }
 
         private async System.Threading.Tasks.Task DownloadAll(Wpf.Ui.Controls.Button btn)

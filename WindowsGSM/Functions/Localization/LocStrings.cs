@@ -167,6 +167,9 @@ namespace WindowsGSM.Functions.Localization
             E("Mods.OpenFolder", "Open the folder", "Ouvrir le dossier", "Abrir la carpeta", "Ordner öffnen");
             E("Mods.Refresh", "Refresh", "Actualiser", "Actualizar", "Aktualisieren");
             E("Mods.NoModsYet", "No mods yet. Click \"Add a mod…\" or drop files into the folder.", "Aucun mod pour l'instant. Clique sur « Ajouter un mod… » ou dépose des fichiers dans le dossier.", "Todavía no hay mods. Haz clic en «Añadir un mod…» o suelta archivos en la carpeta.", "Noch keine Mods. Klicke auf „Mod hinzufügen…“ oder lege Dateien im Ordner ab.");
+            E("Mods.SearchPlaceholder", "Search a mod…", "Rechercher un mod…", "Buscar un mod…", "Mod suchen…");
+            E("Mods.Count", "{0} of {1} shown", "{0} sur {1} affichés", "{0} de {1} mostrados", "{0} von {1} angezeigt");
+            E("Mods.NoMatch", "No mod matches your search.", "Aucun mod ne correspond à ta recherche.", "Ningún mod coincide con tu búsqueda.", "Kein Mod entspricht deiner Suche.");
             E("Mods.TypeFolder", "folder", "dossier", "carpeta", "Ordner");
             E("Mods.Disabled", "disabled", "désactivé", "desactivado", "deaktiviert");
             E("Mods.EnabledMsg", "\"{0}\" enabled. Restart the server to apply.", "« {0} » activé. Redémarre le serveur pour appliquer.", "«{0}» activado. Reinicia el servidor para aplicar.", "„{0}“ aktiviert. Starte den Server neu, um es anzuwenden.");
