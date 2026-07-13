@@ -314,18 +314,20 @@ namespace WindowsGSM.Functions.ConfigEditor
                 Maximum = spec.Max,
                 Value = Math.Max(spec.Min, Math.Min(spec.Max, cur)),
                 TickFrequency = spec.Step,
-                IsSnapToTickEnabled = !isFloat,
+                IsSnapToTickEnabled = true, // snap floats too, so 0.1-step values land on clean 0.1/0.2/… (not 0.206937)
                 MinWidth = 280,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            Action refresh = () => val.Text = isFloat ? slider.Value.ToString("0.0", Inv) : ((long)Math.Round(slider.Value)).ToString(Inv);
+            // Round to the step so the SAVED value matches what's shown (avoids saving a "dirty" float).
+            Func<double, double> snap = v => spec.Step > 0 ? Math.Round(v / spec.Step) * spec.Step : v;
+            Action refresh = () => val.Text = isFloat ? snap(slider.Value).ToString("0.0##", Inv) : ((long)Math.Round(slider.Value)).ToString(Inv);
             slider.ValueChanged += (s, e) => refresh();
             refresh();
             DockPanel.SetDock(val, Dock.Right);
             panel.Children.Add(val);
             panel.Children.Add(slider);
             var capturedEntry = entry;
-            _applies.Add(() => _model.Set(capturedEntry, isFloat ? slider.Value.ToString("0.000000", Inv) : ((long)Math.Round(slider.Value)).ToString(Inv)));
+            _applies.Add(() => _model.Set(capturedEntry, isFloat ? snap(slider.Value).ToString("0.000000", Inv) : ((long)Math.Round(slider.Value)).ToString(Inv)));
             return panel;
         }
 
