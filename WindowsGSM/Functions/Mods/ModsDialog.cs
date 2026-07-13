@@ -20,7 +20,8 @@ namespace WindowsGSM.Functions.Mods
         private readonly string _serverFiles;
         private readonly string _game;
         private readonly ModProfile _profile;
-        private readonly StackPanel _body;
+        private Grid _host;          // fills the middle; holds either a scroll (folder view) or the workshop tabs
+        private StackPanel _body;    // folder/none/fallback view container (re-created per BuildBody)
         private readonly TextBlock _status;
         private bool _closed; // stop a multi-item download loop from writing into a closed dialog
         private string _filter = string.Empty; // mods list search filter (persists across rebuilds)
@@ -75,9 +76,8 @@ namespace WindowsGSM.Functions.Mods
             DockPanel.SetDock(bottom, Dock.Bottom);
             outer.Children.Add(bottom);
 
-            // Right margin = gutter for the Fluent overlay scrollbar (otherwise it covers the content).
-            _body = new StackPanel { Margin = new Thickness(0, 0, 16, 0) };
-            outer.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _body });
+            _host = new Grid(); // BuildBody fills it (scroll for folder view, tabs for workshop)
+            outer.Children.Add(_host);
 
             Content = outer;
             BuildBody();
@@ -96,7 +96,18 @@ namespace WindowsGSM.Functions.Mods
 
         private void BuildBody()
         {
-            _body.Children.Clear();
+            _host.Children.Clear();
+
+            // Steam Workshop games get a two-tab UI (Browse / Activate).
+            if (_profile != null && _profile.Mechanism == ModMechanism.Workshop)
+            {
+                BuildWorkshopTabs();
+                return;
+            }
+
+            // Everything else: a single scrollable body.
+            _body = new StackPanel { Margin = new Thickness(0, 0, 16, 0) };
+            _host.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _body });
 
             if (_profile == null)
             {
@@ -104,19 +115,12 @@ namespace WindowsGSM.Functions.Mods
                 _body.Children.Add(OpenButton(Loc.T("Mods.OpenServerFolder"), _serverFiles));
                 return;
             }
-
-            switch (_profile.Mechanism)
+            if (_profile.Mechanism == ModMechanism.None)
             {
-                case ModMechanism.None:
-                    _body.Children.Add(Info(Loc.T("Mods.NoModSystem")));
-                    break;
-                case ModMechanism.Workshop:
-                    BuildWorkshopView();
-                    break;
-                default:
-                    BuildFolderView();
-                    break;
+                _body.Children.Add(Info(Loc.T("Mods.NoModSystem")));
+                return;
             }
+            BuildFolderView();
         }
 
         // ---- File mods view ----
@@ -239,23 +243,36 @@ namespace WindowsGSM.Functions.Mods
             catch (Exception ex) { Fail(ex.Message); }
         }
 
-        // ---- Steam Workshop view ----
-        private void BuildWorkshopView()
+        // ---- Steam Workshop view: two tabs (Browse / Activate) ----
+        private void BuildWorkshopTabs()
         {
             if (_ws == null) { _ws = WorkshopConfig.Load(_serverId); }
+            var tabs = new TabControl { Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+            var browse = new StackPanel { Margin = new Thickness(0, 10, 14, 0) };
+            var activate = new StackPanel { Margin = new Thickness(0, 10, 14, 0) };
+            var tActivate = new TabItem { Header = Loc.T("Mods.TabActivate"), Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = activate } };
+            tabs.Items.Add(new TabItem { Header = Loc.T("Mods.TabBrowse"), Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = browse } });
+            tabs.Items.Add(tActivate);
+            // Rebuild the Activate tab each time it's shown so mods added in the Browse tab appear.
+            tabs.SelectionChanged += (s, e) => { if (ReferenceEquals(tabs.SelectedItem, tActivate)) { activate.Children.Clear(); BuildActivateTab(activate); } };
+            _host.Children.Add(tabs);
+            BuildBrowseTab(browse);
+            BuildActivateTab(activate);
+        }
 
-            // ---- Steam Workshop browser (downloadable mods, like the Steam page) ----
-            _body.Children.Add(new TextBlock { Text = Loc.T("Mods.BrowseTitle"), Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+        // Tab 1: discover & add mods from the Steam Workshop catalogue.
+        private void BuildBrowseTab(StackPanel body)
+        {
             var browseRow = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 6) };
             var searchBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.BrowseSearchBtn"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(6, 0, 0, 0) };
             DockPanel.SetDock(searchBtn, Dock.Right);
             browseRow.Children.Add(searchBtn);
             var qBox = new Wpf.Ui.Controls.TextBox { PlaceholderText = Loc.T("Mods.BrowsePlaceholder"), Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Search24 } };
             browseRow.Children.Add(qBox);
-            _body.Children.Add(browseRow);
+            body.Children.Add(browseRow);
 
-            var browseHost = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
-            _body.Children.Add(browseHost);
+            var browseHost = new StackPanel();
+            body.Children.Add(browseHost);
 
             async System.Threading.Tasks.Task RunBrowse()
             {
@@ -270,30 +287,30 @@ namespace WindowsGSM.Functions.Mods
             }
             searchBtn.Click += async (s, e) => await RunBrowse();
             qBox.KeyDown += async (s, e) => { if (e.Key == System.Windows.Input.Key.Enter) { await RunBrowse(); } };
-            _ = RunBrowse(); // auto-load trending on open
+            _ = RunBrowse();
 
-            _body.Children.Add(new TextBlock { Text = Loc.T("Mods.TrackedTitle"), Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 13, Margin = new Thickness(0, 6, 0, 6) });
-
-            // Add row
-            var add = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            add.Children.Add(new TextBlock { Text = Loc.T("Mods.AddLabel"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
-            var idBox = new Wpf.Ui.Controls.TextBox { MinWidth = 200, VerticalAlignment = VerticalAlignment.Center, PlaceholderText = Loc.T("Mods.WorkshopIdHint") };
-            var nameBox = new Wpf.Ui.Controls.TextBox { MinWidth = 200, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, PlaceholderText = Loc.T("Mods.NameOptional") };
-            var addBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.AddBtn"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), ToolTip = Loc.T("Common.AddEntry") };
+            body.Children.Add(new TextBlock { Text = Loc.T("Mods.AddLabel"), Foreground = Dim, FontSize = 11, Margin = new Thickness(0, 12, 0, 4) });
+            var add = new StackPanel { Orientation = Orientation.Horizontal };
+            var idBox = new Wpf.Ui.Controls.TextBox { MinWidth = 190, VerticalAlignment = VerticalAlignment.Center, PlaceholderText = Loc.T("Mods.WorkshopIdHint") };
+            var nameBox = new Wpf.Ui.Controls.TextBox { MinWidth = 170, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, PlaceholderText = Loc.T("Mods.NameOptional") };
+            var addBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.AddBtn"), Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary, Padding = new Thickness(14, 5, 14, 5), ToolTip = Loc.T("Common.AddEntry") };
             addBtn.Click += (s, e) =>
             {
                 string id = new string((idBox.Text ?? "").Trim().Where(char.IsDigit).ToArray());
                 if (id.Length == 0) { Fail(Loc.T("Mods.InvalidWorkshopId")); return; }
-                _ws.Items.Add(new WorkshopEntry { Id = id, Name = (nameBox.Text ?? "").Trim(), Enabled = true });
-                _ws.Save();
-                BuildBody();
+                if (!_ws.Items.Any(x => x.Id == id)) { _ws.Items.Add(new WorkshopEntry { Id = id, Name = (nameBox.Text ?? "").Trim(), Enabled = true }); _ws.Save(); }
+                idBox.Text = string.Empty; nameBox.Text = string.Empty;
+                _status.Foreground = Accent; _status.Text = Loc.T("Mods.BrowseAddedMsg", id);
             };
-            add.Children.Add(idBox);
-            add.Children.Add(nameBox);
-            add.Children.Add(addBtn);
-            _body.Children.Add(add);
+            add.Children.Add(idBox); add.Children.Add(nameBox); add.Children.Add(addBtn);
+            body.Children.Add(add);
+        }
 
-            // Steam account for downloads (games that require ownership: Palworld, ARK…).
+        // Tab 2: enable/disable your mods, download them, and apply to the server.
+        private void BuildActivateTab(StackPanel body)
+        {
+            body.Children.Add(new TextBlock { Text = Loc.T("Mods.ActivateNote"), Foreground = Dim, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
+
             if (!_profile.ServerAutoDownloads)
             {
                 var acct = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
@@ -310,11 +327,10 @@ namespace WindowsGSM.Functions.Mods
                     _status.Foreground = Accent; _status.Text = Loc.T("Mods.SteamLoginOpened");
                 };
                 acct.Children.Add(loginBtn);
-                _body.Children.Add(acct);
-                _body.Children.Add(new TextBlock { Text = Loc.T("Mods.SteamAccountNote"), Foreground = Dim, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
+                body.Children.Add(acct);
+                body.Children.Add(new TextBlock { Text = Loc.T("Mods.SteamAccountNote"), Foreground = Dim, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) });
             }
 
-            // Global actions
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
             if (!_profile.ServerAutoDownloads)
             {
@@ -322,21 +338,14 @@ namespace WindowsGSM.Functions.Mods
                 dl.Click += async (s, e) => await DownloadAll(dl);
                 actions.Children.Add(dl);
             }
-            if (!string.IsNullOrEmpty(_profile.ConfigKey) && !string.IsNullOrEmpty(_profile.ConfigFileRelative))
-            {
-                var apply = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.WriteConfigKey", _profile.ConfigKey), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5) };
-                apply.Click += (s, e) =>
-                {
-                    try { _status.Foreground = Accent; _status.Text = WorkshopManager.ApplyToConfig(_serverFiles, _profile, _ws.Items); }
-                    catch (Exception ex) { Fail(ex.Message); }
-                };
-                actions.Children.Add(apply);
-            }
-            if (actions.Children.Count > 0) { _body.Children.Add(actions); }
+            var applyBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.ApplyActivate"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5) };
+            applyBtn.Click += (s, e) => ApplyConfigNow();
+            actions.Children.Add(applyBtn);
+            body.Children.Add(actions);
 
             if (_ws.Items.Count == 0)
             {
-                _body.Children.Add(Info(Loc.T("Mods.NoWorkshopMods")));
+                body.Children.Add(Info(Loc.T("Mods.NoWorkshopMods")));
                 return;
             }
 
@@ -351,9 +360,32 @@ namespace WindowsGSM.Functions.Mods
                 if (list.Count == 0) { host.Children.Add(Info(Loc.T("Mods.NoMatch"))); return; }
                 foreach (var entry in list) { host.Children.Add(WorkshopCard(entry)); }
             });
-            _body.Children.Add(search);
-            _body.Children.Add(count);
-            _body.Children.Add(host);
+            body.Children.Add(search);
+            body.Children.Add(count);
+            body.Children.Add(host);
+        }
+
+        // Writes the enabled mods into the game (Palworld: copy + PalModSettings.ini; ARK/PZ: config key).
+        private void ApplyConfigNow()
+        {
+            try
+            {
+                string msg;
+                if (string.Equals(_profile.GameMatch, "Palworld", StringComparison.OrdinalIgnoreCase))
+                {
+                    msg = WorkshopManager.ApplyPalworld(_serverFiles, _ws.Items);
+                }
+                else if (!string.IsNullOrEmpty(_profile.ConfigKey) && !string.IsNullOrEmpty(_profile.ConfigFileRelative))
+                {
+                    msg = WorkshopManager.ApplyToConfig(_serverFiles, _profile, _ws.Items);
+                }
+                else
+                {
+                    msg = Loc.T("Mods.ActivateServerAuto");
+                }
+                _status.Foreground = Accent; _status.Text = msg;
+            }
+            catch (Exception ex) { Fail(ex.Message); }
         }
 
         // A browse result from the Steam Workshop catalogue: thumbnail + title + "Add" (adds to the tracked list).
@@ -433,8 +465,8 @@ namespace WindowsGSM.Functions.Mods
             var dp = new DockPanel();
 
             var toggle = new Wpf.Ui.Controls.ToggleSwitch { IsChecked = entry.Enabled, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
-            toggle.Checked += (s, e) => { captured.Enabled = true; _ws.Save(); };
-            toggle.Unchecked += (s, e) => { captured.Enabled = false; _ws.Save(); };
+            toggle.Checked += (s, e) => { captured.Enabled = true; _ws.Save(); ApplyConfigNow(); };
+            toggle.Unchecked += (s, e) => { captured.Enabled = false; _ws.Save(); ApplyConfigNow(); };
             DockPanel.SetDock(toggle, Dock.Left);
             dp.Children.Add(toggle);
 
@@ -474,6 +506,8 @@ namespace WindowsGSM.Functions.Mods
                 _status.Foreground = fail == 0 ? Accent : Warn;
                 _status.Text = Loc.T("Mods.DownloadFinished", ok, fail, _profile.ConfigKey)
                     + (fail > 0 && !string.IsNullOrEmpty(lastErr) ? " — " + lastErr : "");
+                // Auto-activate what was just downloaded (Palworld: PalModSettings.ini; ARK/PZ: config key).
+                if (ok > 0) { ApplyConfigNow(); }
             }
             catch (Exception ex) { Fail(ex.Message); }
             finally { btn.IsEnabled = true; }

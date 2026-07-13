@@ -111,6 +111,74 @@ namespace WindowsGSM.Functions.Mods
         }
 
         /// <summary>
+        /// Palworld activation: copies each ENABLED downloaded item into
+        /// &lt;serverfiles&gt;\Pal\Binaries\Win64\Mods\Workshop and (re)writes Mods\PalModSettings.ini
+        /// (bGlobalEnableMod + one ActiveModList=&lt;PackageName&gt; per enabled mod; PackageName read
+        /// from each mod's Info.json, NOT the id/folder). Disabled mods are simply left out. Restart required.
+        /// </summary>
+        public static string ApplyPalworld(string serverFiles, IEnumerable<WorkshopEntry> entries)
+        {
+            try
+            {
+                string modsDir = Path.Combine(serverFiles ?? string.Empty, "Pal", "Binaries", "Win64", "Mods");
+                string workshopDir = Path.Combine(modsDir, "Workshop");
+                Directory.CreateDirectory(workshopDir);
+
+                var pkgs = new List<string>();
+                int copied = 0, noInfo = 0, notServer = 0, notDownloaded = 0;
+                foreach (var e in entries.Where(x => x.Enabled))
+                {
+                    string sid = Digits(e.Id);
+                    string src = ContentPath(1623730, sid);
+                    if (!Directory.Exists(src)) { notDownloaded++; continue; }
+                    string dst = Path.Combine(workshopDir, sid);
+                    CopyDir(src, dst);
+                    copied++;
+
+                    string info = FindFile(dst, "Info.json");
+                    if (info == null) { noInfo++; continue; }
+                    try
+                    {
+                        var j = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(info));
+                        string pkg = j.Value<string>("package_name") ?? j.Value<string>("PackageName") ?? j.Value<string>("packageName") ?? j.Value<string>("mod_name");
+                        var rule = j["InstallRule"] as Newtonsoft.Json.Linq.JObject;
+                        bool isServer = rule?.Value<bool?>("IsServer") ?? true; // assume ok when unspecified
+                        if (!isServer) { notServer++; }
+                        if (!string.IsNullOrWhiteSpace(pkg)) { pkgs.Add(pkg); }
+                        else { noInfo++; }
+                    }
+                    catch { noInfo++; }
+                }
+
+                var sb = new StringBuilder();
+                sb.AppendLine("[PalModSettings]");
+                sb.AppendLine("bGlobalEnableMod=" + (pkgs.Count > 0 ? "true" : "false"));
+                foreach (var p in pkgs.Distinct()) { sb.AppendLine("ActiveModList=" + p); }
+                File.WriteAllText(Path.Combine(modsDir, "PalModSettings.ini"), sb.ToString());
+
+                string msg = $"{pkgs.Count} mod(s) activated — restart the server to apply.";
+                if (notDownloaded > 0) { msg += $" ⚠ {notDownloaded} not downloaded yet (click Download)."; }
+                if (noInfo > 0) { msg += $" ⚠ {noInfo} without a readable PackageName."; }
+                if (notServer > 0) { msg += $" ⚠ {notServer} flagged client-only."; }
+                return msg;
+            }
+            catch (Exception ex) { return "Activation error: " + ex.Message; }
+        }
+
+        private static void CopyDir(string src, string dst)
+        {
+            Directory.CreateDirectory(dst);
+            foreach (var f in Directory.GetFiles(src)) { File.Copy(f, Path.Combine(dst, Path.GetFileName(f)), true); }
+            foreach (var d in Directory.GetDirectories(src)) { CopyDir(d, Path.Combine(dst, Path.GetFileName(d))); }
+        }
+
+        private static string FindFile(string root, string name)
+        {
+            try { foreach (var f in Directory.EnumerateFiles(root, name, SearchOption.AllDirectories)) { return f; } } catch { }
+            return null;
+        }
+
+        /// <summary>
         /// Writes the list of enabled IDs into the game config (profile.ConfigFileRelative / ConfigKey /
         /// ConfigSection). Returns the summary. No-op if the profile has no config wiring.
         /// </summary>
