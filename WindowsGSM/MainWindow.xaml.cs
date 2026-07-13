@@ -3053,6 +3053,38 @@ namespace WindowsGSM
         // await Backup/Update on start, a window where two clicks slipped past the status guard).
         private readonly HashSet<string> _startingServers = new HashSet<string>();
 
+        // On start: keep enabled Workshop mods up to date (only when Update-on-start is on) and re-apply
+        // their activation to the server config (always) so an activated mod stays activated. No-op for
+        // non-Workshop games and for games that download mods themselves (Project Zomboid, Garry's Mod).
+        private async Task UpdateAndActivateModsOnStart(ServerTable server)
+        {
+            try
+            {
+                var profile = Functions.Mods.ModProfiles.For(server.Game);
+                if (profile == null || profile.Mechanism != Functions.Mods.ModMechanism.Workshop || profile.ServerAutoDownloads) { return; }
+
+                var ws = Functions.Mods.WorkshopConfig.Load(server.ID);
+                var enabled = ws.Items.Where(x => x.Enabled).ToList();
+                if (enabled.Count == 0) { return; }
+
+                string sf = Functions.ServerPath.GetServersServerFiles(server.ID);
+                if (GetServerMetadata(server.ID).UpdateOnStart)
+                {
+                    Log(server.ID, $"Mods: checking {enabled.Count} Workshop mod(s) for updates…");
+                    foreach (var e in enabled) { await Functions.Mods.WorkshopManager.DownloadAsync(profile.WorkshopAppId, e.Id); }
+                }
+
+                string msg = await Task.Run(() =>
+                    string.Equals(profile.GameMatch, "Palworld", StringComparison.OrdinalIgnoreCase)
+                        ? Functions.Mods.WorkshopManager.ApplyPalworld(sf, ws.Items)
+                        : (!string.IsNullOrEmpty(profile.ConfigKey) && !string.IsNullOrEmpty(profile.ConfigFileRelative)
+                            ? Functions.Mods.WorkshopManager.ApplyToConfig(sf, profile, ws.Items)
+                            : null));
+                if (!string.IsNullOrEmpty(msg)) { Log(server.ID, "Mods: " + msg); }
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("Mods/OnStart", ex.Message); }
+        }
+
         private async Task GameServer_Start(ServerTable server, string notes = "")
         {
             if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped) { return; }
@@ -3091,6 +3123,9 @@ namespace WindowsGSM
             {
                 await GameServer_Update(server, " | Update on Start");
             }
+
+            // Keep the enabled Workshop mods current + re-applied (so "activated stays activated").
+            await UpdateAndActivateModsOnStart(server);
 
             _serverMetadata[int.Parse(server.ID)].ServerStatus = ServerStatus.Starting;
             Log(server.ID, "Action: Start" + notes);
