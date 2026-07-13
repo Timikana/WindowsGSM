@@ -165,7 +165,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 if (entry == null) { continue; } // key absent from this file -> skip
                 handled.Add(spec.Key);
 
-                if (spec.Group != lastGroup) { AddGroupHeader(spec.Group); lastGroup = spec.Group; }
+                if (spec.Group != lastGroup) { AddGroupHeader(ConfigSchemaFr.Group(_activeSchema.GameMatch, spec.Group)); lastGroup = spec.Group; }
                 _body.Children.Add(BuildFieldRow(spec, entry));
             }
 
@@ -215,10 +215,12 @@ namespace WindowsGSM.Functions.ConfigEditor
             var dp = new DockPanel { Margin = new Thickness(0, 3, 0, 3) };
 
             var labelPanel = new StackPanel { Width = 230, VerticalAlignment = VerticalAlignment.Center };
-            labelPanel.Children.Add(new TextBlock { Text = spec.Label, Foreground = Fg });
-            if (!string.IsNullOrEmpty(spec.Description))
+            string fLabel = ConfigSchemaFr.Label(_activeSchema.GameMatch, spec);
+            string fDesc = ConfigSchemaFr.Desc(_activeSchema.GameMatch, spec);
+            labelPanel.Children.Add(new TextBlock { Text = fLabel, Foreground = Fg });
+            if (!string.IsNullOrEmpty(fDesc))
             {
-                labelPanel.Children.Add(new TextBlock { Text = spec.Description, Foreground = Dim, FontSize = 11, TextWrapping = TextWrapping.Wrap });
+                labelPanel.Children.Add(new TextBlock { Text = fDesc, Foreground = Dim, FontSize = 11, TextWrapping = TextWrapping.Wrap });
             }
             DockPanel.SetDock(labelPanel, Dock.Left);
             dp.Children.Add(labelPanel);
