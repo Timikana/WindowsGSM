@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using WindowsGSM.Functions.Localization;
 
 namespace WindowsGSM.Functions.Mods
@@ -243,6 +244,36 @@ namespace WindowsGSM.Functions.Mods
         {
             if (_ws == null) { _ws = WorkshopConfig.Load(_serverId); }
 
+            // ---- Steam Workshop browser (downloadable mods, like the Steam page) ----
+            _body.Children.Add(new TextBlock { Text = Loc.T("Mods.BrowseTitle"), Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+            var browseRow = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 6) };
+            var searchBtn = new Wpf.Ui.Controls.Button { Content = Loc.T("Mods.BrowseSearchBtn"), Appearance = Wpf.Ui.Controls.ControlAppearance.Primary, Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(6, 0, 0, 0) };
+            DockPanel.SetDock(searchBtn, Dock.Right);
+            browseRow.Children.Add(searchBtn);
+            var qBox = new Wpf.Ui.Controls.TextBox { PlaceholderText = Loc.T("Mods.BrowsePlaceholder"), Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Search24 } };
+            browseRow.Children.Add(qBox);
+            _body.Children.Add(browseRow);
+
+            var browseHost = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            _body.Children.Add(browseHost);
+
+            async System.Threading.Tasks.Task RunBrowse()
+            {
+                browseHost.Children.Clear();
+                browseHost.Children.Add(Info(Loc.T("Mods.BrowseLoading")));
+                var (ok, items, err) = await WorkshopBrowser.SearchAsync(_profile.WorkshopAppId.ToString(), qBox.Text);
+                if (_closed) { return; }
+                browseHost.Children.Clear();
+                if (!ok) { browseHost.Children.Add(Info(Loc.T("Mods.ErrorPrefix", err ?? "?"))); return; }
+                if (items.Count == 0) { browseHost.Children.Add(Info(Loc.T("Mods.BrowseNoResult"))); return; }
+                foreach (var it in items) { browseHost.Children.Add(BrowseCard(it)); }
+            }
+            searchBtn.Click += async (s, e) => await RunBrowse();
+            qBox.KeyDown += async (s, e) => { if (e.Key == System.Windows.Input.Key.Enter) { await RunBrowse(); } };
+            _ = RunBrowse(); // auto-load trending on open
+
+            _body.Children.Add(new TextBlock { Text = Loc.T("Mods.TrackedTitle"), Foreground = Accent, FontWeight = FontWeights.SemiBold, FontSize = 13, Margin = new Thickness(0, 6, 0, 6) });
+
             // Add row
             var add = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
             add.Children.Add(new TextBlock { Text = Loc.T("Mods.AddLabel"), Foreground = Dim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
@@ -302,6 +333,68 @@ namespace WindowsGSM.Functions.Mods
             _body.Children.Add(search);
             _body.Children.Add(count);
             _body.Children.Add(host);
+        }
+
+        // A browse result from the Steam Workshop catalogue: thumbnail + title + "Add" (adds to the tracked list).
+        private Border BrowseCard(WorkshopBrowserItem it)
+        {
+            var card = new Border
+            {
+                BorderBrush = WindowsGSM.Functions.Controls.DialogTheme.CardBorder,
+                Background = WindowsGSM.Functions.Controls.DialogTheme.CardBg,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Margin = new Thickness(0, 0, 0, 6),
+                Padding = new Thickness(8)
+            };
+            var dp = new DockPanel();
+
+            try
+            {
+                var img = new Image { Width = 44, Height = 44, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, Stretch = Stretch.UniformToFill };
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.UriSource = new Uri(it.PreviewUrl);
+                bmp.DecodePixelWidth = 44;
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                bmp.EndInit();
+                img.Source = bmp;
+                DockPanel.SetDock(img, Dock.Left);
+                dp.Children.Add(img);
+            }
+            catch { }
+
+            bool already = _ws.Items.Any(x => x.Id == it.Id);
+            var addB = new Wpf.Ui.Controls.Button
+            {
+                Content = already ? Loc.T("Mods.BrowseAdded") : Loc.T("Mods.AddBtn"),
+                Appearance = already ? Wpf.Ui.Controls.ControlAppearance.Secondary : Wpf.Ui.Controls.ControlAppearance.Primary,
+                IsEnabled = !already,
+                Padding = new Thickness(14, 5, 14, 5),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            addB.Click += (s, e) =>
+            {
+                if (_ws.Items.Any(x => x.Id == it.Id)) { return; }
+                _ws.Items.Add(new WorkshopEntry { Id = it.Id, Name = it.Title, Enabled = true });
+                _ws.Save();
+                addB.Content = Loc.T("Mods.BrowseAdded");
+                addB.IsEnabled = false;
+                addB.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
+                _status.Foreground = Accent;
+                _status.Text = Loc.T("Mods.BrowseAddedMsg", it.Title);
+            };
+            DockPanel.SetDock(addB, Dock.Right);
+            dp.Children.Add(addB);
+
+            var meta = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            meta.Children.Add(new TextBlock { Text = it.Title, Foreground = Fg, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
+            meta.Children.Add(new TextBlock { Text = "ID " + it.Id, Foreground = Dim, FontSize = 11 });
+            dp.Children.Add(meta);
+
+            card.Child = dp;
+            return card;
         }
 
         private Border WorkshopCard(WorkshopEntry entry)

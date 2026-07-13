@@ -183,6 +183,14 @@ namespace WindowsGSM.Functions.Localization
             E("Mods.WorkshopIdHint", "Workshop ID (the number in the URL)", "ID Workshop (le nombre dans l'URL)", "ID de Workshop (el número en la URL)", "Workshop-ID (die Zahl in der URL)");
             E("Mods.NameOptional", "Display name (optional)", "Nom affiché (optionnel)", "Nombre visible (opcional)", "Anzeigename (optional)");
             E("Mods.AddBtn", "Add", "Ajouter", "Añadir", "Hinzufügen");
+            E("Mods.BrowseTitle", "Browse the Steam Workshop", "Parcourir le Steam Workshop", "Explorar el Steam Workshop", "Steam Workshop durchsuchen");
+            E("Mods.BrowseSearchBtn", "Search", "Rechercher", "Buscar", "Suchen");
+            E("Mods.BrowsePlaceholder", "Search the Workshop (empty = trending)…", "Rechercher dans le Workshop (vide = tendances)…", "Buscar en el Workshop (vacío = tendencias)…", "Workshop durchsuchen (leer = Trends)…");
+            E("Mods.BrowseLoading", "Loading the Workshop…", "Chargement du Workshop…", "Cargando el Workshop…", "Workshop wird geladen…");
+            E("Mods.BrowseNoResult", "No result. Try other keywords.", "Aucun résultat. Essaie d'autres mots-clés.", "Sin resultados. Prueba otras palabras clave.", "Kein Ergebnis. Andere Stichwörter versuchen.");
+            E("Mods.BrowseAdded", "Added ✓", "Ajouté ✓", "Añadido ✓", "Hinzugefügt ✓");
+            E("Mods.BrowseAddedMsg", "\"{0}\" added — click \"Download (SteamCMD)\" below to install it.", "« {0} » ajouté — clique sur « Télécharger (SteamCMD) » plus bas pour l'installer.", "«{0}» añadido — haz clic en «Descargar (SteamCMD)» abajo para instalarlo.", "„{0}“ hinzugefügt — unten auf „Herunterladen (SteamCMD)“ klicken, um es zu installieren.");
+            E("Mods.TrackedTitle", "Your selected mods", "Tes mods sélectionnés", "Tus mods seleccionados", "Deine ausgewählten Mods");
             E("Mods.InvalidWorkshopId", "Invalid Workshop ID (digits only).", "ID Workshop invalide (chiffres uniquement).", "ID de Workshop no válido (solo dígitos).", "Ungültige Workshop-ID (nur Ziffern).");
             E("Mods.DownloadSteamCmd", "Download (SteamCMD)", "Télécharger (SteamCMD)", "Descargar (SteamCMD)", "Herunterladen (SteamCMD)");
             E("Mods.WriteConfigKey", "Write {0} to the config", "Écrire {0} dans la config", "Escribir {0} en la config", "{0} in die Konfiguration schreiben");
