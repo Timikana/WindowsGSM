@@ -143,6 +143,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             s.Fields.Add(new FieldSpec("bEnableInvaderEnemy", "Base raids", FieldKind.Bool, "Gameplay", "Enable invader/raid enemies attacking bases."));
             s.Fields.Add(new FieldSpec("EnablePredatorBossPal", "Predator/boss Pals", FieldKind.Bool, "Gameplay", "Enable roaming predator (boss) Pals."));
             s.Fields.Add(new FieldSpec("bEnableFastTravel", "Fast travel", FieldKind.Bool, "Gameplay", "Allow fast travel between statues."));
+            s.Fields.Add(new FieldSpec("bEnableFastTravelOnlyBaseCamp", "Fast travel: base camps only", FieldKind.Bool, "Gameplay", "Restrict fast travel to base camps only."));
             s.Fields.Add(new FieldSpec("bIsStartLocationSelectByMap", "Choose start on map", FieldKind.Bool, "Gameplay", "Let players pick their starting location on the map."));
             s.Fields.Add(new FieldSpec("bExistPlayerAfterLogout", "Body stays after logout", FieldKind.Bool, "Gameplay", "The player's body remains in the world after logging out."));
             s.Fields.Add(new FieldSpec("bEnableNonLoginPenalty", "Non-login penalty", FieldKind.Bool, "Gameplay", "Apply a penalty for players who don't log in for a while."));
