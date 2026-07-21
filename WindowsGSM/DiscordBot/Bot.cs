@@ -934,8 +934,16 @@ namespace WindowsGSM.DiscordBot
 				if (!full && !serverIds.Contains(serverId)) { await cmd.RespondAsync(Loc.T("Bot.NoPermissionServer"), ephemeral: true); return; }
 
 				await cmd.DeferAsync();
-				string result = await ExecuteSlashTargetAction(action, serverId, cmd.User.Id.ToString(), cmd.User.Username);
-				await cmd.FollowupAsync(result);
+				// Off the gateway task (see On_ButtonExecuted): a long start/update must not block the heartbeat.
+				_ = Task.Run(async () =>
+				{
+					try
+					{
+						string result = await ExecuteSlashTargetAction(action, serverId, cmd.User.Id.ToString(), cmd.User.Username);
+						await cmd.FollowupAsync(result);
+					}
+					catch (Exception ex) { try { await cmd.FollowupAsync(Loc.T("Bot.Error", ex.Message)); } catch { } }
+				});
 			}
 			catch (Exception e)
 			{
@@ -1103,18 +1111,24 @@ namespace WindowsGSM.DiscordBot
 				}
 
 				await comp.DeferAsync(ephemeral: true);
-				string result = await ExecuteSlashTargetAction(action, serverId, comp.User.Id.ToString(), comp.User.Username);
-				await comp.FollowupAsync(result, ephemeral: true);
-
-				// Refreshes the panel (status/players) after the action.
-				try
+				// Run the action OFF the gateway task. A Start that triggers update-on-start can take minutes;
+				// awaiting it here would block Discord's heartbeat -> the bot gets disconnected mid-operation
+				// ("Server missed last heartbeat") and no status updates get through until it reconnects.
+				// We already deferred, so the interaction token stays valid ~15 min for the follow-up.
+				_ = Task.Run(async () =>
 				{
-					var (embed, components) = isAdminPanel
-						? await BuildAdminPanel(comp.Channel.Id)
-						: await BuildPanelMessage(serverId);
-					await comp.Message.ModifyAsync(m => { m.Embed = embed; m.Components = components; });
-				}
-				catch { }
+					try
+					{
+						string result = await ExecuteSlashTargetAction(action, serverId, comp.User.Id.ToString(), comp.User.Username);
+						await comp.FollowupAsync(result, ephemeral: true);
+						// Refreshes the panel (status/players) after the action.
+						var (embed, components) = isAdminPanel
+							? await BuildAdminPanel(comp.Channel.Id)
+							: await BuildPanelMessage(serverId);
+						await comp.Message.ModifyAsync(m => { m.Embed = embed; m.Components = components; });
+					}
+					catch (Exception ex) { try { await comp.FollowupAsync(Loc.T("Bot.Error", ex.Message), ephemeral: true); } catch { } }
+				});
 			}
 			catch (Exception e)
 			{
