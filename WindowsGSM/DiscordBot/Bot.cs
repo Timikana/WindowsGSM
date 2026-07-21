@@ -726,6 +726,8 @@ namespace WindowsGSM.DiscordBot
 			var snap = Application.Current.Dispatcher.Invoke(
 				() => ((MainWindow)Application.Current.MainWindow).GetServerSnapshot(serverId));
 			bool started = snap.status == "Started";
+			var gauto = Application.Current.Dispatcher.Invoke(
+				() => ((MainWindow)Application.Current.MainWindow).GetAutoSettings(serverId));
 
 			string playerList = string.Empty;
 			if (started)
@@ -763,6 +765,9 @@ namespace WindowsGSM.DiscordBot
 			{
 				cb.WithButton(Loc.T("Bot.GcBtnConsole"), $"wgsmgc:console:{serverId}", ButtonStyle.Secondary, row: 1);
 			}
+			cb.WithButton(Loc.T("Bot.BtnAutoStart") + (gauto.autoStart ? " ✅" : " ✖"), $"wgsm:autostart:{serverId}", gauto.autoStart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
+			cb.WithButton(Loc.T("Bot.BtnAutoRestart") + (gauto.autoRestart ? " ✅" : " ✖"), $"wgsm:autorestart:{serverId}", gauto.autoRestart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
+			cb.WithButton(Loc.T("Bot.BtnAutoUpdate") + (gauto.autoUpdate ? " ✅" : " ✖"), $"wgsm:autoupdate:{serverId}", gauto.autoUpdate ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
 			return (embed.Build(), cb.Build());
 		}
 
@@ -997,6 +1002,14 @@ namespace WindowsGSM.DiscordBot
 						return (await w.BackupServerById(serverId, userId, userName)) ? Loc.T("Bot.BackedUp", serverId) : Loc.T("Bot.FailBackup", serverId);
 					case "update":
 						return (await w.UpdateServerById(serverId, userId, userName)) ? Loc.T("Bot.Updated", serverId) : Loc.T("Bot.FailUpdate", serverId);
+					case "autostart":
+					case "autorestart":
+					case "autoupdate":
+					{
+						bool nv = w.ToggleAutoSetting(serverId, action);
+						string label = action == "autostart" ? Loc.T("Bot.BtnAutoStart") : action == "autorestart" ? Loc.T("Bot.BtnAutoRestart") : Loc.T("Bot.BtnAutoUpdate");
+						return Loc.T("Bot.AutoToggled", label, nv ? Loc.T("Bot.On") : Loc.T("Bot.Off"));
+					}
 					default:
 						return Loc.T("Bot.UnknownAction");
 				}
@@ -1023,12 +1036,16 @@ namespace WindowsGSM.DiscordBot
 					.WithFooter(Loc.T("Bot.ControlFooter", MainWindow.WGSM_VERSION))
 					.Build();
 
+				var auto = w.GetAutoSettings(serverId);
 				var comp = new ComponentBuilder()
 					.WithButton(Loc.T("Bot.BtnStart"), $"wgsm:start:{serverId}", ButtonStyle.Success)
 					.WithButton(Loc.T("Bot.BtnStop"), $"wgsm:stop:{serverId}", ButtonStyle.Danger)
 					.WithButton(Loc.T("Bot.BtnRestart"), $"wgsm:restart:{serverId}", ButtonStyle.Primary)
 					.WithButton(Loc.T("Bot.BtnBackup"), $"wgsm:backup:{serverId}", ButtonStyle.Secondary)
 					.WithButton(Loc.T("Bot.BtnUpdate"), $"wgsm:update:{serverId}", ButtonStyle.Secondary)
+					.WithButton(Loc.T("Bot.BtnAutoStart") + (auto.autoStart ? " ✅" : " ✖"), $"wgsm:autostart:{serverId}", auto.autoStart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 1)
+					.WithButton(Loc.T("Bot.BtnAutoRestart") + (auto.autoRestart ? " ✅" : " ✖"), $"wgsm:autorestart:{serverId}", auto.autoRestart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 1)
+					.WithButton(Loc.T("Bot.BtnAutoUpdate") + (auto.autoUpdate ? " ✅" : " ✖"), $"wgsm:autoupdate:{serverId}", auto.autoUpdate ? ButtonStyle.Success : ButtonStyle.Secondary, row: 1)
 					.Build();
 
 				return await Task.FromResult((embed, comp));

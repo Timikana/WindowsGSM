@@ -5621,6 +5621,44 @@ namespace WindowsGSM
             return names;
         }
 
+        // ---- Auto-* settings, exposed so the Discord bot can show + toggle them (UI-thread only) ----
+
+        /// <summary>Current Auto-Start / Auto-Restart / Auto-Update flags for a server.</summary>
+        public (bool autoStart, bool autoRestart, bool autoUpdate) GetAutoSettings(string serverId)
+        {
+            var m = GetServerMetadata(serverId);
+            return m == null ? (false, false, false) : (m.AutoStart, m.AutoRestart, m.AutoUpdate);
+        }
+
+        /// <summary>Toggle one auto flag (autostart|autorestart|autoupdate), persist it to the server config,
+        /// and mirror it onto the desktop switches when that server is the selected row. Returns the new value.</summary>
+        public bool ToggleAutoSetting(string serverId, string which)
+        {
+            if (!int.TryParse(serverId, out int id) || GetServerMetadata(serverId) == null) { return false; }
+            bool nv;
+            switch ((which ?? string.Empty).ToLowerInvariant())
+            {
+                case "autostart": nv = !_serverMetadata[id].AutoStart; _serverMetadata[id].AutoStart = nv; ServerConfig.SetSetting(serverId, ServerConfig.SettingName.AutoStart, nv ? "1" : "0"); break;
+                case "autorestart": nv = !_serverMetadata[id].AutoRestart; _serverMetadata[id].AutoRestart = nv; ServerConfig.SetSetting(serverId, ServerConfig.SettingName.AutoRestart, nv ? "1" : "0"); break;
+                case "autoupdate": nv = !_serverMetadata[id].AutoUpdate; _serverMetadata[id].AutoUpdate = nv; ServerConfig.SetSetting(serverId, ServerConfig.SettingName.AutoUpdate, nv ? "1" : "0"); break;
+                default: return false;
+            }
+            // Keep the desktop toggle switches in sync if this server's row is currently selected.
+            try
+            {
+                var sel = (ServerTable)ServerGrid.SelectedItem;
+                if (sel != null && sel.ID == serverId)
+                {
+                    switch_autostart.IsChecked = _serverMetadata[id].AutoStart;
+                    switch_autorestart.IsChecked = _serverMetadata[id].AutoRestart;
+                    switch_autoupdate.IsChecked = _serverMetadata[id].AutoUpdate;
+                }
+            }
+            catch { }
+            Log(serverId, $"Discord: toggle {which} -> {(nv ? "ON" : "OFF")}");
+            return nv;
+        }
+
         // Last lines of a server's console (for the Discord console/log command).
         public string GetServerConsoleTail(string serverId, int lines)
         {

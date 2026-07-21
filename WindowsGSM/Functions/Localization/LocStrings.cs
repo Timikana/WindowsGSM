@@ -722,6 +722,12 @@ namespace WindowsGSM.Functions.Localization
             E("Bot.BtnRestart", "Restart", "Redémarrer", "Reiniciar", "Neu starten");
             E("Bot.BtnBackup", "Backup", "Sauvegarder", "Copia de seguridad", "Sichern");
             E("Bot.BtnUpdate", "Update", "Mettre à jour", "Actualizar", "Aktualisieren");
+            E("Bot.BtnAutoStart", "Auto-Start", "Démarrage auto", "Inicio auto", "Auto-Start");
+            E("Bot.BtnAutoRestart", "Auto-Restart", "Redémarrage auto", "Reinicio auto", "Auto-Neustart");
+            E("Bot.BtnAutoUpdate", "Auto-Update", "MàJ auto", "Actualización auto", "Auto-Update");
+            E("Bot.On", "ON", "ON", "ON", "AN");
+            E("Bot.Off", "OFF", "OFF", "OFF", "AUS");
+            E("Bot.AutoToggled", "{0} is now **{1}**.", "{0} est maintenant **{1}**.", "{0} ahora está **{1}**.", "{0} ist jetzt **{1}**.");
             E("Bot.NoPermission", "You do not have permission.", "Tu n'as pas la permission.", "No tienes permiso.", "Du hast keine Berechtigung.");
             E("Bot.Error", "Error: {0}", "Erreur : {0}", "Error: {0}", "Fehler: {0}");
             E("Bot.SlashDesc", "Control WindowsGSM", "Contrôler WindowsGSM", "Controlar WindowsGSM", "WindowsGSM steuern");
