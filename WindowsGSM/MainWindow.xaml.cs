@@ -5621,6 +5621,12 @@ namespace WindowsGSM
             return names;
         }
 
+        // ---- Config bridge context (game + serverfiles) for the Discord config editor ----
+        public (string game, string serverFiles) GetServerConfigContext(string serverId)
+        {
+            return (GetServerGame(serverId) ?? string.Empty, Functions.ServerPath.GetServersServerFiles(serverId));
+        }
+
         // ---- Auto-* settings, exposed so the Discord bot can show + toggle them (UI-thread only) ----
 
         /// <summary>Current Auto-Start / Auto-Restart / Auto-Update flags for a server.</summary>

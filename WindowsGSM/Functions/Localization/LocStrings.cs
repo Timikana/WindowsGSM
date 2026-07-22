@@ -728,6 +728,18 @@ namespace WindowsGSM.Functions.Localization
             E("Bot.On", "ON", "ON", "ON", "AN");
             E("Bot.Off", "OFF", "OFF", "OFF", "AUS");
             E("Bot.AutoToggled", "{0} is now **{1}**.", "{0} est maintenant **{1}**.", "{0} ahora está **{1}**.", "{0} ist jetzt **{1}**.");
+            E("Bot.BtnConfig", "⚙️ Settings", "⚙️ Réglages", "⚙️ Ajustes", "⚙️ Einstellungen");
+            E("Bot.CfgSlashDesc", "Change a server setting", "Modifier un réglage du serveur", "Cambiar un ajuste del servidor", "Servereinstellung ändern");
+            E("Bot.CfgSettingDesc", "Setting to change", "Réglage à modifier", "Ajuste a cambiar", "Zu ändernde Einstellung");
+            E("Bot.CfgValueDesc", "New value", "Nouvelle valeur", "Nuevo valor", "Neuer Wert");
+            E("Bot.CfgNoConfig", "No editable config for this server.", "Aucune config éditable pour ce serveur.", "No hay configuración editable para este servidor.", "Keine bearbeitbare Konfiguration für diesen Server.");
+            E("Bot.CfgPickSection", "Choose a section…", "Choisis une section…", "Elige una sección…", "Wähle einen Bereich…");
+            E("Bot.CfgPickSetting", "Choose a setting…", "Choisis un réglage…", "Elige un ajuste…", "Wähle eine Einstellung…");
+            E("Bot.CfgModalTitle", "Edit setting", "Modifier le réglage", "Editar ajuste", "Einstellung bearbeiten");
+            E("Bot.CfgCurrent", "Current: {0}", "Actuel : {0}", "Actual: {0}", "Aktuell: {0}");
+            E("Bot.CfgSaved", "✅ {0} — restart the server to apply.", "✅ {0} — redémarre le serveur pour appliquer.", "✅ {0} — reinicia el servidor para aplicar.", "✅ {0} — Server neu starten, um zu übernehmen.");
+            E("Bot.CfgFailed", "❌ {0}", "❌ {0}", "❌ {0}", "❌ {0}");
+            E("Bot.UpdateNeedsStop", "⚠️ Server `{0}` must be **stopped** to update (files are in use). Stop it, then update.", "⚠️ Le serveur `{0}` doit être **arrêté** pour la mise à jour (fichiers en cours d'utilisation). Arrête-le, puis mets à jour.", "⚠️ El servidor `{0}` debe estar **detenido** para actualizar. Deténlo y actualiza.", "⚠️ Server `{0}` muss zum Aktualisieren **gestoppt** sein. Stoppe ihn und aktualisiere dann.");
             E("Bot.NoPermission", "You do not have permission.", "Tu n'as pas la permission.", "No tienes permiso.", "Du hast keine Berechtigung.");
             E("Bot.Error", "Error: {0}", "Erreur : {0}", "Error: {0}", "Fehler: {0}");
             E("Bot.SlashDesc", "Control WindowsGSM", "Contrôler WindowsGSM", "Controlar WindowsGSM", "WindowsGSM steuern");

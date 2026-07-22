@@ -94,6 +94,7 @@ namespace WindowsGSM.DiscordBot
 			_client.ButtonExecuted += On_ButtonExecuted;
 			_client.SelectMenuExecuted += On_SelectMenuExecuted;
 			_client.ModalSubmitted += On_ModalSubmitted;
+			_client.AutocompleteExecuted += On_AutocompleteExecuted;
 
 			try
 			{
@@ -768,6 +769,7 @@ namespace WindowsGSM.DiscordBot
 			cb.WithButton(Loc.T("Bot.BtnAutoStart") + (gauto.autoStart ? " ✅" : " ✖"), $"wgsm:autostart:{serverId}", gauto.autoStart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
 			cb.WithButton(Loc.T("Bot.BtnAutoRestart") + (gauto.autoRestart ? " ✅" : " ✖"), $"wgsm:autorestart:{serverId}", gauto.autoRestart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
 			cb.WithButton(Loc.T("Bot.BtnAutoUpdate") + (gauto.autoUpdate ? " ✅" : " ✖"), $"wgsm:autoupdate:{serverId}", gauto.autoUpdate ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
+			cb.WithButton(Loc.T("Bot.BtnConfig"), $"wgsm:config:{serverId}", ButtonStyle.Primary, row: 3);
 			return (embed.Build(), cb.Build());
 		}
 
@@ -839,6 +841,32 @@ namespace WindowsGSM.DiscordBot
 		{
 			try
 			{
+				string cid = comp.Data.CustomId ?? string.Empty;
+				if (cid.StartsWith("wgsmcfg:sec:"))
+				{
+					string sid = cid.Substring("wgsmcfg:sec:".Length);
+					if (!CfgAllowed(comp.User.Id.ToString(), sid)) { await comp.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+					string grp = comp.Data.Values.FirstOrDefault() ?? string.Empty;
+					await comp.UpdateAsync(m => { m.Content = Loc.T("Bot.CfgPickSetting"); m.Components = BuildConfigSettingMenu(sid, grp); });
+					return;
+				}
+				if (cid.StartsWith("wgsmcfg:key:"))
+				{
+					string sid = cid.Substring("wgsmcfg:key:".Length);
+					if (!CfgAllowed(comp.User.Id.ToString(), sid)) { await comp.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+					string key = comp.Data.Values.FirstOrDefault() ?? string.Empty;
+					var (cgame, csf) = CfgCtx(sid);
+					var fld = Functions.ConfigEditor.ConfigBridge.Get(cgame, csf, key);
+					string flabel = fld?.Label ?? key; if (flabel.Length > 45) { flabel = flabel.Substring(0, 45); }
+					string place = string.Empty;
+					if (fld != null) { if (fld.EnumValues != null && fld.EnumValues.Length > 0) { place = string.Join("/", fld.EnumValues); } else if (fld.Kind == Functions.ConfigEditor.FieldKind.Bool) { place = "on/off"; } else if (fld.HasRange) { place = ((long)fld.Min) + "-" + ((long)fld.Max); } }
+					if (place.Length > 100) { place = place.Substring(0, 100); }
+					var modal = new ModalBuilder().WithTitle(Loc.T("Bot.CfgModalTitle")).WithCustomId($"wgsmcfgmodal:{sid}:{key}")
+						.AddTextInput(flabel, "val", value: fld?.Current ?? string.Empty, placeholder: place, required: true, maxLength: 200);
+					await comp.RespondWithModalAsync(modal.Build());
+					return;
+				}
+
 				if ((comp.Data.CustomId ?? string.Empty) != "wgsmadm:select") { return; }
 
 				var serverIds = Configs.GetServerIdsByAdminId(comp.User.Id.ToString());
@@ -861,6 +889,73 @@ namespace WindowsGSM.DiscordBot
 		}
 
 		// ===== Slash commands (coexist with prefix commands) =====
+		// ===== Config editor over Discord (guided menu + /config) =====
+		private (string game, string sf) CfgCtx(string serverId)
+			=> Application.Current.Dispatcher.Invoke(() => ((MainWindow)Application.Current.MainWindow).GetServerConfigContext(serverId));
+
+		private bool CfgAllowed(string userId, string serverId)
+		{
+			var ids = Configs.GetServerIdsByAdminId(userId);
+			return ids.Count > 0 && (ids.Contains("0") || ids.Contains(serverId));
+		}
+
+		private MessageComponent BuildConfigSectionMenu(string serverId)
+		{
+			var (game, sf) = CfgCtx(serverId);
+			var menu = new SelectMenuBuilder().WithCustomId($"wgsmcfg:sec:{serverId}").WithPlaceholder(Loc.T("Bot.CfgPickSection")).WithMinValues(1).WithMaxValues(1);
+			foreach (var g in Functions.ConfigEditor.ConfigBridge.Groups(game, sf).Take(25)) { menu.AddOption(g.Length > 100 ? g.Substring(0, 100) : g, g); }
+			return new ComponentBuilder().WithSelectMenu(menu).Build();
+		}
+
+		private MessageComponent BuildConfigSettingMenu(string serverId, string groupFr)
+		{
+			var (game, sf) = CfgCtx(serverId);
+			var menu = new SelectMenuBuilder().WithCustomId($"wgsmcfg:key:{serverId}").WithPlaceholder(Loc.T("Bot.CfgPickSetting")).WithMinValues(1).WithMaxValues(1);
+			foreach (var fld in Functions.ConfigEditor.ConfigBridge.Fields(game, sf, groupFr).Take(25))
+			{
+				string lab = fld.Label.Length > 100 ? fld.Label.Substring(0, 100) : fld.Label;
+				string desc = Loc.T("Bot.CfgCurrent", fld.Current ?? string.Empty);
+				if (desc.Length > 100) { desc = desc.Substring(0, 100); }
+				menu.AddOption(lab, fld.Key, desc);
+			}
+			return new ComponentBuilder().WithSelectMenu(menu).Build();
+		}
+
+		private async Task On_AutocompleteExecuted(SocketAutocompleteInteraction ac)
+		{
+			try
+			{
+				if (ac.Data.CommandName != "config" || ac.Data.Current.Name != "setting") { await ac.RespondAsync(System.Array.Empty<AutocompleteResult>()); return; }
+				string serverId = ac.Data.Options.FirstOrDefault(o => o.Name == "serverid")?.Value?.ToString() ?? string.Empty;
+				string typed = (ac.Data.Current.Value?.ToString() ?? string.Empty).Trim();
+				var (game, sf) = CfgCtx(serverId);
+				var fields = Functions.ConfigEditor.ConfigBridge.Fields(game, sf);
+				if (typed.Length > 0) { fields = fields.Where(f => f.Label.IndexOf(typed, StringComparison.OrdinalIgnoreCase) >= 0 || f.Key.IndexOf(typed, StringComparison.OrdinalIgnoreCase) >= 0).ToList(); }
+				var results = fields.Take(25).Select(f => new AutocompleteResult(((f.Label.Length > 88 ? f.Label.Substring(0, 88) : f.Label) + " [" + f.Key + "]"), f.Key)).ToArray();
+				await ac.RespondAsync(results);
+			}
+			catch { try { await ac.RespondAsync(System.Array.Empty<AutocompleteResult>()); } catch { } }
+		}
+
+		private async Task HandleConfigSlash(SocketSlashCommand cmd)
+		{
+			string serverId = cmd.Data.Options.FirstOrDefault(o => o.Name == "serverid")?.Value?.ToString() ?? string.Empty;
+			string key = cmd.Data.Options.FirstOrDefault(o => o.Name == "setting")?.Value?.ToString() ?? string.Empty;
+			string value = cmd.Data.Options.FirstOrDefault(o => o.Name == "value")?.Value?.ToString() ?? string.Empty;
+			if (!CfgAllowed(cmd.User.Id.ToString(), serverId)) { await cmd.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+			await cmd.DeferAsync(ephemeral: true);
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					var (game, sf) = CfgCtx(serverId);
+					var (ok, msg) = Functions.ConfigEditor.ConfigBridge.Set(game, sf, key, value);
+					await cmd.FollowupAsync(ok ? Loc.T("Bot.CfgSaved", msg) : Loc.T("Bot.CfgFailed", msg), ephemeral: true);
+				}
+				catch (Exception ex) { try { await cmd.FollowupAsync(Loc.T("Bot.Error", ex.Message), ephemeral: true); } catch { } }
+			});
+		}
+
 		private async Task RegisterSlashCommands()
 		{
 			try
@@ -887,6 +982,14 @@ namespace WindowsGSM.DiscordBot
 					.AddOption("serverid", ApplicationCommandOptionType.Integer, Loc.T("Bot.SlashServerIdDesc"), isRequired: false);
 
 				await _client.CreateGlobalApplicationCommandAsync(cmd.Build());
+
+				var cfg = new SlashCommandBuilder()
+					.WithName("config")
+					.WithDescription(Loc.T("Bot.CfgSlashDesc"))
+					.AddOption("serverid", ApplicationCommandOptionType.Integer, Loc.T("Bot.SlashServerIdDesc"), isRequired: true)
+					.AddOption(new SlashCommandOptionBuilder().WithName("setting").WithDescription(Loc.T("Bot.CfgSettingDesc")).WithType(ApplicationCommandOptionType.String).WithRequired(true).WithAutocomplete(true))
+					.AddOption("value", ApplicationCommandOptionType.String, Loc.T("Bot.CfgValueDesc"), isRequired: true);
+				await _client.CreateGlobalApplicationCommandAsync(cfg.Build());
 			}
 			catch (Exception e)
 			{
@@ -896,6 +999,7 @@ namespace WindowsGSM.DiscordBot
 
 		private async Task On_SlashCommandExecuted(SocketSlashCommand cmd)
 		{
+			if (cmd.CommandName == "config") { await HandleConfigSlash(cmd); return; }
 			if (cmd.CommandName != "wgsm") { return; }
 
 			try
@@ -1001,6 +1105,7 @@ namespace WindowsGSM.DiscordBot
 					case "backup":
 						return (await w.BackupServerById(serverId, userId, userName)) ? Loc.T("Bot.BackedUp", serverId) : Loc.T("Bot.FailBackup", serverId);
 					case "update":
+						if (w.GetServerStatus(serverId).ToString() != "Stopped") { return Loc.T("Bot.UpdateNeedsStop", serverId); }
 						return (await w.UpdateServerById(serverId, userId, userName)) ? Loc.T("Bot.Updated", serverId) : Loc.T("Bot.FailUpdate", serverId);
 					case "autostart":
 					case "autorestart":
@@ -1046,6 +1151,7 @@ namespace WindowsGSM.DiscordBot
 					.WithButton(Loc.T("Bot.BtnAutoStart") + (auto.autoStart ? " ✅" : " ✖"), $"wgsm:autostart:{serverId}", auto.autoStart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 1)
 					.WithButton(Loc.T("Bot.BtnAutoRestart") + (auto.autoRestart ? " ✅" : " ✖"), $"wgsm:autorestart:{serverId}", auto.autoRestart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 1)
 					.WithButton(Loc.T("Bot.BtnAutoUpdate") + (auto.autoUpdate ? " ✅" : " ✖"), $"wgsm:autoupdate:{serverId}", auto.autoUpdate ? ButtonStyle.Success : ButtonStyle.Secondary, row: 1)
+					.WithButton(Loc.T("Bot.BtnConfig"), $"wgsm:config:{serverId}", ButtonStyle.Primary, row: 2)
 					.Build();
 
 				return await Task.FromResult((embed, comp));
@@ -1058,6 +1164,28 @@ namespace WindowsGSM.DiscordBot
 			try
 			{
 				string cid = modal.Data.CustomId ?? string.Empty;
+				if (cid.StartsWith("wgsmcfgmodal:"))
+				{
+					string rest = cid.Substring("wgsmcfgmodal:".Length);
+					int ci = rest.IndexOf(':');
+					string msid = ci > 0 ? rest.Substring(0, ci) : rest;
+					string mkey = ci > 0 ? rest.Substring(ci + 1) : string.Empty;
+					if (!CfgAllowed(modal.User.Id.ToString(), msid)) { await modal.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+					string mval = modal.Data.Components.FirstOrDefault(c => c.CustomId == "val")?.Value ?? string.Empty;
+					await modal.DeferAsync(ephemeral: true);
+					_ = Task.Run(async () =>
+					{
+						try
+						{
+							var (cgame, csf) = CfgCtx(msid);
+							var (ok, msg) = Functions.ConfigEditor.ConfigBridge.Set(cgame, csf, mkey, mval);
+							var rc = new ComponentBuilder().WithButton(Loc.T("Bot.BtnRestart"), $"wgsm:restart:{msid}", ButtonStyle.Primary).Build();
+							await modal.FollowupAsync(ok ? Loc.T("Bot.CfgSaved", msg) : Loc.T("Bot.CfgFailed", msg), ephemeral: true, components: ok ? rc : null);
+						}
+						catch (Exception ex) { try { await modal.FollowupAsync(Loc.T("Bot.Error", ex.Message), ephemeral: true); } catch { } }
+					});
+					return;
+				}
 				if (!cid.StartsWith("wgsmgcmodal:")) { return; }
 				string sid = cid.Substring("wgsmgcmodal:".Length);
 				var ids = Configs.GetServerIdsByAdminId(modal.User.Id.ToString());
@@ -1079,6 +1207,17 @@ namespace WindowsGSM.DiscordBot
 		{
 			try
 			{
+				// Guided config editor button: opens the section select menu (ephemeral). Admin-only.
+				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsm:config:"))
+				{
+					string csid = comp.Data.CustomId.Substring("wgsm:config:".Length);
+					if (!CfgAllowed(comp.User.Id.ToString(), csid)) { await comp.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+					var (cgame, csf) = CfgCtx(csid);
+					if (!Functions.ConfigEditor.ConfigBridge.Supported(cgame, csf)) { await comp.RespondAsync(Loc.T("Bot.CfgNoConfig"), ephemeral: true); return; }
+					await comp.RespondAsync(Loc.T("Bot.CfgPickSection"), components: BuildConfigSectionMenu(csid), ephemeral: true);
+					return;
+				}
+
 				// Game-channel "Console" button (Palworld): opens a modal to type an RCON command. Admin-only.
 				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsmgc:console:"))
 				{
