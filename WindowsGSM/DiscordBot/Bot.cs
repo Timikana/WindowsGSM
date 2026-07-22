@@ -770,6 +770,7 @@ namespace WindowsGSM.DiscordBot
 			cb.WithButton(Loc.T("Bot.BtnAutoRestart") + (gauto.autoRestart ? " ✅" : " ✖"), $"wgsm:autorestart:{serverId}", gauto.autoRestart ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
 			cb.WithButton(Loc.T("Bot.BtnAutoUpdate") + (gauto.autoUpdate ? " ✅" : " ✖"), $"wgsm:autoupdate:{serverId}", gauto.autoUpdate ? ButtonStyle.Success : ButtonStyle.Secondary, row: 2);
 			cb.WithButton(Loc.T("Bot.BtnConfig"), $"wgsm:config:{serverId}", ButtonStyle.Primary, row: 3);
+			cb.WithButton(Loc.T("Bot.BtnClean"), $"wgsm:clean:{serverId}", ButtonStyle.Secondary, row: 3);
 			return (embed.Build(), cb.Build());
 		}
 
@@ -889,6 +890,29 @@ namespace WindowsGSM.DiscordBot
 		}
 
 		// ===== Slash commands (coexist with prefix commands) =====
+		// ===== Channel cleanup (game channels) =====
+		private SocketTextChannel FindGameChannel(string serverId)
+		{
+			string cat = Configs.GetGameChannelsCategory();
+			if (string.IsNullOrWhiteSpace(cat) || !ulong.TryParse(cat, out ulong catId)) { return null; }
+			if (!(_client.GetChannel(catId) is SocketCategoryChannel category)) { return null; }
+			return category.Channels.OfType<SocketTextChannel>().FirstOrDefault(c => (c.Topic ?? string.Empty).Trim() == $"wgsm:server:{serverId}");
+		}
+
+		// Deletes every message in a game channel except the live status panel (keepId). These channels are
+		// bot-only (@everyone can't post), so this just clears the bot's own status/event backlog.
+		private async Task<int> PurgeGameChannel(SocketTextChannel channel, ulong keepId)
+		{
+			int deleted = 0;
+			var all = (await channel.GetMessagesAsync(100).FlattenAsync()).Where(m => m.Id != keepId).ToList();
+			var recent = all.Where(m => (DateTimeOffset.UtcNow - m.Timestamp).TotalDays < 14).ToList();
+			var old = all.Where(m => (DateTimeOffset.UtcNow - m.Timestamp).TotalDays >= 14).ToList();
+			if (recent.Count >= 2) { try { await channel.DeleteMessagesAsync(recent); deleted += recent.Count; } catch { foreach (var m in recent) { try { await m.DeleteAsync(); deleted++; } catch { } } } }
+			else { foreach (var m in recent) { try { await m.DeleteAsync(); deleted++; } catch { } } }
+			foreach (var m in old) { try { await m.DeleteAsync(); deleted++; } catch { } }
+			return deleted;
+		}
+
 		// ===== Config editor over Discord (guided menu + /config) =====
 		private (string game, string sf) CfgCtx(string serverId)
 			=> Application.Current.Dispatcher.Invoke(() => ((MainWindow)Application.Current.MainWindow).GetServerConfigContext(serverId));
@@ -1207,6 +1231,27 @@ namespace WindowsGSM.DiscordBot
 		{
 			try
 			{
+				// Clean button: purge the game channel (keeps the live panel). Admin-only.
+				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsm:clean:"))
+				{
+					string sid = comp.Data.CustomId.Substring("wgsm:clean:".Length);
+					if (!CfgAllowed(comp.User.Id.ToString(), sid)) { await comp.RespondAsync(Loc.T("Bot.NoPermission"), ephemeral: true); return; }
+					await comp.DeferAsync(ephemeral: true);
+					_ = Task.Run(async () =>
+					{
+						try
+						{
+							var ch = FindGameChannel(sid);
+							if (ch == null) { await comp.FollowupAsync(Loc.T("Bot.CleanNoChannel"), ephemeral: true); return; }
+							ulong keep = _gameChannelMessages.TryGetValue(sid, out var lm) && lm != null ? lm.Id : 0UL;
+							int n = await PurgeGameChannel(ch, keep);
+							await comp.FollowupAsync(Loc.T("Bot.CleanDone", n), ephemeral: true);
+						}
+						catch (Exception ex) { try { await comp.FollowupAsync(Loc.T("Bot.Error", ex.Message), ephemeral: true); } catch { } }
+					});
+					return;
+				}
+
 				// Guided config editor button: opens the section select menu (ephemeral). Admin-only.
 				if ((comp.Data.CustomId ?? string.Empty).StartsWith("wgsm:config:"))
 				{

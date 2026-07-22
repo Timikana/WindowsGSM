@@ -739,6 +739,9 @@ namespace WindowsGSM.Functions.Localization
             E("Bot.CfgCurrent", "Current: {0}", "Actuel : {0}", "Actual: {0}", "Aktuell: {0}");
             E("Bot.CfgSaved", "✅ {0} — restart the server to apply.", "✅ {0} — redémarre le serveur pour appliquer.", "✅ {0} — reinicia el servidor para aplicar.", "✅ {0} — Server neu starten, um zu übernehmen.");
             E("Bot.CfgFailed", "❌ {0}", "❌ {0}", "❌ {0}", "❌ {0}");
+            E("Bot.BtnClean", "🧹 Clean", "🧹 Nettoyer", "🧹 Limpiar", "🧹 Aufräumen");
+            E("Bot.CleanDone", "🧹 Deleted {0} message(s) — the live panel stays.", "🧹 {0} message(s) supprimé(s) — le panneau live reste.", "🧹 {0} mensaje(s) borrado(s).", "🧹 {0} Nachricht(en) gelöscht.");
+            E("Bot.CleanNoChannel", "No game channel found for this server.", "Aucun canal de jeu trouvé pour ce serveur.", "No se encontró canal para este servidor.", "Kein Spielkanal für diesen Server gefunden.");
             E("Bot.UpdateNeedsStop", "⚠️ Server `{0}` must be **stopped** to update (files are in use). Stop it, then update.", "⚠️ Le serveur `{0}` doit être **arrêté** pour la mise à jour (fichiers en cours d'utilisation). Arrête-le, puis mets à jour.", "⚠️ El servidor `{0}` debe estar **detenido** para actualizar. Deténlo y actualiza.", "⚠️ Server `{0}` muss zum Aktualisieren **gestoppt** sein. Stoppe ihn und aktualisiere dann.");
             E("Bot.NoPermission", "You do not have permission.", "Tu n'as pas la permission.", "No tienes permiso.", "Du hast keine Berechtigung.");
             E("Bot.Error", "Error: {0}", "Erreur : {0}", "Error: {0}", "Fehler: {0}");
