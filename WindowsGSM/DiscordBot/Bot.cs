@@ -1129,8 +1129,7 @@ namespace WindowsGSM.DiscordBot
 					case "backup":
 						return (await w.BackupServerById(serverId, userId, userName)) ? Loc.T("Bot.BackedUp", serverId) : Loc.T("Bot.FailBackup", serverId);
 					case "update":
-						if (w.GetServerStatus(serverId).ToString() != "Stopped") { return Loc.T("Bot.UpdateNeedsStop", serverId); }
-						return (await w.UpdateServerById(serverId, userId, userName)) ? Loc.T("Bot.Updated", serverId) : Loc.T("Bot.FailUpdate", serverId);
+						return await w.UpdateServerLifecycleById(serverId, userId, userName);
 					case "autostart":
 					case "autorestart":
 					case "autoupdate":

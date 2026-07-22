@@ -5583,6 +5583,39 @@ namespace WindowsGSM
             return GetServerMetadata(server.ID).ServerStatus == ServerStatus.Stopped;
         }
 
+        /// <summary>One-click Discord update: if the server is running, stop it, update, then start it again
+        /// (SteamCMD needs the files free). Returns a human summary. Update-applied vs already-up-to-date is
+        /// in the server log; we report the lifecycle neutrally rather than guess.</summary>
+        public async Task<string> UpdateServerLifecycleById(string serverId, string adminID, string adminName)
+        {
+            var server = GetServerTableById(serverId);
+            if (server == null) { return Loc.T("Bot.ServerNotExist", serverId); }
+            bool wasRunning = GetServerMetadata(server.ID).ServerStatus == ServerStatus.Started;
+            DiscordBotLog($"Discord: Receive UPDATE(lifecycle) action | {adminName} ({adminID})");
+
+            if (wasRunning)
+            {
+                await GameServer_Stop(server);
+                for (int i = 0; i < 30 && GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped; i++) { await Task.Delay(1000); }
+                if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped) { return Loc.T("Bot.UpdateStopFailed", serverId); }
+            }
+            else if (GetServerMetadata(server.ID).ServerStatus != ServerStatus.Stopped)
+            {
+                return Loc.T("Bot.UpdateNeedsStop", serverId); // busy (updating/restarting) -> don't interfere
+            }
+
+            await GameServer_Update(server);
+
+            if (wasRunning)
+            {
+                await GameServer_Start(server);
+                return GetServerMetadata(server.ID).ServerStatus == ServerStatus.Started
+                    ? Loc.T("Bot.UpdatedRestarted", serverId)
+                    : Loc.T("Bot.UpdatedRestartWarn", serverId);
+            }
+            return Loc.T("Bot.UpdatedStopped", serverId);
+        }
+
         // ===== Helpers for the enriched Discord commands =====
         public string GetServerConnectInfo(string serverId)
         {
