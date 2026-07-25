@@ -51,7 +51,7 @@ namespace WindowsGSM.Functions.ConfigEditor
     {
         private static readonly List<GameConfigSchema> _all = new List<GameConfigSchema>
         {
-            Palworld(), SevenDaysToDie(), ProjectZomboid(), Minecraft(), ArkGameUserSettings(), ArkGame()
+            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Minecraft(), ArkGameUserSettings(), ArkGame()
         };
 
         /// <summary>Returns the first curated schema matching the game, or null (-> the UI falls back to raw mode).</summary>
@@ -470,6 +470,152 @@ namespace WindowsGSM.Functions.ConfigEditor
             s.Fields.Add(new FieldSpec("AntiCheatProtectionType20ThresholdMultiplier", "AntiCheat 20 threshold x", FieldKind.Float, "Anti-cheat"));
             s.Fields.Add(new FieldSpec("AntiCheatProtectionType22ThresholdMultiplier", "AntiCheat 22 threshold x", FieldKind.Float, "Anti-cheat"));
             s.Fields.Add(new FieldSpec("AntiCheatProtectionType24ThresholdMultiplier", "AntiCheat 24 threshold x", FieldKind.Float, "Anti-cheat"));
+            return s;
+        }
+
+        private static GameConfigSchema ProjectZomboidSandbox()
+        {
+            var s = new GameConfigSchema
+            {
+                GameMatch = "Project Zomboid",
+                Label = "Sandbox (gameplay)",
+                Model = "zomboidsandbox",
+                BoolTrue = "true",
+                BoolFalse = "false",
+                RelativePaths = new[] { @"..\Zomboid\Server\servertest_SandboxVars.lua" }
+            };
+            s.Fields.Add(new FieldSpec("Zombies", "Zombies", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("Distribution", "Distribution", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("DayLength", "Day Length", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("StartYear", "Start Year", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("StartMonth", "Start Month", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("StartDay", "Start Day", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("StartTime", "Start Time", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("WaterShut", "Water Shut", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("ElecShut", "Elec Shut", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("WaterShutModifier", "Water Shut Modifier", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("ElecShutModifier", "Elec Shut Modifier", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("FoodLoot", "Food Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("CannedFoodLoot", "Canned Food Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("LiteratureLoot", "Literature Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("SurvivalGearsLoot", "Survival Gears Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("MedicalLoot", "Medical Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("WeaponLoot", "Weapon Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("RangedWeaponLoot", "Ranged Weapon Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("AmmoLoot", "Ammo Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("MechanicsLoot", "Mechanics Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("OtherLoot", "Other Loot", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("Temperature", "Temperature", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("Rain", "Rain", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("ErosionSpeed", "Erosion Speed", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("ErosionDays", "Erosion Days", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("XpMultiplier", "Xp Multiplier", FieldKind.Float, "Character"));
+            s.Fields.Add(new FieldSpec("XpMultiplierAffectsPassive", "Xp Multiplier Affects Passive", FieldKind.Bool, "Character"));
+            s.Fields.Add(new FieldSpec("ZombieAttractionMultiplier", "Zombie Attraction Multiplier", FieldKind.Float, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("VehicleEasyUse", "Vehicle Easy Use", FieldKind.Bool, "Vehicles"));
+            s.Fields.Add(new FieldSpec("Farming", "Farming", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("CompostTime", "Compost Time", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("StatsDecrease", "Stats Decrease", FieldKind.Int, "Character"));
+            s.Fields.Add(new FieldSpec("NatureAbundance", "Nature Abundance", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("Alarm", "Alarm", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("LockedHouses", "Locked Houses", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("StarterKit", "Starter Kit", FieldKind.Bool, "Character"));
+            s.Fields.Add(new FieldSpec("Nutrition", "Nutrition", FieldKind.Bool, "Character"));
+            s.Fields.Add(new FieldSpec("FoodRotSpeed", "Food Rot Speed", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("FridgeFactor", "Fridge Factor", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("LootRespawn", "Loot Respawn", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("SeenHoursPreventLootRespawn", "Seen Hours Prevent Loot Respawn", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("HoursForWorldItemRemoval", "Hours For World Item Removal", FieldKind.Float, "Advanced"));
+            s.Fields.Add(new FieldSpec("ItemRemovalListBlacklistToggle", "Item Removal List Blacklist Toggle", FieldKind.Bool, "Advanced"));
+            s.Fields.Add(new FieldSpec("TimeSinceApo", "Time Since Apo", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("PlantResilience", "Plant Resilience", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("PlantAbundance", "Plant Abundance", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("EndRegen", "End Regen", FieldKind.Int, "Nature & farming"));
+            s.Fields.Add(new FieldSpec("Helicopter", "Helicopter", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("MetaEvent", "Meta Event", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("SleepingEvent", "Sleeping Event", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("GeneratorSpawning", "Generator Spawning", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("GeneratorFuelConsumption", "Generator Fuel Consumption", FieldKind.Float, "Survival"));
+            s.Fields.Add(new FieldSpec("SurvivorHouseChance", "Survivor House Chance", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("VehicleStoryChance", "Vehicle Story Chance", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("ZoneStoryChance", "Zone Story Chance", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("AnnotatedMapChance", "Annotated Map Chance", FieldKind.Int, "Events"));
+            s.Fields.Add(new FieldSpec("CharacterFreePoints", "Character Free Points", FieldKind.Int, "Character"));
+            s.Fields.Add(new FieldSpec("ConstructionBonusPoints", "Construction Bonus Points", FieldKind.Int, "Character"));
+            s.Fields.Add(new FieldSpec("NightDarkness", "Night Darkness", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("NightLength", "Night Length", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("InjurySeverity", "Injury Severity", FieldKind.Int, "Character"));
+            s.Fields.Add(new FieldSpec("BoneFracture", "Bone Fracture", FieldKind.Bool, "Character"));
+            s.Fields.Add(new FieldSpec("HoursForCorpseRemoval", "Hours For Corpse Removal", FieldKind.Float, "Advanced"));
+            s.Fields.Add(new FieldSpec("DecayingCorpseHealthImpact", "Decaying Corpse Health Impact", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("BloodLevel", "Blood Level", FieldKind.Int, "Advanced"));
+            s.Fields.Add(new FieldSpec("ClothingDegradation", "Clothing Degradation", FieldKind.Int, "Character"));
+            s.Fields.Add(new FieldSpec("FireSpread", "Fire Spread", FieldKind.Bool, "Advanced"));
+            s.Fields.Add(new FieldSpec("DaysForRottenFoodRemoval", "Days For Rotten Food Removal", FieldKind.Int, "Advanced"));
+            s.Fields.Add(new FieldSpec("AllowExteriorGenerator", "Allow Exterior Generator", FieldKind.Bool, "Survival"));
+            s.Fields.Add(new FieldSpec("MaxFogIntensity", "Max Fog Intensity", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("MaxRainFxIntensity", "Max Rain Fx Intensity", FieldKind.Int, "Time & weather"));
+            s.Fields.Add(new FieldSpec("EnableSnowOnGround", "Enable Snow On Ground", FieldKind.Bool, "Time & weather"));
+            s.Fields.Add(new FieldSpec("MultiHitZombies", "Multi Hit Zombies", FieldKind.Bool, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("RearVulnerability", "Rear Vulnerability", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("AttackBlockMovements", "Attack Block Movements", FieldKind.Bool, "Advanced"));
+            s.Fields.Add(new FieldSpec("AllClothesUnlocked", "All Clothes Unlocked", FieldKind.Bool, "Character"));
+            s.Fields.Add(new FieldSpec("EnableTaintedWaterText", "Enable Tainted Water Text", FieldKind.Bool, "Advanced"));
+            s.Fields.Add(new FieldSpec("CarSpawnRate", "Car Spawn Rate", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("ChanceHasGas", "Chance Has Gas", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("InitialGas", "Initial Gas", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("FuelStationGas", "Fuel Station Gas", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("CarGasConsumption", "Car Gas Consumption", FieldKind.Float, "Vehicles"));
+            s.Fields.Add(new FieldSpec("LockedCar", "Locked Car", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("CarGeneralCondition", "Car General Condition", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("CarDamageOnImpact", "Car Damage On Impact", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("DamageToPlayerFromHitByACar", "Damage To Player From Hit By A Car", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("TrafficJam", "Traffic Jam", FieldKind.Bool, "Vehicles"));
+            s.Fields.Add(new FieldSpec("CarAlarm", "Car Alarm", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("PlayerDamageFromCrash", "Player Damage From Crash", FieldKind.Bool, "Vehicles"));
+            s.Fields.Add(new FieldSpec("SirenShutoffHours", "Siren Shutoff Hours", FieldKind.Float, "Vehicles"));
+            s.Fields.Add(new FieldSpec("RecentlySurvivorVehicles", "Recently Survivor Vehicles", FieldKind.Int, "Vehicles"));
+            s.Fields.Add(new FieldSpec("EnableVehicles", "Enable Vehicles", FieldKind.Bool, "Vehicles"));
+            s.Fields.Add(new FieldSpec("EnablePoisoning", "Enable Poisoning", FieldKind.Int, "Survival"));
+            s.Fields.Add(new FieldSpec("MaggotSpawn", "Maggot Spawn", FieldKind.Int, "Advanced"));
+            s.Fields.Add(new FieldSpec("LightBulbLifespan", "Light Bulb Lifespan", FieldKind.Float, "Advanced"));
+            s.Fields.Add(new FieldSpec("Map.AllowMiniMap", "Allow Mini Map", FieldKind.Bool, "Map"));
+            s.Fields.Add(new FieldSpec("Map.AllowWorldMap", "Allow World Map", FieldKind.Bool, "Map"));
+            s.Fields.Add(new FieldSpec("Map.MapAllKnown", "Map All Known", FieldKind.Bool, "Map"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Speed", "Speed", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Strength", "Strength", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Toughness", "Toughness", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Transmission", "Transmission", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Mortality", "Mortality", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Reanimate", "Reanimate", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Cognition", "Cognition", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.CrawlUnderVehicle", "Crawl Under Vehicle", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Memory", "Memory", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Sight", "Sight", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.Hearing", "Hearing", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.ThumpNoChasing", "Thump No Chasing", FieldKind.Bool, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.ThumpOnConstruction", "Thump On Construction", FieldKind.Bool, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.ActiveOnly", "Active Only", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.TriggerHouseAlarm", "Trigger House Alarm", FieldKind.Bool, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.ZombiesDragDown", "Zombies Drag Down", FieldKind.Bool, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.ZombiesFenceLunge", "Zombies Fence Lunge", FieldKind.Bool, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieLore.DisableFakeDead", "Disable Fake Dead", FieldKind.Int, "Zombie behaviour"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.PopulationMultiplier", "Population Multiplier", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.PopulationStartMultiplier", "Population Start Multiplier", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.PopulationPeakMultiplier", "Population Peak Multiplier", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.PopulationPeakDay", "Population Peak Day", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RespawnHours", "Respawn Hours", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RespawnUnseenHours", "Respawn Unseen Hours", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RespawnMultiplier", "Respawn Multiplier", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RedistributeHours", "Redistribute Hours", FieldKind.Float, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.FollowSoundDistance", "Follow Sound Distance", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RallyGroupSize", "Rally Group Size", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RallyTravelDistance", "Rally Travel Distance", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RallyGroupSeparation", "Rally Group Separation", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("ZombieConfig.RallyGroupRadius", "Rally Group Radius", FieldKind.Int, "Population"));
+            s.Fields.Add(new FieldSpec("Plumbing.PumpFilterUsage", "Pump Filter Usage", FieldKind.Float, "Plumbing"));
+            s.Fields.Add(new FieldSpec("Plumbing.PumpEfficiencyLoss", "Pump Efficiency Loss", FieldKind.Float, "Plumbing"));
+            s.Fields.Add(new FieldSpec("Plumbing.PumpMaxWater", "Pump Max Water", FieldKind.Int, "Plumbing"));
             return s;
         }
 
