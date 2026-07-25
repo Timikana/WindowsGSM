@@ -51,7 +51,7 @@ namespace WindowsGSM.Functions.ConfigEditor
     {
         private static readonly List<GameConfigSchema> _all = new List<GameConfigSchema>
         {
-            Palworld(), SevenDaysToDie(), Minecraft(), ArkGameUserSettings(), ArkGame()
+            Palworld(), SevenDaysToDie(), ProjectZomboid(), Minecraft(), ArkGameUserSettings(), ArkGame()
         };
 
         /// <summary>Returns the first curated schema matching the game, or null (-> the UI falls back to raw mode).</summary>
@@ -318,6 +318,158 @@ namespace WindowsGSM.Functions.ConfigEditor
             s.Fields.Add(new FieldSpec("DynamicMeshMaxItemCache", "Dynamic mesh item cache", FieldKind.Int, "Performance", "Concurrent items processed; higher = more RAM.") { Min = 1, Max = 32, Step = 1 });
             s.Fields.Add(new FieldSpec("TwitchServerPermission", "Twitch permission level", FieldKind.Int, "Twitch", "Permission level required to use Twitch integration.") { Min = 0, Max = 1000, Step = 1 });
             s.Fields.Add(new FieldSpec("TwitchBloodMoonAllowed", "Twitch during blood moon", FieldKind.Bool, "Twitch", "Allow Twitch actions during blood moons (can cause lag)."));
+            return s;
+        }
+
+        private static GameConfigSchema ProjectZomboid()
+        {
+            var s = new GameConfigSchema
+            {
+                GameMatch = "Project Zomboid",
+                Model = "universal",
+                BoolTrue = "true",
+                BoolFalse = "false",
+                RelativePaths = new[] { @"..\Zomboid\Server\servertest.ini" }
+            };
+            s.Fields.Add(new FieldSpec("PVP", "PvP", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("PauseEmpty", "Pause when empty", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("GlobalChat", "Global chat", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("ChatStreams", "Chat streams", FieldKind.Text, "Chat"));
+            s.Fields.Add(new FieldSpec("Open", "Open server", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("ServerWelcomeMessage", "Welcome message", FieldKind.Text, "Server"));
+            s.Fields.Add(new FieldSpec("AutoCreateUserInWhiteList", "Auto-whitelist new users", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("DisplayUserName", "Display username", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("ShowFirstAndLastName", "Show first/last name", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("SpawnPoint", "Spawn point", FieldKind.Text, "World"));
+            s.Fields.Add(new FieldSpec("SafetySystem", "Safety system", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("ShowSafety", "Show safety", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("SafetyToggleTimer", "Safety toggle timer", FieldKind.Int, "PvP"));
+            s.Fields.Add(new FieldSpec("SafetyCooldownTimer", "Safety cooldown", FieldKind.Int, "PvP"));
+            s.Fields.Add(new FieldSpec("SpawnItems", "Spawn items", FieldKind.Text, "World"));
+            s.Fields.Add(new FieldSpec("DefaultPort", "Game port", FieldKind.Int, "Network"));
+            s.Fields.Add(new FieldSpec("UDPPort", "UDP port", FieldKind.Int, "Network"));
+            s.Fields.Add(new FieldSpec("ResetID", "Reset ID", FieldKind.Int, "Server"));
+            s.Fields.Add(new FieldSpec("Mods", "Mods", FieldKind.Text, "World"));
+            s.Fields.Add(new FieldSpec("Map", "Maps", FieldKind.Text, "World"));
+            s.Fields.Add(new FieldSpec("DoLuaChecksum", "Lua checksum (anti-cheat)", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("DenyLoginOnOverloadedServer", "Deny login if overloaded", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("Public", "Public (server browser)", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("PublicName", "Public name", FieldKind.Text, "Server"));
+            s.Fields.Add(new FieldSpec("PublicDescription", "Public description", FieldKind.Text, "Server"));
+            s.Fields.Add(new FieldSpec("MaxPlayers", "Max players", FieldKind.Int, "Server"));
+            s.Fields.Add(new FieldSpec("PingLimit", "Ping limit (ms)", FieldKind.Int, "Server"));
+            s.Fields.Add(new FieldSpec("HoursForLootRespawn", "Loot respawn (hours)", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("MaxItemsForLootRespawn", "Max items for respawn", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("ConstructionPreventsLootRespawn", "Construction blocks respawn", FieldKind.Bool, "Loot"));
+            s.Fields.Add(new FieldSpec("DropOffWhiteListAfterDeath", "Drop from whitelist on death", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("NoFire", "No fire spread", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("AnnounceDeath", "Announce deaths", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("MinutesPerPage", "Minutes per book page", FieldKind.Float, "World"));
+            s.Fields.Add(new FieldSpec("SaveWorldEveryMinutes", "Autosave (min)", FieldKind.Int, "World"));
+            s.Fields.Add(new FieldSpec("PlayerSafehouse", "Player safehouses", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("AdminSafehouse", "Admin safehouses", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafehouseAllowTrepass", "Allow trespass", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafehouseAllowFire", "Allow fire", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafehouseAllowLoot", "Allow loot", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafehouseAllowRespawn", "Allow respawn", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafehouseDaySurvivedToClaim", "Days survived to claim", FieldKind.Int, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafeHouseRemovalTime", "Removal time (h)", FieldKind.Int, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SafehouseAllowNonResidential", "Allow non-residential", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("AllowDestructionBySledgehammer", "Sledgehammer destruction", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("SledgehammerOnlyInSafehouse", "Sledgehammer only in safehouse", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("KickFastPlayers", "Kick fast players", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("ServerPlayerID", "Server player ID", FieldKind.Int, "Server"));
+            s.Fields.Add(new FieldSpec("RCONPort", "RCON port", FieldKind.Int, "RCON & Discord"));
+            s.Fields.Add(new FieldSpec("RCONPassword", "RCON password", FieldKind.Secret, "RCON & Discord"));
+            s.Fields.Add(new FieldSpec("DiscordEnable", "Discord relay", FieldKind.Bool, "RCON & Discord"));
+            s.Fields.Add(new FieldSpec("DiscordToken", "Discord token", FieldKind.Secret, "RCON & Discord"));
+            s.Fields.Add(new FieldSpec("DiscordChannel", "Discord channel", FieldKind.Int, "RCON & Discord"));
+            s.Fields.Add(new FieldSpec("DiscordChannelID", "Discord channel ID", FieldKind.Int, "RCON & Discord"));
+            s.Fields.Add(new FieldSpec("Password", "Password", FieldKind.Secret, "Server"));
+            s.Fields.Add(new FieldSpec("MaxAccountsPerUser", "Max accounts / user", FieldKind.Int, "Server"));
+            s.Fields.Add(new FieldSpec("AllowCoop", "Allow split-screen coop", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("SleepAllowed", "Sleep allowed", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("SleepNeeded", "Sleep needed", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("KnockedDownAllowed", "Knockdown allowed", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("SneakModeHideFromOtherPlayers", "Sneak hides from players", FieldKind.Bool, "World"));
+            s.Fields.Add(new FieldSpec("WorkshopItems", "Workshop items", FieldKind.Text, "World"));
+            s.Fields.Add(new FieldSpec("SteamScoreboard", "Steam scoreboard", FieldKind.Bool, "Steam"));
+            s.Fields.Add(new FieldSpec("SteamVAC", "Steam VAC", FieldKind.Bool, "Steam"));
+            s.Fields.Add(new FieldSpec("UPnP", "UPnP", FieldKind.Bool, "Network"));
+            s.Fields.Add(new FieldSpec("VoiceEnable", "Voice chat", FieldKind.Bool, "Voice"));
+            s.Fields.Add(new FieldSpec("VoiceMinDistance", "Voice min distance", FieldKind.Float, "Voice"));
+            s.Fields.Add(new FieldSpec("VoiceMaxDistance", "Voice max distance", FieldKind.Float, "Voice"));
+            s.Fields.Add(new FieldSpec("Voice3D", "3D voice", FieldKind.Bool, "Voice"));
+            s.Fields.Add(new FieldSpec("SpeedLimit", "Speed limit", FieldKind.Float, "Network"));
+            s.Fields.Add(new FieldSpec("LoginQueueEnabled", "Login queue", FieldKind.Bool, "Network"));
+            s.Fields.Add(new FieldSpec("LoginQueueConnectTimeout", "Queue timeout (s)", FieldKind.Int, "Network"));
+            s.Fields.Add(new FieldSpec("server_browser_announced_ip", "Announced IP", FieldKind.Text, "Server"));
+            s.Fields.Add(new FieldSpec("PlayerRespawnWithSelf", "Respawn at own death spot", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("PlayerRespawnWithOther", "Respawn at other's spot", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("FastForwardMultiplier", "Fast-forward multiplier", FieldKind.Float, "World"));
+            s.Fields.Add(new FieldSpec("DisableSafehouseWhenPlayerConnected", "Disable when owner online", FieldKind.Bool, "Safehouse"));
+            s.Fields.Add(new FieldSpec("Faction", "Factions", FieldKind.Bool, "Factions"));
+            s.Fields.Add(new FieldSpec("FactionDaySurvivedToCreate", "Days to create", FieldKind.Int, "Factions"));
+            s.Fields.Add(new FieldSpec("FactionPlayersRequiredForTag", "Players for tag", FieldKind.Int, "Factions"));
+            s.Fields.Add(new FieldSpec("DisableRadioStaff", "Radio: staff", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("DisableRadioAdmin", "Radio: admin", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("DisableRadioGM", "Radio: GM", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("DisableRadioOverseer", "Radio: overseer", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("DisableRadioModerator", "Radio: moderator", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("DisableRadioInvisible", "Radio: invisible", FieldKind.Bool, "Chat"));
+            s.Fields.Add(new FieldSpec("ClientCommandFilter", "Client command filter", FieldKind.Text, "Logs"));
+            s.Fields.Add(new FieldSpec("ClientActionLogs", "Client action logs", FieldKind.Text, "Logs"));
+            s.Fields.Add(new FieldSpec("PerkLogs", "Perk logs", FieldKind.Bool, "Logs"));
+            s.Fields.Add(new FieldSpec("ItemNumbersLimitPerContainer", "Item limit / container", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("BloodSplatLifespanDays", "Blood splat lifespan (days)", FieldKind.Int, "Loot"));
+            s.Fields.Add(new FieldSpec("AllowNonAsciiUsername", "Allow non-ASCII usernames", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("BanKickGlobalSound", "Ban/kick global sound", FieldKind.Bool, "Logs"));
+            s.Fields.Add(new FieldSpec("RemovePlayerCorpsesOnCorpseRemoval", "Remove player corpses", FieldKind.Bool, "Loot"));
+            s.Fields.Add(new FieldSpec("TrashDeleteAll", "Trash deletes all", FieldKind.Bool, "Loot"));
+            s.Fields.Add(new FieldSpec("PVPMeleeWhileHitReaction", "Melee while hit reaction", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("MouseOverToSeeDisplayName", "Mouse over to see name", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("HidePlayersBehindYou", "Hide players behind you", FieldKind.Bool, "Server"));
+            s.Fields.Add(new FieldSpec("PVPMeleeDamageModifier", "Melee damage (%)", FieldKind.Float, "PvP"));
+            s.Fields.Add(new FieldSpec("PVPFirearmDamageModifier", "Firearm damage (%)", FieldKind.Float, "PvP"));
+            s.Fields.Add(new FieldSpec("CarEngineAttractionModifier", "Car engine noise (zombies)", FieldKind.Float, "World"));
+            s.Fields.Add(new FieldSpec("PlayerBumpPlayer", "Player bump player", FieldKind.Bool, "PvP"));
+            s.Fields.Add(new FieldSpec("MapRemotePlayerVisibility", "Map player visibility", FieldKind.Int, "World"));
+            s.Fields.Add(new FieldSpec("BackupsCount", "Backups count", FieldKind.Int, "Backups"));
+            s.Fields.Add(new FieldSpec("BackupsOnStart", "Backup on start", FieldKind.Bool, "Backups"));
+            s.Fields.Add(new FieldSpec("BackupsOnVersionChange", "Backup on version change", FieldKind.Bool, "Backups"));
+            s.Fields.Add(new FieldSpec("BackupsPeriod", "Backup period (min)", FieldKind.Int, "Backups"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType1", "AntiCheat type 1", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType2", "AntiCheat type 2", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType3", "AntiCheat type 3", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType4", "AntiCheat type 4", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType5", "AntiCheat type 5", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType6", "AntiCheat type 6", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType7", "AntiCheat type 7", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType8", "AntiCheat type 8", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType9", "AntiCheat type 9", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType10", "AntiCheat type 10", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType11", "AntiCheat type 11", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType12", "AntiCheat type 12", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType13", "AntiCheat type 13", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType14", "AntiCheat type 14", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType15", "AntiCheat type 15", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType16", "AntiCheat type 16", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType17", "AntiCheat type 17", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType18", "AntiCheat type 18", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType19", "AntiCheat type 19", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType20", "AntiCheat type 20", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType21", "AntiCheat type 21", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType22", "AntiCheat type 22", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType23", "AntiCheat type 23", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType24", "AntiCheat type 24", FieldKind.Bool, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType2ThresholdMultiplier", "AntiCheat 2 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType3ThresholdMultiplier", "AntiCheat 3 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType4ThresholdMultiplier", "AntiCheat 4 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType9ThresholdMultiplier", "AntiCheat 9 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType15ThresholdMultiplier", "AntiCheat 15 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType20ThresholdMultiplier", "AntiCheat 20 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType22ThresholdMultiplier", "AntiCheat 22 threshold x", FieldKind.Float, "Anti-cheat"));
+            s.Fields.Add(new FieldSpec("AntiCheatProtectionType24ThresholdMultiplier", "AntiCheat 24 threshold x", FieldKind.Float, "Anti-cheat"));
             return s;
         }
 
