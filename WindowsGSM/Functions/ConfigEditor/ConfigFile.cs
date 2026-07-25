@@ -20,6 +20,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         public IReadOnlyList<ConfigEntry> Entries => _entries;
 
         private List<string> _lines = new List<string>();
+        private System.Text.Encoding _enc;
 
         private static readonly Regex ReIniKey = new Regex(@"^\s*([^=\[#;][^=]*?)\s*=\s*(.*)$", RegexOptions.Compiled);
         private static readonly Regex ReProp = new Regex("<property\\s+name=\"([^\"]+)\"\\s+value=\"([^\"]*)\"", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -27,7 +28,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         public static ConfigFile Load(string path)
         {
             var cf = new ConfigFile { Path = path };
-            string text = File.ReadAllText(path);
+            string text = ConfigIO.Read(path, out cf._enc);
             cf._lines = new List<string>(text.Split('\n')); // keeps any trailing \r on the line (CRLF preserved)
             cf.Format = Detect(text, path);
             cf.ParseLines();
@@ -152,7 +153,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 File.Copy(Path, bak, true);
             }
             catch { /* best-effort backup */ }
-            File.WriteAllText(Path, string.Join("\n", _lines));
+            ConfigIO.Write(Path, string.Join("\n", _lines), _enc);
         }
     }
 }

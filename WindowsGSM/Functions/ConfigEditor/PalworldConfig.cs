@@ -23,11 +23,12 @@ namespace WindowsGSM.Functions.ConfigEditor
         private string _prefix;         // "OptionSettings=(" (before the content)
         private string _suffix;         // ")<\r?>" (after the content)
         private string _inner;          // content between the parentheses (mutable)
+        private System.Text.Encoding _enc;
 
         public static PalworldConfig Load(string path)
         {
             var cf = new PalworldConfig { Path = path };
-            cf._allLines = File.ReadAllText(path).Split('\n');
+            cf._allLines = ConfigIO.Read(path, out cf._enc).Split('\n');
             cf.LocateAndParse();
             return cf;
         }
@@ -119,7 +120,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             catch { /* best-effort backup */ }
 
             _allLines[_optLineIndex] = _prefix + _inner + _suffix;
-            File.WriteAllText(Path, string.Join("\n", _allLines));
+            ConfigIO.Write(Path, string.Join("\n", _allLines), _enc);
         }
     }
 }

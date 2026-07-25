@@ -20,6 +20,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         public IReadOnlyList<ConfigEntry> Entries => _entries;
 
         private string[] _lines;
+        private System.Text.Encoding _enc;
 
         // group1=indent, 2=key, 3=value (non-greedy), 4=optional comma, 5=optional trailing comment
         private static readonly Regex Assign = new Regex(@"^(\s*)([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*(,?)\s*(--.*)?$");
@@ -27,7 +28,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         public static ZomboidSandboxConfig Load(string path)
         {
             var c = new ZomboidSandboxConfig { Path = path };
-            c._lines = File.ReadAllText(path).Split('\n');
+            c._lines = ConfigIO.Read(path, out c._enc).Split('\n');
             c.Parse();
             return c;
         }
@@ -82,7 +83,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         public void Save()
         {
             try { File.Copy(Path, Path + ".wgsmbak", true); } catch { /* best-effort */ }
-            File.WriteAllText(Path, string.Join("\n", _lines));
+            ConfigIO.Write(Path, string.Join("\n", _lines), _enc);
         }
     }
 }
