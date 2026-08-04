@@ -51,7 +51,7 @@ namespace WindowsGSM.Functions.ConfigEditor
     {
         private static readonly List<GameConfigSchema> _all = new List<GameConfigSchema>
         {
-            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Minecraft(), ArkGameUserSettings(), ArkGame()
+            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Windrose(), Minecraft(), ArkGameUserSettings(), ArkGame()
         };
 
         /// <summary>Returns the first curated schema matching the game, or null (-> the UI falls back to raw mode).</summary>
@@ -616,6 +616,36 @@ namespace WindowsGSM.Functions.ConfigEditor
             s.Fields.Add(new FieldSpec("Plumbing.PumpFilterUsage", "Pump Filter Usage", FieldKind.Float, "Plumbing"));
             s.Fields.Add(new FieldSpec("Plumbing.PumpEfficiencyLoss", "Pump Efficiency Loss", FieldKind.Float, "Plumbing"));
             s.Fields.Add(new FieldSpec("Plumbing.PumpMaxWater", "Pump Max Water", FieldKind.Int, "Plumbing"));
+            return s;
+        }
+
+        private static GameConfigSchema Windrose()
+        {
+            var s = new GameConfigSchema
+            {
+                GameMatch = "Windrose",
+                Model = "windrosejson",
+                BoolTrue = "true",
+                BoolFalse = "false",
+                RelativePaths = new[] { @"R5\ServerDescription.json" }
+            };
+            // — Server —
+            s.Fields.Add(new FieldSpec("ServerName", "Server name", FieldKind.Text, "Server", "Name shown to players (invite codes can look alike)."));
+            s.Fields.Add(new FieldSpec("InviteCode", "Invite code", FieldKind.Text, "Server", "Players join with this code (Play > Connect to Server). 6+ letters/digits, case-sensitive."));
+            s.Fields.Add(new FieldSpec("Password", "Password", FieldKind.Secret, "Server", "Server password. Also set 'Password protected' accordingly."));
+            s.Fields.Add(new FieldSpec("IsPasswordProtected", "Password protected", FieldKind.Bool, "Server", "Must be ON when a password is set, OFF when empty."));
+            s.Fields.Add(new FieldSpec("MaxPlayerCount", "Max players", FieldKind.Int, "Server", "Maximum simultaneous players.") { Min = 1, Max = 16, Step = 1 });
+            s.Fields.Add(new FieldSpec("UserSelectedRegion", "Region", FieldKind.Enum, "Server", "Connection Service region. Empty = auto by latency. EU also covers NA.") { EnumValues = new[] { "", "EU", "SEA", "CIS" } });
+            // — Network —
+            s.Fields.Add(new FieldSpec("UseDirectConnection", "Direct connection", FieldKind.Bool, "Network", "ON = direct IP sockets (needs port forwarding). OFF = ICE P2P via the Connection Service (no port forwarding, join by invite code)."));
+            s.Fields.Add(new FieldSpec("DirectConnectionServerPort", "Direct connection port", FieldKind.Int, "Network", "TCP+UDP port for direct connections (-1 = unset, default 7777).") { Min = -1, Max = 65535, Step = 1 });
+            s.Fields.Add(new FieldSpec("P2pProxyAddress", "P2P listen address", FieldKind.Text, "Network", "IP address for listening sockets."));
+            s.Fields.Add(new FieldSpec("DirectConnectionProxyAddress", "Direct listen address", FieldKind.Text, "Network", "Bind address for direct connections."));
+            s.Fields.Add(new FieldSpec("DirectConnectionServerAddress", "Direct server address", FieldKind.Text, "Network", "Reserved for future use (not used currently)."));
+            // — Advanced —
+            s.Fields.Add(new FieldSpec("WorldIslandId", "World island ID", FieldKind.Text, "Advanced", "ID of the world loaded at startup. Must match a WorldDescription.json. Change only to switch worlds."));
+            s.Fields.Add(new FieldSpec("AutoLoadLatestBackupIfHasBroken", "Auto-load backup if broken", FieldKind.Bool, "Advanced", "Load the latest backup automatically if the save is corrupted."));
+            s.Fields.Add(new FieldSpec("CanLaunchMultipleServerInstances", "Allow multiple instances", FieldKind.Bool, "Advanced", "Allow several server instances on the same machine."));
             return s;
         }
 

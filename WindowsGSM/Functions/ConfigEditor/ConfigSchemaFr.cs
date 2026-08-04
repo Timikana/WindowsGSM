@@ -503,12 +503,31 @@ namespace WindowsGSM.Functions.ConfigEditor
             { "Plumbing.PumpMaxWater", ("Eau max de la pompe", "") },
         };
 
+        private static readonly Dictionary<string, (string label, string desc)> Windrose = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "ServerName", ("Nom du serveur", "Nom affiché aux joueurs (utile quand les codes se ressemblent).") },
+            { "InviteCode", ("Code d'invitation", "Les joueurs rejoignent avec ce code (Jouer > Se connecter au serveur). 6+ lettres/chiffres, sensible à la casse.") },
+            { "Password", ("Mot de passe", "Mot de passe du serveur. Pense à cocher « Protégé par mot de passe ».") },
+            { "IsPasswordProtected", ("Protégé par mot de passe", "Doit être ACTIVÉ si un mot de passe est défini, désactivé sinon.") },
+            { "MaxPlayerCount", ("Joueurs max", "Nombre max de joueurs simultanés.") },
+            { "UserSelectedRegion", ("Région", "Région du service de connexion. Vide = auto selon la latence. EU couvre aussi l'Amérique du Nord.") },
+            { "UseDirectConnection", ("Connexion directe", "ACTIVÉ = sockets IP directs (redirection de port requise). Désactivé = P2P ICE via leur service (aucune redirection, on rejoint par code d'invitation).") },
+            { "DirectConnectionServerPort", ("Port connexion directe", "Port TCP+UDP pour les connexions directes (-1 = non défini, défaut 7777).") },
+            { "P2pProxyAddress", ("Adresse d'écoute P2P", "Adresse IP des sockets d'écoute.") },
+            { "DirectConnectionProxyAddress", ("Adresse d'écoute directe", "Adresse de bind pour les connexions directes.") },
+            { "DirectConnectionServerAddress", ("Adresse serveur directe", "Réservé pour plus tard (pas encore utilisé).") },
+            { "WorldIslandId", ("ID du monde", "ID du monde chargé au démarrage (doit correspondre à un WorldDescription.json). À changer seulement pour changer de monde.") },
+            { "AutoLoadLatestBackupIfHasBroken", ("Backup auto si corrompu", "Charge automatiquement la dernière sauvegarde si le monde est corrompu.") },
+            { "CanLaunchMultipleServerInstances", ("Instances multiples", "Autorise plusieurs instances du serveur sur la même machine.") },
+        };
+
         private static Dictionary<string, (string label, string desc)> Map(string game)
         {
             if (string.IsNullOrEmpty(game)) { return null; }
             if (game.StartsWith("Palworld", StringComparison.OrdinalIgnoreCase)) { return Palworld; }
             if (game.StartsWith("7 Days to Die", StringComparison.OrdinalIgnoreCase)) { return SevenDaysToDie; }
             if (game.StartsWith("Project Zomboid", StringComparison.OrdinalIgnoreCase)) { return ProjectZomboid; }
+            if (game.StartsWith("Windrose", StringComparison.OrdinalIgnoreCase)) { return Windrose; }
             return null;
         }
 

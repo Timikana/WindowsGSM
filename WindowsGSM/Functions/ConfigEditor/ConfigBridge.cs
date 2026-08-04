@@ -32,6 +32,7 @@ namespace WindowsGSM.Functions.ConfigEditor
         {
             if (schema.Model == "palworld") { return PalworldConfig.Load(full); }
             if (schema.Model == "zomboidsandbox") { return ZomboidSandboxConfig.Load(full); }
+            if (schema.Model == "windrosejson") { return WindroseConfig.Load(full); }
             return ConfigFile.Load(full);
         }
 
