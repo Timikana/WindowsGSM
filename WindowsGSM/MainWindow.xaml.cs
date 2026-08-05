@@ -3917,25 +3917,44 @@ namespace WindowsGSM
 
         private void SetServerStatus(ServerTable server, string status, string pid = null)
         {
-            server.Status = status;
-            if (pid != null)
-            {
-                server.PID = pid;
-            }
-            if (status == "Stopped")
-            {
-                server.PID = string.Empty;
-            }
+            Apply(server);
 
-            if (server.Status != "Started" && server.Maxplayers.Contains('/'))
+            // LoadServerTable() builds BRAND NEW ServerTable instances (it runs again when the plugins
+            // finish compiling, and on every table reload), so a long start/stop that began before a
+            // rebuild is holding a stale object: writing the status only there leaves the row that is
+            // actually in the grid — and everything reading it, including the Discord bot via
+            // GetServerList() — stuck on the previous status. A 7 Days to Die server takes ~3 minutes to
+            // report Started, which is more than enough time to lose the race and show up offline while
+            // running fine. Apply to the live row too. (The old code hid this by doing
+            // ServerGrid.Items[i] = server, which put the captured instance back into the grid.)
+            var live = GetServerTableById(server.ID);
+            if (live != null && !ReferenceEquals(live, server))
             {
-                var serverConfig = new ServerConfig(server.ID);
-                server.Maxplayers = serverConfig.ServerMaxPlayer;
+                Apply(live);
             }
 
             // Status/PID/Maxplayers are notifying now, so the grid cells (and the StatusDisplay column)
             // update on assignment — no ServerGrid.Items[i]=server + Items.Refresh() full rebind needed.
             DataGrid_RefreshElements();
+
+            void Apply(ServerTable row)
+            {
+                row.Status = status;
+                if (pid != null)
+                {
+                    row.PID = pid;
+                }
+                if (status == "Stopped")
+                {
+                    row.PID = string.Empty;
+                }
+
+                if (row.Status != "Started" && row.Maxplayers.Contains('/'))
+                {
+                    var serverConfig = new ServerConfig(row.ID);
+                    row.Maxplayers = serverConfig.ServerMaxPlayer;
+                }
+            }
         }
 
         public void Log(string serverId, string logText)
