@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -39,9 +40,9 @@ namespace WindowsGSM.Functions
                 {
                     udp.Client.ReceiveTimeout = timeoutMs;
                     udp.Client.SendTimeout = timeoutMs;
-                    udp.Connect(host, port);
+                    var target = new IPEndPoint(ResolveHost(host), port);
 
-                    byte[] response = await QueryAsync(udp, BuildRequest(null), timeoutMs).ConfigureAwait(false);
+                    byte[] response = await QueryAsync(udp, BuildRequest(null), timeoutMs, target).ConfigureAwait(false);
                     if (response == null) { return null; }
 
                     // Challenge response: 0x41 followed by a 4-byte challenge -> we replay.
@@ -49,7 +50,7 @@ namespace WindowsGSM.Functions
                     {
                         byte[] challenge = new byte[4];
                         Array.Copy(response, 5, challenge, 0, 4);
-                        response = await QueryAsync(udp, BuildRequest(challenge), timeoutMs).ConfigureAwait(false);
+                        response = await QueryAsync(udp, BuildRequest(challenge), timeoutMs, target).ConfigureAwait(false);
                         if (response == null) { return null; }
                     }
 
@@ -73,9 +74,20 @@ namespace WindowsGSM.Functions
             return req;
         }
 
-        private static async Task<byte[]> QueryAsync(UdpClient udp, byte[] request, int timeoutMs)
+        private static IPAddress ResolveHost(string host)
         {
-            await udp.SendAsync(request, request.Length).ConfigureAwait(false);
+            if (IPAddress.TryParse(host, out IPAddress ip)) { return ip; }
+            try
+            {
+                return Dns.GetHostAddresses(host).FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)
+                       ?? IPAddress.Loopback;
+            }
+            catch { return IPAddress.Loopback; }
+        }
+
+        private static async Task<byte[]> QueryAsync(UdpClient udp, byte[] request, int timeoutMs, IPEndPoint target)
+        {
+            await udp.SendAsync(request, request.Length, target).ConfigureAwait(false);
 
             using (var cts = new CancellationTokenSource(timeoutMs))
             {
@@ -89,6 +101,11 @@ namespace WindowsGSM.Functions
                     return null;
                 }
                 cts.Cancel();
+                // Some servers answer from a DIFFERENT source port than the one that was queried: Project
+                // Zomboid listens on UDPPort (DefaultPort+1) but replies from DefaultPort. A *connected*
+                // UdpClient silently drops those datagrams, which is why the players column stayed empty
+                // for it. The socket therefore stays unconnected and only the source ADDRESS is checked.
+                if (!recv.Result.RemoteEndPoint.Address.Equals(target.Address)) { return null; }
                 return recv.Result.Buffer;
             }
         }
