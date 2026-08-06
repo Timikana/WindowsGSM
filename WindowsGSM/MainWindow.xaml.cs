@@ -2984,8 +2984,21 @@ namespace WindowsGSM
         {
             _serverMetadata[int.Parse(server.ID)].Process = null;
 
-            dynamic gameServer = GameServer.Data.Class.Get(server.Game, pluginList: PluginsList);
-            await gameServer.Stop(p);
+            // A plugin's Stop() must never be able to abort the shutdown: it runs on a Process that may
+            // have been re-attached after a WindowsGSM restart, and reading p.StartInfo on such a process
+            // throws. That exception used to bubble up through Server_BeginStop and GameServer_Restart,
+            // which are awaited from a fire-and-forget Task, so it vanished silently and left the server
+            // pinned on "Restarting" while it kept running — the Discord restart button did nothing.
+            // Swallow it here: the bounded wait plus Kill below still stops the server.
+            try
+            {
+                dynamic gameServer = GameServer.Data.Class.Get(server.Game, pluginList: PluginsList);
+                await gameServer.Stop(p);
+            }
+            catch (Exception e)
+            {
+                Functions.AppLog.Warn("Server", $"#{server.ID} graceful stop failed ({e.GetType().Name}: {e.Message}); falling back to kill.");
+            }
 
             for (int i = 0; i < 10; i++)
             {
