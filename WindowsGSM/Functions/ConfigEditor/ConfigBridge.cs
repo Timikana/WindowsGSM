@@ -140,7 +140,11 @@ namespace WindowsGSM.Functions.ConfigEditor
                     case FieldKind.Float:
                         if (!double.TryParse(raw, NumberStyles.Any, Inv, out double dv)) { return (false, "Expected a number."); }
                         if (spec.Max > spec.Min && (dv < spec.Min || dv > spec.Max)) { return (false, $"Out of range ({spec.Min}-{spec.Max})."); }
+                        // Keep a decimal part when the setting is a float: Project Zomboid's SandboxVars
+                        // stores dozens of values as "1.0", and writing back a bare "1" rewrites them all
+                        // for nothing (and makes a config diff unreadable).
                         formatted = dv.ToString("0.######", Inv);
+                        if (formatted.IndexOf('.') < 0) { formatted += ".0"; }
                         break;
                     case FieldKind.Enum:
                         string match = spec.EnumValues?.FirstOrDefault(x => string.Equals(x, raw, StringComparison.OrdinalIgnoreCase));
