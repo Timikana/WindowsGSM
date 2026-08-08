@@ -3205,6 +3205,11 @@ namespace WindowsGSM
 
             await Task.Delay(1000);
 
+            // Restart has to re-apply the mods just like Start does, otherwise a mod change only takes
+            // effect after a full stop + start — and a restart is exactly what everyone does after changing
+            // one. The server is stopped at this point, so files the running game had locked are free.
+            await UpdateAndActivateModsOnStart(server);
+
             var gameServer = await Server_BeginStart(server);
             if (gameServer == null)
             {
