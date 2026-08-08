@@ -179,7 +179,18 @@ namespace WindowsGSM.Functions.Mods
                 var luaPkgs = new List<string>();
                 foreach (var (dst, pkg, rules) in deployList)
                 {
-                    foreach (var r in rules) { DeployRule(dst, pkg, r, win64, serverFiles, luaPkgs); }
+                    // Some mods ship the SAME mod twice: a modern pak under ./Paks/ (mounted by the engine)
+                    // and a legacy blueprint stub under ./LogicMods/ (loaded by BPModLoaderMod through
+                    // UE4SS). Deploying both makes the mod load twice — two ModActor_C for one mod — and the
+                    // duplicate fights itself: whichever instance the UI hooks land on may be the one that
+                    // just got destroyed, so the mod appears to work then randomly stop. Creative Menu ships
+                    // exactly that and says so itself in the log ("LogicMod version ... is no longer used").
+                    // Deploy the ./Paks/ variant first, then skip any LogicMods pak that is the same mod.
+                    var pakStems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var r in rules.OrderBy(r => string.Equals(((string)r["Type"] ?? "").Trim(), "LogicMods", StringComparison.OrdinalIgnoreCase) ? 1 : 0))
+                    {
+                        DeployRule(dst, pkg, r, win64, serverFiles, luaPkgs, pakStems);
+                    }
                 }
                 if (needsUe4ss) { EnableUe4ssMods(win64, luaPkgs); }
 
@@ -229,7 +240,15 @@ namespace WindowsGSM.Functions.Mods
         // ---- UE4SS install + per-InstallRule distribution (Palworld) ----
 
         /// <summary>Distribute one InstallRule of a mod to its runtime target folder.</summary>
-        private static void DeployRule(string modDir, string pkg, JToken rule, string win64, string serverFiles, List<string> luaPkgs)
+        // A mod pak is the same mod whether it is shipped as "Name.pak" or "Name_P.pak" (the _P suffix only
+        // raises the engine's mount priority), so both collapse to the same stem for duplicate detection.
+        private static string PakStem(string path)
+        {
+            string s = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+            return s.EndsWith("_P", StringComparison.OrdinalIgnoreCase) ? s.Substring(0, s.Length - 2) : s;
+        }
+
+        private static void DeployRule(string modDir, string pkg, JToken rule, string win64, string serverFiles, List<string> luaPkgs, HashSet<string> pakStems = null)
         {
             try
             {
@@ -247,8 +266,12 @@ namespace WindowsGSM.Functions.Mods
                     if (!Directory.Exists(srcDir)) { continue; }
                     switch (type)
                     {
-                        case "LogicMods": CopyPaks(srcDir, logicMods); break;              // BPModLoaderMod loads these
-                        case "Paks": CopyPaks(srcDir, paksMods); break;                    // UE auto-mounts ~mods
+                        case "LogicMods":                                                   // BPModLoaderMod loads these
+                            CopyPaks(srcDir, logicMods, skipStems: pakStems, purgeSkipped: true);
+                            break;
+                        case "Paks":                                                        // UE auto-mounts ~mods
+                            CopyPaks(srcDir, paksMods, collectStems: pakStems);
+                            break;
                         case "Lua":                                                         // ue4ss\Mods\<pkg>\<Scripts>
                             string leaf = Path.GetFileName(srcDir.TrimEnd('\\'));
                             CopyDir(srcDir, Path.Combine(ueMods, pkg, leaf));
@@ -349,16 +372,37 @@ namespace WindowsGSM.Functions.Mods
             catch (Exception ex) { Functions.AppLog.Warn("Palworld/UE4SS", ex.Message); }
         }
 
-        private static void CopyPaks(string src, string dst)
+        // collectStems: remembers what was deployed here, so a later rule can recognise the same mod.
+        // skipStems + purgeSkipped: do not deploy a pak that is already mounted from another folder, and
+        // delete a copy left behind by an earlier version of this code (best-effort: the file is locked
+        // while the server runs, so the cleanup lands at the next start, before the server is launched).
+        private static void CopyPaks(string src, string dst, HashSet<string> collectStems = null,
+                                     HashSet<string> skipStems = null, bool purgeSkipped = false)
         {
             Directory.CreateDirectory(dst);
             foreach (var f in Directory.EnumerateFiles(src, "*.*", SearchOption.AllDirectories))
             {
                 string ext = Path.GetExtension(f).ToLowerInvariant();
-                if (ext == ".pak" || ext == ".utoc" || ext == ".ucas" || ext == ".sig")
+                if (ext != ".pak" && ext != ".utoc" && ext != ".ucas" && ext != ".sig") { continue; }
+
+                string stem = PakStem(f);
+                if (skipStems != null && skipStems.Contains(stem))
                 {
-                    File.Copy(f, Path.Combine(dst, Path.GetFileName(f)), true);
+                    if (purgeSkipped)
+                    {
+                        try
+                        {
+                            string stale = Path.Combine(dst, Path.GetFileName(f));
+                            if (File.Exists(stale)) { File.Delete(stale); }
+                        }
+                        catch (Exception ex) { Functions.AppLog.Warn("Palworld/Deploy", $"duplicate {Path.GetFileName(f)} still locked: {ex.Message}"); }
+                    }
+                    Functions.AppLog.Info("Palworld/Deploy", $"skipped duplicate {Path.GetFileName(f)} ({stem} already deployed as a pak)");
+                    continue;
                 }
+
+                File.Copy(f, Path.Combine(dst, Path.GetFileName(f)), true);
+                collectStems?.Add(stem);
             }
         }
 
