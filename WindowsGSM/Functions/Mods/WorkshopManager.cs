@@ -86,7 +86,16 @@ namespace WindowsGSM.Functions.Mods
                     p.Start();
                     p.BeginOutputReadLine();
                     p.BeginErrorReadLine();
-                    await Task.Run(() => p.WaitForExit());
+
+                    // SteamCMD waits on stdin when the cached session is gone (it wants a password and a
+                    // Steam Guard code), and stdin is not attached here — so it hangs for ever. That used to
+                    // pin a server restart open: the game stayed down until the process was killed by hand.
+                    if (!await Task.Run(() => p.WaitForExit(90_000)))
+                    {
+                        try { p.Kill(true); } catch { }
+                        Functions.AppLog.Warn("Workshop/Download", $"app {appId} item {sid}: SteamCMD timed out (90s), killed.");
+                        return (false, "SteamCMD did not answer within 90s — the cached Steam session has most likely expired. Log in once from Mods ▸ Steam login.");
+                    }
                 }
                 string content = ContentPath(appId, sid);
                 bool ok = Directory.Exists(content);

@@ -3084,7 +3084,18 @@ namespace WindowsGSM
                 if (GetServerMetadata(server.ID).UpdateOnStart)
                 {
                     Log(server.ID, $"Mods: checking {enabled.Count} Workshop mod(s) for updates…");
-                    foreach (var e in enabled) { await Functions.Mods.WorkshopManager.DownloadAsync(profile.WorkshopAppId, e.Id); }
+                    foreach (var e in enabled)
+                    {
+                        var (ok, message) = await Functions.Mods.WorkshopManager.DownloadAsync(profile.WorkshopAppId, e.Id);
+                        if (ok) { continue; }
+
+                        // Checking for mod updates must never hold a server down. When SteamCMD cannot log
+                        // in (a cached session does expire) every item fails the same way, so stop after the
+                        // first failure instead of paying the timeout once per mod, and start the server
+                        // with the mods already on disk.
+                        Log(server.ID, $"Mods: update check skipped — {message}");
+                        break;
+                    }
                 }
 
                 string msg = await Task.Run(() =>
