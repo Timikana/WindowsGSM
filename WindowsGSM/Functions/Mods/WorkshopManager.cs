@@ -183,6 +183,33 @@ namespace WindowsGSM.Functions.Mods
                 }
                 if (needsUe4ss) { EnableUe4ssMods(win64, luaPkgs); }
 
+                // Unchecking a mod has to actually turn it OFF. This pass only ever added things, so a mod
+                // that had been deployed once kept its folder, its enabled.txt and its "name : 1" line and
+                // went on loading for ever. On Palworld that quietly left several mods writing the same
+                // values at once (three base-radius mods fighting over one property, last writer wins), and
+                // the effect looked like it "dropped" at random after each base event.
+                var disabledPkgs = new List<string>();
+                foreach (var e in entries.Where(x => !x.Enabled))
+                {
+                    string sid = Digits(e.Id);
+                    string dst = Path.Combine(workshopDir, sid);
+                    string info = FindFile(dst, "Info.json");
+                    if (info == null) { continue; }
+                    try
+                    {
+                        var j = JObject.Parse(File.ReadAllText(info));
+                        string pkg = j.Value<string>("package_name") ?? j.Value<string>("PackageName") ?? j.Value<string>("packageName") ?? j.Value<string>("mod_name");
+                        var rules = new List<JToken>();
+                        var ruleTok = j["InstallRule"];
+                        if (ruleTok is JArray darr) { rules.AddRange(darr); }
+                        else if (ruleTok is JObject) { rules.Add(ruleTok); }
+                        foreach (var r in rules) { UndeployRule(dst, pkg, r, win64, serverFiles); }
+                        if (!string.IsNullOrWhiteSpace(pkg)) { disabledPkgs.Add(pkg); }
+                    }
+                    catch { }
+                }
+                DisableUe4ssMods(win64, disabledPkgs);
+
                 // 4) Also write the official PalModSettings.ini (harmless; used if the official path ever runs).
                 var sb = new StringBuilder();
                 sb.AppendLine("[PalModSettings]");
@@ -240,6 +267,88 @@ namespace WindowsGSM.Functions.Mods
         }
 
         /// <summary>Copy only pak-family files (flat) from a source tree into a destination folder.</summary>
+        // Mirror of DeployRule: takes back out what a mod had put in place, so unchecking it really stops it
+        // from loading. Lua mods lose their enabled.txt (the folder is kept, so re-enabling costs nothing);
+        // pak-based mods lose the files they shipped, matched by name so a shared folder is never emptied.
+        private static void UndeployRule(string modDir, string pkg, JToken rule, string win64, string serverFiles)
+        {
+            try
+            {
+                string type = ((string)rule["Type"] ?? "").Trim();
+                string ueMods = Path.Combine(win64, "ue4ss", "Mods");
+                string logicMods = Path.Combine(serverFiles ?? "", "Pal", "Content", "Paks", "LogicMods");
+                string paksMods = Path.Combine(serverFiles ?? "", "Pal", "Content", "Paks", "~mods");
+                var targets = (rule["Targets"] as JArray)?.Select(t => (string)t).Where(t => t != null).ToList() ?? new List<string> { "." };
+
+                foreach (var tRaw in targets)
+                {
+                    string rel = (tRaw ?? ".").Replace('/', '\\').TrimStart('.', '\\');
+                    string srcDir = string.IsNullOrEmpty(rel) ? modDir : Path.Combine(modDir, rel);
+                    switch (type)
+                    {
+                        case "LogicMods": RemovePaks(srcDir, logicMods); break;
+                        case "Paks": RemovePaks(srcDir, paksMods); break;
+                        case "Lua":
+                            try { File.Delete(Path.Combine(ueMods, pkg ?? string.Empty, "enabled.txt")); } catch { }
+                            break;
+                        case "PalSchema":
+                            try
+                            {
+                                string ps = Path.Combine(ueMods, "PalSchema", "mods", pkg ?? string.Empty);
+                                if (Directory.Exists(ps)) { Directory.Delete(ps, true); }
+                            }
+                            catch { }
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("Palworld/Undeploy", ex.Message); }
+        }
+
+        // Removes from dst only the pak files this mod had shipped (same file names as in src).
+        private static void RemovePaks(string src, string dst)
+        {
+            if (!Directory.Exists(src) || !Directory.Exists(dst)) { return; }
+            foreach (var f in Directory.EnumerateFiles(src, "*.*", SearchOption.AllDirectories))
+            {
+                string ext = Path.GetExtension(f).ToLowerInvariant();
+                if (ext != ".pak" && ext != ".utoc" && ext != ".ucas" && ext != ".sig") { continue; }
+                try
+                {
+                    string victim = Path.Combine(dst, Path.GetFileName(f));
+                    if (File.Exists(victim)) { File.Delete(victim); }
+                }
+                catch { }
+            }
+        }
+
+        private static void DisableUe4ssMods(string win64, IEnumerable<string> pkgs)
+        {
+            try
+            {
+                var wanted = pkgs.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                if (wanted.Count == 0) { return; }
+                string mt = Path.Combine(win64, "ue4ss", "Mods", "mods.txt");
+                if (!File.Exists(mt)) { return; }
+                var lines = File.ReadAllLines(mt).ToList();
+                bool touched = false;
+                foreach (var name in wanted)
+                {
+                    for (int i = 0; i < lines.Count; i++)
+                    {
+                        if (Regex.IsMatch(lines[i], @"^\s*" + Regex.Escape(name) + @"\s*:", RegexOptions.IgnoreCase))
+                        {
+                            lines[i] = name + " : 0";
+                            touched = true;
+                        }
+                    }
+                    try { File.Delete(Path.Combine(win64, "ue4ss", "Mods", name, "enabled.txt")); } catch { }
+                }
+                if (touched) { File.WriteAllLines(mt, lines); }
+            }
+            catch (Exception ex) { Functions.AppLog.Warn("Palworld/UE4SS", ex.Message); }
+        }
+
         private static void CopyPaks(string src, string dst)
         {
             Directory.CreateDirectory(dst);
