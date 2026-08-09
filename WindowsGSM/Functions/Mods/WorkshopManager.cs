@@ -133,21 +133,28 @@ namespace WindowsGSM.Functions.Mods
         {
             try
             {
-                string win64 = Path.Combine(serverFiles ?? string.Empty, "Pal", "Binaries", "Win64");
-                string modsDir = Path.Combine(win64, "Mods");
+                // Palworld deploys its own mods. The server reads <server>\Mods\Workshop\<id>\Info.json,
+                // enables whatever PalModSettings.ini lists, and on the next start writes
+                // Mods\ManagedMods\<PackageName>\InstallManifest.json while copying the files where they
+                // belong (~WorkshopMods, LogicMods, Mods\NativeMods\UE4SS). That manifest is also what the
+                // server ANNOUNCES to joining clients, so a client rejects a mod the server never staged.
+                //
+                // This used to stage into Pal\Binaries\Win64\Mods and inject its own UE4SS through a
+                // dwmapi.dll proxy. The server never looked there, and that private UE4SS collided with the
+                // one Palworld deploys itself: two runtimes in one process, an access violation a few
+                // seconds after every start. Stage where the game looks, and let the game do the rest.
+                string modsDir = Path.Combine(serverFiles ?? string.Empty, "Mods");
                 string workshopDir = Path.Combine(modsDir, "Workshop");
                 Directory.CreateDirectory(workshopDir);
 
-                // 1) Copy each enabled item into Mods\Workshop and read its Info.json (PackageName + InstallRule[]).
                 var pkgs = new List<string>();
-                var deployList = new List<(string dst, string pkg, List<JToken> rules)>();
                 int copied = 0, noInfo = 0, notDownloaded = 0;
-                bool needsUe4ss = false;
                 foreach (var e in entries.Where(x => x.Enabled))
                 {
                     string sid = Digits(e.Id);
                     string src = ContentPath(1623730, sid);
                     if (!Directory.Exists(src)) { notDownloaded++; continue; }
+
                     string dst = Path.Combine(workshopDir, sid);
                     CopyDir(src, dst);
                     copied++;
@@ -158,78 +165,32 @@ namespace WindowsGSM.Functions.Mods
                     {
                         var j = JObject.Parse(File.ReadAllText(info));
                         string pkg = j.Value<string>("package_name") ?? j.Value<string>("PackageName") ?? j.Value<string>("packageName") ?? j.Value<string>("mod_name");
-                        // InstallRule may be a single object OR an array; normalise to a flat list of rules.
-                        var rules = new List<JToken>();
-                        var ruleTok = j["InstallRule"];
-                        if (ruleTok is JArray arr) { rules.AddRange(arr); }
-                        else if (ruleTok is JObject) { rules.Add(ruleTok); }
-                        // Anything that isn't a plain Pak needs the UE4SS loader (Lua/LogicMods/UE4SS/PalSchema),
-                        // and so does anything that declares a UE4SS dependency.
-                        foreach (var r in rules)
-                        {
-                            string t = ((string)r["Type"] ?? "").Trim();
-                            if (t == "UE4SS" || t == "Lua" || t == "LogicMods" || t == "PalSchema") { needsUe4ss = true; }
-                        }
-                        if (j["Dependencies"] is JArray dep && dep.Any(d => ((string)d ?? "").IndexOf("UE4SS", StringComparison.OrdinalIgnoreCase) >= 0)) { needsUe4ss = true; }
-
                         if (!string.IsNullOrWhiteSpace(pkg)) { pkgs.Add(pkg); }
-                        deployList.Add((dst, pkg, rules));
                     }
                     catch { noInfo++; }
                 }
 
-                // 2) The raw dedicated-server binary does NOT run the official mod pipeline (no auto-deploy, no
-                //    UE4SS injection). So we install UE4SS ourselves (classic dwmapi.dll proxy, fetched from
-                //    GitHub) and distribute the files exactly like the official deployer would.
-                string ueMsg = null;
-                if (needsUe4ss) { EnsureUe4ss(win64, out ueMsg); }
-
-                // 3) Distribute every enabled mod's files to their runtime folders per InstallRule Type.
-                var luaPkgs = new List<string>();
-                foreach (var (dst, pkg, rules) in deployList)
-                {
-                    foreach (var r in rules) { DeployRule(dst, pkg, r, win64, serverFiles, luaPkgs); }
-                }
-                if (needsUe4ss) { EnableUe4ssMods(win64, luaPkgs); }
-
-                // Unchecking a mod has to actually turn it OFF. This pass only ever added things, so a mod
-                // that had been deployed once kept its folder, its enabled.txt and its "name : 1" line and
-                // went on loading for ever. On Palworld that quietly left several mods writing the same
-                // values at once (three base-radius mods fighting over one property, last writer wins), and
-                // the effect looked like it "dropped" at random after each base event.
-                var disabledPkgs = new List<string>();
+                // A disabled mod is dropped from ActiveModList and its staged folder removed, so the server
+                // stops redeploying it. Its ManagedMods entry is left alone: the server prunes that itself.
                 foreach (var e in entries.Where(x => !x.Enabled))
                 {
-                    string sid = Digits(e.Id);
-                    string dst = Path.Combine(workshopDir, sid);
-                    string info = FindFile(dst, "Info.json");
-                    if (info == null) { continue; }
                     try
                     {
-                        var j = JObject.Parse(File.ReadAllText(info));
-                        string pkg = j.Value<string>("package_name") ?? j.Value<string>("PackageName") ?? j.Value<string>("packageName") ?? j.Value<string>("mod_name");
-                        var rules = new List<JToken>();
-                        var ruleTok = j["InstallRule"];
-                        if (ruleTok is JArray darr) { rules.AddRange(darr); }
-                        else if (ruleTok is JObject) { rules.Add(ruleTok); }
-                        foreach (var r in rules) { UndeployRule(dst, pkg, r, win64, serverFiles); }
-                        if (!string.IsNullOrWhiteSpace(pkg)) { disabledPkgs.Add(pkg); }
+                        string stale = Path.Combine(workshopDir, Digits(e.Id));
+                        if (Directory.Exists(stale)) { Directory.Delete(stale, true); }
                     }
-                    catch { }
+                    catch (Exception ex) { Functions.AppLog.Warn("Palworld/Deploy", ex.Message); }
                 }
-                DisableUe4ssMods(win64, disabledPkgs);
 
-                // 4) Also write the official PalModSettings.ini (harmless; used if the official path ever runs).
                 var sb = new StringBuilder();
                 sb.AppendLine("[PalModSettings]");
-                sb.AppendLine("bGlobalEnableMod=" + (pkgs.Count > 0 ? "true" : "false"));
+                sb.AppendLine("bGlobalEnableMod=" + (pkgs.Count > 0 ? "True" : "False"));
                 foreach (var p in pkgs.Distinct()) { sb.AppendLine("ActiveModList=" + p); }
                 File.WriteAllText(Path.Combine(modsDir, "PalModSettings.ini"), sb.ToString());
 
-                string msg = $"{pkgs.Count} mod(s) deployed — restart the server to apply.";
-                if (!string.IsNullOrEmpty(ueMsg)) { msg += " " + ueMsg + "."; }
-                if (notDownloaded > 0) { msg += $" ⚠ {notDownloaded} not downloaded yet (click Download)."; }
-                if (noInfo > 0) { msg += $" ⚠ {noInfo} without a readable Info.json."; }
+                string msg = $"{pkgs.Count} mod(s) staged in Mods\\Workshop — restart the server, it deploys and announces them.";
+                if (notDownloaded > 0) { msg += $" WARN {notDownloaded} not downloaded yet (click Download)."; }
+                if (noInfo > 0) { msg += $" WARN {noInfo} without a readable Info.json."; }
                 return msg;
             }
             catch (Exception ex) { return "Activation error: " + ex.Message; }
