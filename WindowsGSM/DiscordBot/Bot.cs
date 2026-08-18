@@ -614,11 +614,22 @@ namespace WindowsGSM.DiscordBot
 										string nn = EmojiName(eon, eid, ename); // 🟢/⚫ prefix in the channel name (changes only on on/off flip)
 										if (ech.Name != nn && (!_chanRenameAt.TryGetValue(ech.Id, out var last) || (DateTime.UtcNow - last).TotalMinutes >= 15))
 										{
-											_chanRenameAt[ech.Id] = DateTime.UtcNow;
 											await ech.ModifyAsync(c => c.Name = nn);
+											// Only start the cooldown once the rename actually went through. Stamping it
+											// before the call meant a failure (Discord 503s happen) silently cost 15
+											// minutes before the next attempt, and a channel could sit on the wrong
+											// status indefinitely if the failures kept landing on that window.
+											_chanRenameAt[ech.Id] = DateTime.UtcNow;
 										}
 									}
-									catch { }
+									catch (Exception re)
+									{
+										// This used to be swallowed whole: a channel stuck showing a server as online
+										// left no trace anywhere, so there was nothing to diagnose. Log it once per
+										// channel per cooldown window, which is rare enough not to spam.
+										BotLog($"Game channel rename (server {eid}): {re.Message}");
+										_chanRenameAt[ech.Id] = DateTime.UtcNow;
+									}
 								}
 								try { await ArchiveRemovedGameChannels(category, servers); } catch (Exception ae) { BotLog($"Game channels archive: {ae.Message}"); }
 								try { await SortGameChannels(category, servers); }
