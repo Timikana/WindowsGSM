@@ -33,6 +33,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             if (schema.Model == "palworld") { return PalworldConfig.Load(full); }
             if (schema.Model == "zomboidsandbox") { return ZomboidSandboxConfig.Load(full); }
             if (schema.Model == "windrosejson") { return WindroseConfig.Load(full); }
+            if (schema.Model == "windroseworld") { return WindroseWorldConfig.Load(full); }
             return ConfigFile.Load(full);
         }
 
@@ -46,8 +47,8 @@ namespace WindowsGSM.Functions.ConfigEditor
             {
                 foreach (var rel in schema.RelativePaths ?? Array.Empty<string>())
                 {
-                    string full = Path.Combine(serverFiles ?? string.Empty, rel);
-                    if (!File.Exists(full)) { continue; }
+                    string full = GameConfigSchema.ResolveUnder(serverFiles, rel);
+                    if (full == null) { continue; }
                     try { res.Add((schema, ModelFor(schema, full))); } catch { }
                     break;
                 }

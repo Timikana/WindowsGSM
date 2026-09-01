@@ -104,8 +104,8 @@ namespace WindowsGSM.Functions.ConfigEditor
                 string primary = null;
                 foreach (string rel in schema.RelativePaths ?? Array.Empty<string>())
                 {
-                    string full = Path.Combine(_serverFiles ?? "", rel);
-                    if (File.Exists(full)) { primary = full; break; }
+                    string full = GameConfigSchema.ResolveUnder(_serverFiles, rel);
+                    if (full != null) { primary = full; break; }
                 }
                 if (primary == null || taken.Contains(primary)) { continue; }
                 taken.Add(primary);
@@ -144,6 +144,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                 _model = _activeSchema?.Model == "palworld" ? (IConfigModel)PalworldConfig.Load(fi.FullPath)
                        : _activeSchema?.Model == "zomboidsandbox" ? (IConfigModel)ZomboidSandboxConfig.Load(fi.FullPath)
                        : _activeSchema?.Model == "windrosejson" ? (IConfigModel)WindroseConfig.Load(fi.FullPath)
+                       : _activeSchema?.Model == "windroseworld" ? (IConfigModel)WindroseWorldConfig.Load(fi.FullPath)
                        : ConfigFile.Load(fi.FullPath);
             }
             catch (Exception ex)

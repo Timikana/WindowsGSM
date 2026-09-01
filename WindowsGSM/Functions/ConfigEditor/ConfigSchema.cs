@@ -31,6 +31,52 @@ namespace WindowsGSM.Functions.ConfigEditor
         public string GameMatch;                 // match on GameServer.FullName (StartsWith)
         public string Label;                     // file label in the selector (optional)
         public string[] RelativePaths;           // candidate file paths under serverfiles
+
+        /// <summary>
+        /// Resolves one RelativePaths entry under serverFiles, allowing '*' as a path segment: Windrose
+        /// keeps its world file under RocksDB_v2\&lt;game version&gt;\Worlds\&lt;world id&gt;\, both of which
+        /// change on their own (a game update bumps the version, a new world adds a folder). Returns the
+        /// most recently written match, or null when nothing matches.
+        /// </summary>
+        public static string ResolveUnder(string serverFiles, string relative)
+        {
+            if (string.IsNullOrEmpty(relative)) { return null; }
+            string full = System.IO.Path.Combine(serverFiles ?? string.Empty, relative);
+            if (relative.IndexOf('*') < 0) { return System.IO.File.Exists(full) ? full : null; }
+
+            var current = new System.Collections.Generic.List<string> { serverFiles ?? string.Empty };
+            var parts = relative.Split(new[] { '\\', '/' }, System.StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < parts.Length; i++)
+            {
+                bool last = i == parts.Length - 1;
+                var next = new System.Collections.Generic.List<string>();
+                foreach (string baseDir in current)
+                {
+                    try
+                    {
+                        if (parts[i] == "..")
+                        {
+                            var up = System.IO.Directory.GetParent(baseDir);
+                            if (up != null) { next.Add(up.FullName); }
+                        }
+                        else if (last)
+                        {
+                            next.AddRange(System.IO.Directory.GetFiles(baseDir, parts[i]));
+                        }
+                        else
+                        {
+                            next.AddRange(System.IO.Directory.GetDirectories(baseDir, parts[i]));
+                        }
+                    }
+                    catch { }
+                }
+                current = next;
+                if (current.Count == 0) { return null; }
+            }
+            return System.Linq.Enumerable.FirstOrDefault(
+                System.Linq.Enumerable.OrderByDescending(current,
+                    f => { try { return System.IO.File.GetLastWriteTimeUtc(f); } catch { return System.DateTime.MinValue; } }));
+        }
         public string Model = "universal";        // "universal" (ConfigFile) | "palworld" (PalworldConfig)
         public string BoolTrue = "True";          // literal written for a true boolean (Palworld=True, MC/7DtD=true)
         public string BoolFalse = "False";
@@ -51,7 +97,7 @@ namespace WindowsGSM.Functions.ConfigEditor
     {
         private static readonly List<GameConfigSchema> _all = new List<GameConfigSchema>
         {
-            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Windrose(), Minecraft(), ArkGameUserSettings(), ArkGame()
+            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Windrose(), WindroseWorld(), Minecraft(), ArkGameUserSettings(), ArkGame()
         };
 
         /// <summary>Returns the first curated schema matching the game, or null (-> the UI falls back to raw mode).</summary>
@@ -801,6 +847,38 @@ return s;
             s.Fields.Add(new FieldSpec("WorldIslandId", "World island ID", FieldKind.Text, "Advanced", "ID of the world loaded at startup. Must match a WorldDescription.json. Change only to switch worlds."));
             s.Fields.Add(new FieldSpec("AutoLoadLatestBackupIfHasBroken", "Auto-load backup if broken", FieldKind.Bool, "Advanced", "Load the latest backup automatically if the save is corrupted."));
             s.Fields.Add(new FieldSpec("CanLaunchMultipleServerInstances", "Allow multiple instances", FieldKind.Bool, "Advanced", "Allow several server instances on the same machine."));
+            return s;
+        }
+
+        private static GameConfigSchema WindroseWorld()
+        {
+            // Per-world gameplay settings. The file lives under a version- and world-id-keyed path that
+            // both move on their own, so RelativePaths uses '*' segments (resolved by GameConfigSchema.ResolveUnder).
+            var s = new GameConfigSchema
+            {
+                GameMatch = "Windrose",
+                Model = "windroseworld",
+                Label = "Réglages du monde",
+                BoolTrue = "true",
+                BoolFalse = "false",
+                RelativePaths = new[] { @"R5\Saved\SaveProfiles\Default\RocksDB_v2\*\Worlds\*\WorldDescription.json" }
+            };
+            // — World —
+            s.Fields.Add(new FieldSpec("WorldName", "World name", FieldKind.Text, "World", "Display name of this world."));
+            s.Fields.Add(new FieldSpec("WorldPresetType", "Difficulty preset", FieldKind.Enum, "World", "Gameplay preset. Changing any parameter below forces this to Custom.") { EnumValues = new[] { "Easy", "Medium", "Hard", "Custom" } });
+            // — Combat — (values only apply under the Custom preset)
+            s.Fields.Add(new FieldSpec("CombatDifficulty", "Combat difficulty", FieldKind.Enum, "Combat", "How difficult boss encounters are and how aggressive enemies are.") { EnumValues = new[] { "Easy", "Normal", "Hard" } });
+            s.Fields.Add(new FieldSpec("MobHealthMultiplier", "Enemy health", FieldKind.Float, "Combat", "How much health enemies have.") { Min = 0.2, Max = 5.0, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("MobDamageMultiplier", "Enemy damage", FieldKind.Float, "Combat", "How hard enemies hit.") { Min = 0.2, Max = 5.0, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("ShipsHealthMultiplier", "Enemy ship health", FieldKind.Float, "Combat", "How much health enemy ships have.") { Min = 0.4, Max = 5.0, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("ShipsDamageMultiplier", "Enemy ship damage", FieldKind.Float, "Combat", "How much damage enemy ships deal.") { Min = 0.2, Max = 2.5, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("BoardingDifficultyMultiplier", "Boarding difficulty", FieldKind.Float, "Combat", "How many enemy sailors must be defeated to win a boarding.") { Min = 0.2, Max = 5.0, Step = 0.1 });
+            // — Co-op —
+            s.Fields.Add(new FieldSpec("Coop.SharedQuests", "Shared quests", FieldKind.Bool, "Co-op", "A co-op quest completed by one player auto-completes for the others who have it active."));
+            s.Fields.Add(new FieldSpec("Coop.StatsCorrectionModifier", "Enemy scaling (players)", FieldKind.Float, "Co-op", "Scales enemy health / posture loss with the number of players.") { Min = 0.0, Max = 2.0, Step = 0.1 });
+            s.Fields.Add(new FieldSpec("Coop.ShipStatsCorrectionModifier", "Enemy ship scaling (players)", FieldKind.Float, "Co-op", "Scales enemy ship health with the number of players.") { Min = 0.0, Max = 2.0, Step = 0.1 });
+            // — Exploration —
+            s.Fields.Add(new FieldSpec("EasyExplore", "Immersive exploration", FieldKind.Bool, "Exploration", "ON hides points-of-interest map markers (harder exploration). Note: the name is inverted — true makes it harder."));
             return s;
         }
 

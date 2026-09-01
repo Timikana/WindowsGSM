@@ -21,7 +21,8 @@ namespace WindowsGSM.Functions.ConfigEditor
             { "Network", "Réseau" }, { "Web & Telnet", "Web & Telnet" }, { "Blood moon", "Lune de sang" },
             { "Loot", "Butin" }, { "Land claims", "Revendications (LCB)" }, { "Performance", "Performance" }, { "Twitch", "Twitch" },
             { "RCON & Discord", "RCON & Discord" }, { "Safehouse", "Refuges" }, { "Factions", "Factions" }, { "Chat", "Chat & radio" }, { "Voice", "Voix (VOIP)" }, { "Steam", "Steam" }, { "Logs", "Logs" }, { "Backups", "Sauvegardes" }, { "Anti-cheat", "Anti-triche" }, { "PvP", "PvP" },
-            { "Population", "Population de zombies" }, { "Zombie behaviour", "Comportement zombies" }, { "Time & weather", "Temps & météo" }, { "Nature & farming", "Nature & agriculture" }, { "Character", "Personnage" }, { "Vehicles", "Véhicules" }, { "Events", "Événements" }, { "Survival", "Survie" }, { "Map", "Carte" }, { "Plumbing", "Plomberie" }
+            { "Population", "Population de zombies" }, { "Zombie behaviour", "Comportement zombies" }, { "Time & weather", "Temps & météo" }, { "Nature & farming", "Nature & agriculture" }, { "Character", "Personnage" }, { "Vehicles", "Véhicules" }, { "Events", "Événements" }, { "Survival", "Survie" }, { "Map", "Carte" }, { "Plumbing", "Plomberie" },
+            { "Co-op", "Coop" }, { "Exploration", "Exploration" }
         };
 
         private static readonly Dictionary<string, (string label, string desc)> Palworld = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
@@ -715,6 +716,19 @@ namespace WindowsGSM.Functions.ConfigEditor
             { "WorldIslandId", ("ID du monde", "ID du monde chargé au démarrage (doit correspondre à un WorldDescription.json). À changer seulement pour changer de monde.") },
             { "AutoLoadLatestBackupIfHasBroken", ("Backup auto si corrompu", "Charge automatiquement la dernière sauvegarde si le monde est corrompu.") },
             { "CanLaunchMultipleServerInstances", ("Instances multiples", "Autorise plusieurs instances du serveur sur la même machine.") },
+            // — Réglages du monde (WorldDescription.json) —
+            { "WorldName", ("Nom du monde", "Nom affiché de ce monde.") },
+            { "WorldPresetType", ("Préréglage de difficulté", "Préréglage de jeu. Modifier un réglage ci-dessous force la valeur à « Custom ».") },
+            { "CombatDifficulty", ("Difficulté de combat", "Difficulté des boss et agressivité générale des ennemis.") },
+            { "MobHealthMultiplier", ("Vie des ennemis", "Quantité de vie des ennemis (1 = normal).") },
+            { "MobDamageMultiplier", ("Dégâts des ennemis", "Force des coups des ennemis (1 = normal).") },
+            { "ShipsHealthMultiplier", ("Vie des navires ennemis", "Quantité de vie des navires ennemis (1 = normal).") },
+            { "ShipsDamageMultiplier", ("Dégâts des navires ennemis", "Dégâts infligés par les navires ennemis (1 = normal).") },
+            { "BoardingDifficultyMultiplier", ("Difficulté d'abordage", "Nombre de marins ennemis à vaincre pour gagner un abordage (1 = normal).") },
+            { "Coop.SharedQuests", ("Quêtes partagées", "Une quête coop terminée par un joueur se valide pour les autres qui l'ont active.") },
+            { "Coop.StatsCorrectionModifier", ("Adaptation ennemis (joueurs)", "Ajuste la vie et la perte de posture des ennemis selon le nombre de joueurs.") },
+            { "Coop.ShipStatsCorrectionModifier", ("Adaptation navires (joueurs)", "Ajuste la vie des navires ennemis selon le nombre de joueurs.") },
+            { "EasyExplore", ("Exploration immersive", "ACTIVÉ masque les marqueurs de points d'intérêt (exploration plus difficile). Attention : le nom est inversé — « vrai » rend l'exploration plus dure.") },
         };
 
         private static Dictionary<string, (string label, string desc)> Map(string game)
