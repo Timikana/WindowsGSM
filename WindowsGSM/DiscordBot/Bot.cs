@@ -551,7 +551,7 @@ namespace WindowsGSM.DiscordBot
 										p.Topic = marker;
 										p.Position = createPos;
 									});
-									try { await created.AddPermissionOverwriteAsync(guild.EveryoneRole, new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Deny, addReactions: PermValue.Deny)); } catch { }
+									try { await SyncGameChannelPermissions(created, category); } catch { }
 									_gameChannelMessages[id] = await created.SendMessageAsync(embed: embed, components: comp);
 									_gameChanLastState[id] = state;
 									_gameChanLastOn[id] = on;
@@ -645,6 +645,43 @@ namespace WindowsGSM.DiscordBot
 				int rate = Configs.GetDashboardRefreshRate();
 				if (rate < 10) { rate = 10; }
 				await Task.Delay(rate * 1000);
+			}
+		}
+
+		// Makes a status channel inherit its category's permissions (so Discord shows it as "synced").
+		// Discord does NOT copy category overwrites when a channel is created through the API, and the old
+		// code layered a standalone @everyone overwrite on top — both reasons the channel diverged from the
+		// category. We copy every category overwrite, folding a send/react deny into @everyone so the channel
+		// stays read-only while inheriting the category's visibility/role rules. Best-effort (needs Manage
+		// Channels); a failure just leaves the channel as-is.
+		private async Task SyncGameChannelPermissions(IGuildChannel chan, SocketCategoryChannel category)
+		{
+			var guild = category.Guild;
+			bool everyoneSeen = false;
+			foreach (var ow in category.PermissionOverwrites)
+			{
+				var perms = ow.Permissions;
+				if (ow.TargetId == guild.EveryoneRole.Id)
+				{
+					everyoneSeen = true;
+					perms = perms.Modify(sendMessages: PermValue.Deny, addReactions: PermValue.Deny);
+				}
+				if (ow.TargetType == PermissionTarget.Role)
+				{
+					var role = guild.GetRole(ow.TargetId);
+					if (role != null) { await chan.AddPermissionOverwriteAsync(role, perms); }
+				}
+				else
+				{
+					var user = guild.GetUser(ow.TargetId);
+					if (user != null) { await chan.AddPermissionOverwriteAsync(user, perms); }
+				}
+			}
+			// Category has no @everyone overwrite: just enforce read-only, visibility stays inherited.
+			if (!everyoneSeen)
+			{
+				await chan.AddPermissionOverwriteAsync(guild.EveryoneRole,
+					new OverwritePermissions(sendMessages: PermValue.Deny, addReactions: PermValue.Deny));
 			}
 		}
 
