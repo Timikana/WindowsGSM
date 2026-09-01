@@ -1303,13 +1303,49 @@ namespace WindowsGSM
                         bool dead;
                         var p = meta.Process;
                         if (p == null) { dead = true; }
-                        else { try { dead = p.HasExited; } catch { dead = false; } } // uncertain -> don't demote
+                        else
+                        {
+                            try { dead = p.HasExited; }
+                            catch
+                            {
+                                // HasExited can throw for a process re-attached from a previous (elevated)
+                                // WindowsGSM session: the retained handle lacks the rights to read the exit
+                                // code. Treating that as "uncertain, keep Started" left a crashed server
+                                // flagged UP forever (grid + Discord) with no auto-restart. Fall back to a
+                                // handle-free existence check: is a process with this PID and the expected
+                                // name still in the OS snapshot?
+                                dead = !IsPidAlive(p, ServerCache.GetProcessName(s.ID));
+                            }
+                        }
 
                         if (dead) { OnGameServerExited(s); }
                     }
                 }
                 catch { }
             }
+        }
+
+        // Handle-free liveness check used when Process.HasExited can't be read (re-attached process from a
+        // prior elevated session). Getting a process BY id uses the OS snapshot, not the retained handle, so
+        // it works across that boundary: an ArgumentException means the PID is gone (server truly dead), and
+        // a PID reused by an unrelated process is caught by the name guard. Returns false (dead) on any doubt
+        // ONLY when the PID is absent; when it exists but we can't confirm the name, we err towards alive.
+        private static bool IsPidAlive(Process p, string expectedName)
+        {
+            int pid;
+            try { pid = p.Id; } catch { return false; } // no id -> nothing to probe
+
+            Process probe = null;
+            try { probe = Process.GetProcessById(pid); }
+            catch (ArgumentException) { return false; }   // PID not in the snapshot -> dead
+            catch { return true; }                        // transient failure -> assume alive, retry next tick
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expectedName)) { return true; }
+                return string.Equals(probe.ProcessName, expectedName, StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return true; }
+            finally { probe.Dispose(); }
         }
 
         // Online players (A2S Steam Query): dedicated loop, slow cadence to avoid
