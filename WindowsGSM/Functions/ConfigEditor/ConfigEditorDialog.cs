@@ -145,6 +145,7 @@ namespace WindowsGSM.Functions.ConfigEditor
                        : _activeSchema?.Model == "zomboidsandbox" ? (IConfigModel)ZomboidSandboxConfig.Load(fi.FullPath)
                        : _activeSchema?.Model == "windrosejson" ? (IConfigModel)WindroseConfig.Load(fi.FullPath)
                        : _activeSchema?.Model == "windroseworld" ? (IConfigModel)WindroseWorldConfig.Load(fi.FullPath)
+                       : _activeSchema?.Model == "enshroudedjson" ? (IConfigModel)EnshroudedConfig.Load(fi.FullPath)
                        : ConfigFile.Load(fi.FullPath);
             }
             catch (Exception ex)

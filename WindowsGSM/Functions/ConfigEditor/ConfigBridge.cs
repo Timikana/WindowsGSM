@@ -34,6 +34,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             if (schema.Model == "zomboidsandbox") { return ZomboidSandboxConfig.Load(full); }
             if (schema.Model == "windrosejson") { return WindroseConfig.Load(full); }
             if (schema.Model == "windroseworld") { return WindroseWorldConfig.Load(full); }
+            if (schema.Model == "enshroudedjson") { return EnshroudedConfig.Load(full); }
             return ConfigFile.Load(full);
         }
 

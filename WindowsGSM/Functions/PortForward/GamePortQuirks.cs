@@ -21,6 +21,18 @@ namespace WindowsGSM.Functions.PortForward
         {
             string g = (gameFullName ?? "").ToLowerInvariant();
 
+            // Enshrouded — UDP only (Steam networking). Players join on the query port; the "game" port is
+            // kept forwarded for older builds that still used it, but as UDP rather than the TCP+UDP default.
+            if (g.Contains("enshrouded"))
+            {
+                return new PortQuirk
+                {
+                    GamePortProtocol = PortProtocol.Udp,
+                    IncludeQueryPort = true,
+                    ExtraPorts = new List<PortMapping>()
+                };
+            }
+
             // Satisfactory — since Update 1.1: port 7777 (TCP+UDP) + 8888/TCP "Reliable Messaging"
             // MANDATORY; the old 15000 (beacon) and 15777 (query) are NO LONGER used.
             if (g.Contains("satisfactory"))

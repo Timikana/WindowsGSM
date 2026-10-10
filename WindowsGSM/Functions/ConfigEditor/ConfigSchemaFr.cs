@@ -22,7 +22,8 @@ namespace WindowsGSM.Functions.ConfigEditor
             { "Loot", "Butin" }, { "Land claims", "Revendications (LCB)" }, { "Performance", "Performance" }, { "Twitch", "Twitch" },
             { "RCON & Discord", "RCON & Discord" }, { "Safehouse", "Refuges" }, { "Factions", "Factions" }, { "Chat", "Chat & radio" }, { "Voice", "Voix (VOIP)" }, { "Steam", "Steam" }, { "Logs", "Logs" }, { "Backups", "Sauvegardes" }, { "Anti-cheat", "Anti-triche" }, { "PvP", "PvP" },
             { "Population", "Population de zombies" }, { "Zombie behaviour", "Comportement zombies" }, { "Time & weather", "Temps & météo" }, { "Nature & farming", "Nature & agriculture" }, { "Character", "Personnage" }, { "Vehicles", "Véhicules" }, { "Events", "Événements" }, { "Survival", "Survie" }, { "Map", "Carte" }, { "Plumbing", "Plomberie" },
-            { "Co-op", "Coop" }, { "Exploration", "Exploration" }
+            { "Co-op", "Coop" }, { "Exploration", "Exploration" },
+            { "Communication", "Communication" }, { "Player", "Joueur" }, { "Resources", "Ressources" }, { "Progression", "Progression" }, { "Enemies", "Ennemis" }, { "User groups", "Groupes de joueurs" }
         };
 
         private static readonly Dictionary<string, (string label, string desc)> Palworld = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
@@ -731,6 +732,70 @@ namespace WindowsGSM.Functions.ConfigEditor
             { "EasyExplore", ("Exploration immersive", "ACTIVÉ masque les marqueurs de points d'intérêt (exploration plus difficile). Attention : le nom est inversé — « vrai » rend l'exploration plus dure.") },
         };
 
+        private static readonly Dictionary<string, (string label, string desc)> Enshrouded = BuildEnshrouded();
+
+        private static Dictionary<string, (string label, string desc)> BuildEnshrouded()
+        {
+            var d = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
+            {
+            { "gameSettingsPreset", ("Préréglage de difficulté", "Default / Relaxed / Hard / Survival appliquent les valeurs du jeu. Les réglages de gameplay ci-dessous ne comptent qu'en « Custom ».") },
+            { "useAlternativeP2P", ("Connexion P2P alternative", "Autre méthode de connexion. À laisser désactivé sauf si des joueurs n'arrivent pas à rejoindre.") },
+            { "enableTextChat", ("Chat écrit", "Autorise le chat écrit en jeu.") },
+            { "enableVoiceChat", ("Chat vocal", "Autorise le chat vocal en jeu.") },
+            { "voiceChatMode", ("Mode du chat vocal", "Proximity = entendu seulement par les joueurs proches ; Global = entendu par tout le monde.") },
+            { "gameSettings.playerHealthFactor", ("Vie des joueurs", "Multiplicateur de vie des joueurs.") },
+            { "gameSettings.playerManaFactor", ("Mana des joueurs", "Multiplicateur de mana des joueurs.") },
+            { "gameSettings.playerStaminaFactor", ("Endurance des joueurs", "Multiplicateur d'endurance des joueurs.") },
+            { "gameSettings.playerBodyHeatFactor", ("Résistance au froid", "Vitesse à laquelle le froid affecte le joueur (plus haut = plus résistant).") },
+            { "gameSettings.playerDivingTimeFactor", ("Temps de plongée", "Durée sous l'eau avant de manquer d'air.") },
+            { "gameSettings.enableDurability", ("Usure de l'équipement", "Les armes et outils s'usent.") },
+            { "gameSettings.enableStarvingDebuff", ("Malus de famine", "Malus quand un joueur reste trop longtemps sans manger.") },
+            { "gameSettings.fromHungerToStarving", ("Faim → famine (min)", "Minutes entre « affamé » et « en famine ».") },
+            { "gameSettings.foodBuffDurationFactor", ("Durée des bonus de nourriture", "Durée des effets de la nourriture.") },
+            { "gameSettings.shroudTimeFactor", ("Temps dans le Voile", "Temps qu'un joueur peut passer dans le Voile.") },
+            { "gameSettings.tombstoneMode", ("À la mort", "AddBackpackMaterials = seuls les matériaux tombent ; Everything = tout l'inventaire tombe ; NoTombstone = on garde tout.") },
+            { "gameSettings.enableGliderTurbulences", ("Turbulences du planeur", "Le planeur est secoué par les turbulences.") },
+            { "gameSettings.dayTimeDuration", ("Durée du jour (min)", "Durée de la journée, en minutes.") },
+            { "gameSettings.nightTimeDuration", ("Durée de la nuit (min)", "Durée de la nuit, en minutes.") },
+            { "gameSettings.weatherFrequency", ("Météo", "Fréquence des événements météo.") },
+            { "gameSettings.fishingDifficulty", ("Difficulté de pêche", "Difficulté du mini-jeu de pêche.") },
+            { "gameSettings.curseModifier", ("Malédiction du Voile", "Probabilité d'être maudit par le Voile.") },
+            { "gameSettings.miningDamageFactor", ("Vitesse de minage", "Dégâts infligés aux ressources (minage, abattage).") },
+            { "gameSettings.resourceDropStackAmountFactor", ("Quantité de ressources", "Quantité de ressources récoltées.") },
+            { "gameSettings.plantGrowthSpeedFactor", ("Pousse des plantes", "Vitesse de pousse des plantes.") },
+            { "gameSettings.factoryProductionSpeedFactor", ("Vitesse de production", "Vitesse des stations d'artisanat et de production.") },
+            { "gameSettings.experienceCombatFactor", ("XP de combat", "Expérience gagnée en combat.") },
+            { "gameSettings.experienceMiningFactor", ("XP de minage", "Expérience gagnée en minant.") },
+            { "gameSettings.experienceExplorationQuestsFactor", ("XP exploration & quêtes", "Expérience gagnée en explorant et en faisant des quêtes.") },
+            { "gameSettings.perkCostFactor", ("Coût des améliorations", "Prix des améliorations de talents.") },
+            { "gameSettings.perkUpgradeRecyclingFactor", ("Remboursement des améliorations", "Part remboursée quand on recycle une amélioration.") },
+            { "gameSettings.randomSpawnerAmount", ("Nombre d'ennemis", "Quantité d'ennemis qui apparaissent.") },
+            { "gameSettings.aggroPoolAmount", ("Attaquants simultanés", "Nombre d'ennemis pouvant attaquer en même temps.") },
+            { "gameSettings.enemyDamageFactor", ("Dégâts des ennemis", "Dégâts des ennemis (hors boss).") },
+            { "gameSettings.enemyHealthFactor", ("Vie des ennemis", "Vie des ennemis (hors boss).") },
+            { "gameSettings.enemyStaminaFactor", ("Endurance des ennemis", "Endurance des ennemis : vitesse à laquelle ils sont étourdis.") },
+            { "gameSettings.enemyPerceptionRangeFactor", ("Perception des ennemis", "Distance à laquelle les ennemis repèrent les joueurs.") },
+            { "gameSettings.threatBonus", ("Agressivité des ennemis", "Agressivité générale des ennemis.") },
+            { "gameSettings.bossDamageFactor", ("Dégâts des boss", "Dégâts infligés par les boss.") },
+            { "gameSettings.bossHealthFactor", ("Vie des boss", "Vie des boss.") },
+            { "gameSettings.pacifyAllEnemies", ("Ennemis pacifiques", "Les ennemis n'attaquent jamais en premier.") },
+            { "gameSettings.tamingStartleRepercussion", ("Apprivoisement effrayé", "Ce qui arrive à la progression d'apprivoisement quand l'animal est effrayé.") },
+            };
+            // One block per user group the game may create (only the groups present in the file show).
+            foreach (string g in GameSchemas.EnshroudedGroups)
+            {
+                string k = "userGroups." + g + ".";
+                d[k + "password"] = (g + " : mot de passe", "Mot de passe que les joueurs tapent pour rejoindre avec ce rôle. Doit être différent pour chaque groupe ; un seul groupe peut ne pas en avoir.");
+                d[k + "canKickBan"] = (g + " : expulser & bannir", "Peut expulser et bannir des joueurs.");
+                d[k + "canAccessInventories"] = (g + " : ouvrir les coffres", "Peut ouvrir les coffres et rangements des autres joueurs.");
+                d[k + "canEditWorld"] = (g + " : modifier le monde", "Peut construire et creuser hors des bases.");
+                d[k + "canEditBase"] = (g + " : modifier les bases", "Peut construire dans les bases (nécessite « modifier le monde »).");
+                d[k + "canExtendBase"] = (g + " : agrandir les bases", "Peut poser et agrandir les Autels de flamme.");
+                d[k + "reservedSlots"] = (g + " : places réservées", "Places gardées libres pour ce groupe.");
+            }
+            return d;
+        }
+
         private static Dictionary<string, (string label, string desc)> Map(string game)
         {
             if (string.IsNullOrEmpty(game)) { return null; }
@@ -738,6 +803,7 @@ namespace WindowsGSM.Functions.ConfigEditor
             if (game.StartsWith("7 Days to Die", StringComparison.OrdinalIgnoreCase)) { return SevenDaysToDie; }
             if (game.StartsWith("Project Zomboid", StringComparison.OrdinalIgnoreCase)) { return ProjectZomboid; }
             if (game.StartsWith("Windrose", StringComparison.OrdinalIgnoreCase)) { return Windrose; }
+            if (game.StartsWith("Enshrouded", StringComparison.OrdinalIgnoreCase)) { return Enshrouded; }
             return null;
         }
 

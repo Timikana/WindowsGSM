@@ -97,7 +97,7 @@ namespace WindowsGSM.Functions.ConfigEditor
     {
         private static readonly List<GameConfigSchema> _all = new List<GameConfigSchema>
         {
-            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Windrose(), WindroseWorld(), Minecraft(), ArkGameUserSettings(), ArkGame()
+            Palworld(), SevenDaysToDie(), ProjectZomboid(), ProjectZomboidSandbox(), Windrose(), WindroseWorld(), Enshrouded(), Minecraft(), ArkGameUserSettings(), ArkGame()
         };
 
         /// <summary>Returns the first curated schema matching the game, or null (-> the UI falls back to raw mode).</summary>
@@ -879,6 +879,94 @@ return s;
             s.Fields.Add(new FieldSpec("Coop.ShipStatsCorrectionModifier", "Enemy ship scaling (players)", FieldKind.Float, "Co-op", "Scales enemy ship health with the number of players.") { Min = 0.0, Max = 2.0, Step = 0.1 });
             // — Exploration —
             s.Fields.Add(new FieldSpec("EasyExplore", "Immersive exploration", FieldKind.Bool, "Exploration", "ON hides points-of-interest map markers (harder exploration). Note: the name is inverted — true makes it harder."));
+            return s;
+        }
+
+        // Enshrouded user groups created by the game (current builds: Admin/Friend/Guest/Visitor; older
+        // worlds have a single "Default"). Fields only show for the groups present in the file.
+        // A property, not a static field: the schema registry above is built during static init, before
+        // any field declared below it would be assigned.
+        internal static string[] EnshroudedGroups => new[] { "Admin", "Friend", "Guest", "Visitor", "Default" };
+
+        private static GameConfigSchema Enshrouded()
+        {
+            // Values and ranges: enum values read from enshrouded_server.exe, ranges from the in-game sliders.
+            var s = new GameConfigSchema
+            {
+                GameMatch = "Enshrouded",
+                Model = "enshroudedjson",
+                BoolTrue = "true",
+                BoolFalse = "false",
+                RelativePaths = new[] { "enshrouded_server.json" }
+            };
+            FieldSpec F(string key, string label, FieldKind kind, string group, string desc, double min = 0, double max = 0, double step = 0.05)
+                => new FieldSpec(key, label, kind, group, desc) { Min = min, Max = max, Step = step };
+            FieldSpec E(string key, string label, string group, string desc, params string[] values)
+                => new FieldSpec(key, label, FieldKind.Enum, group, desc) { EnumValues = values };
+            const string G = "gameSettings.";
+
+            // — Server —
+            s.Fields.Add(E("gameSettingsPreset", "Difficulty preset", "Server", "Default / Relaxed / Hard / Survival use the game's own values. The gameplay settings below only apply with Custom.", "Default", "Relaxed", "Hard", "Survival", "Custom"));
+            s.Fields.Add(F("useAlternativeP2P", "Alternative P2P connection", FieldKind.Bool, "Network", "Alternative connection method. Leave off unless players cannot join."));
+            // — Communication —
+            s.Fields.Add(F("enableTextChat", "Text chat", FieldKind.Bool, "Communication", "Allow the in-game text chat."));
+            s.Fields.Add(F("enableVoiceChat", "Voice chat", FieldKind.Bool, "Communication", "Allow the in-game voice chat."));
+            s.Fields.Add(E("voiceChatMode", "Voice chat mode", "Communication", "Proximity = heard by nearby players only; Global = heard by everyone.", "Proximity", "Global"));
+            // — Player —
+            s.Fields.Add(F(G + "playerHealthFactor", "Player health", FieldKind.Float, "Player", "Player health multiplier.", 0.25, 4));
+            s.Fields.Add(F(G + "playerManaFactor", "Player mana", FieldKind.Float, "Player", "Player mana multiplier.", 0.25, 4));
+            s.Fields.Add(F(G + "playerStaminaFactor", "Player stamina", FieldKind.Float, "Player", "Player stamina multiplier.", 0.25, 4));
+            s.Fields.Add(F(G + "playerBodyHeatFactor", "Body heat", FieldKind.Float, "Player", "How fast cold affects the player (higher = more resistant).", 0.5, 2));
+            s.Fields.Add(F(G + "playerDivingTimeFactor", "Diving time", FieldKind.Float, "Player", "How long players can stay under water.", 0.5, 2));
+            // — Survival —
+            s.Fields.Add(F(G + "enableDurability", "Equipment durability", FieldKind.Bool, "Survival", "Weapons and tools wear out."));
+            s.Fields.Add(F(G + "enableStarvingDebuff", "Starvation debuff", FieldKind.Bool, "Survival", "Players get a debuff when they go without food."));
+            s.Fields.Add(F(G + "fromHungerToStarving", "Hunger to starving (min)", FieldKind.Float, "Survival", "Minutes between being hungry and starving.", 5, 20, 1));
+            s.Fields.Add(F(G + "foodBuffDurationFactor", "Food buff duration", FieldKind.Float, "Survival", "How long food buffs last.", 0.5, 2));
+            s.Fields.Add(F(G + "shroudTimeFactor", "Time in the Shroud", FieldKind.Float, "Survival", "How long players can stay in the Shroud.", 0.5, 2));
+            s.Fields.Add(E(G + "tombstoneMode", "On death", "Survival", "AddBackpackMaterials = materials only drop; Everything = the whole inventory drops; NoTombstone = keep everything.", "AddBackpackMaterials", "Everything", "NoTombstone"));
+            s.Fields.Add(F(G + "enableGliderTurbulences", "Glider turbulence", FieldKind.Bool, "Survival", "The glider wobbles in turbulence."));
+            // — World —
+            s.Fields.Add(F(G + "dayTimeDuration", "Day length (min)", FieldKind.Float, "World", "Length of the day, in minutes.", 2, 60, 1));
+            s.Fields.Add(F(G + "nightTimeDuration", "Night length (min)", FieldKind.Float, "World", "Length of the night, in minutes.", 2, 60, 1));
+            s.Fields.Add(E(G + "weatherFrequency", "Weather", "World", "How often weather events happen.", "Disabled", "Rare", "Normal", "Often"));
+            s.Fields.Add(E(G + "fishingDifficulty", "Fishing difficulty", "World", "Difficulty of the fishing mini-game.", "VeryEasy", "Easy", "Normal", "Hard", "VeryHard"));
+            s.Fields.Add(E(G + "curseModifier", "Shroud curse", "World", "Chance of getting cursed by the Shroud.", "Easy", "Normal", "Hard"));
+            // — Resources —
+            s.Fields.Add(F(G + "miningDamageFactor", "Mining speed", FieldKind.Float, "Resources", "Damage dealt to resource nodes.", 0.5, 2));
+            s.Fields.Add(F(G + "resourceDropStackAmountFactor", "Resource drops", FieldKind.Float, "Resources", "Quantity of resources gathered.", 0.25, 2));
+            s.Fields.Add(F(G + "plantGrowthSpeedFactor", "Plant growth", FieldKind.Float, "Resources", "Speed at which plants grow.", 0.25, 2));
+            s.Fields.Add(F(G + "factoryProductionSpeedFactor", "Production speed", FieldKind.Float, "Resources", "Speed of crafting stations and production.", 0.25, 2));
+            // — Progression —
+            s.Fields.Add(F(G + "experienceCombatFactor", "Combat XP", FieldKind.Float, "Progression", "Experience from combat.", 0.25, 2));
+            s.Fields.Add(F(G + "experienceMiningFactor", "Mining XP", FieldKind.Float, "Progression", "Experience from mining.", 0, 2));
+            s.Fields.Add(F(G + "experienceExplorationQuestsFactor", "Exploration & quests XP", FieldKind.Float, "Progression", "Experience from exploration and quests.", 0.25, 2));
+            s.Fields.Add(F(G + "perkCostFactor", "Perk cost", FieldKind.Float, "Progression", "Price of perk upgrades.", 0.25, 2));
+            s.Fields.Add(F(G + "perkUpgradeRecyclingFactor", "Perk refund", FieldKind.Float, "Progression", "Share refunded when a perk upgrade is recycled.", 0, 1));
+            // — Enemies —
+            s.Fields.Add(E(G + "randomSpawnerAmount", "Enemy amount", "Enemies", "Number of enemies spawned.", "Few", "Normal", "Many", "Extreme"));
+            s.Fields.Add(E(G + "aggroPoolAmount", "Simultaneous attackers", "Enemies", "How many enemies can attack at the same time.", "Few", "Normal", "Many", "Extreme"));
+            s.Fields.Add(F(G + "enemyDamageFactor", "Enemy damage", FieldKind.Float, "Enemies", "Damage dealt by enemies (bosses excluded).", 0.25, 5));
+            s.Fields.Add(F(G + "enemyHealthFactor", "Enemy health", FieldKind.Float, "Enemies", "Enemy health (bosses excluded).", 0.25, 4));
+            s.Fields.Add(F(G + "enemyStaminaFactor", "Enemy stamina", FieldKind.Float, "Enemies", "Enemy stamina: how fast they get staggered.", 0.5, 2));
+            s.Fields.Add(F(G + "enemyPerceptionRangeFactor", "Enemy perception", FieldKind.Float, "Enemies", "Distance at which enemies notice players.", 0.5, 2));
+            s.Fields.Add(F(G + "threatBonus", "Enemy aggressiveness", FieldKind.Float, "Enemies", "How aggressive enemies are.", 0.25, 4));
+            s.Fields.Add(F(G + "bossDamageFactor", "Boss damage", FieldKind.Float, "Enemies", "Damage dealt by bosses.", 0.2, 5));
+            s.Fields.Add(F(G + "bossHealthFactor", "Boss health", FieldKind.Float, "Enemies", "Boss health.", 0.2, 5));
+            s.Fields.Add(F(G + "pacifyAllEnemies", "Peaceful enemies", FieldKind.Bool, "Enemies", "Enemies never attack first."));
+            s.Fields.Add(E(G + "tamingStartleRepercussion", "Startled taming", "Enemies", "What happens to taming progress when the animal is startled.", "KeepProgress", "LoseSomeProgress", "LoseAllProgress"));
+            // — User groups — (the game rejects duplicate passwords and more than one group without one)
+            foreach (string g in EnshroudedGroups)
+            {
+                string k = "userGroups." + g + ".";
+                s.Fields.Add(F(k + "password", g + ": password", FieldKind.Secret, "User groups", "Password players type to join with this role. Must be different for every group; only one group may have none."));
+                s.Fields.Add(F(k + "canKickBan", g + ": kick & ban", FieldKind.Bool, "User groups", "Can kick and ban players."));
+                s.Fields.Add(F(k + "canAccessInventories", g + ": open chests", FieldKind.Bool, "User groups", "Can open other players' chests and storage."));
+                s.Fields.Add(F(k + "canEditWorld", g + ": edit the world", FieldKind.Bool, "User groups", "Can build and dig outside bases."));
+                s.Fields.Add(F(k + "canEditBase", g + ": edit bases", FieldKind.Bool, "User groups", "Can build inside bases (requires 'edit the world')."));
+                s.Fields.Add(F(k + "canExtendBase", g + ": extend bases", FieldKind.Bool, "User groups", "Can place and extend Flame Altars."));
+                s.Fields.Add(F(k + "reservedSlots", g + ": reserved slots", FieldKind.Int, "User groups", "Slots kept free for this group.", 0, 16, 1));
+            }
             return s;
         }
 
